@@ -1,0 +1,34 @@
+{
+    "name": "@tiangou/global",
+    "version": "1.0.0",
+    "type": "module",
+    "main": "./index.js",
+    "exports": {
+      ".": "./index.js",
+      "./components/*": "./components/*",
+      "./hooks/*": "./hooks/*",
+      "./utils/*": "./utils/*",
+      "./stores/*": "./stores/*",
+      "./api/*": "./api/*",
+      "./enums/*": "./enums/*",
+      "./assets/*": "./assets/*"
+    },
+    "dependencies": {
+      "@vueuse/core": "^13.5.0",
+      "axios": "^1.11.0",
+      "dayjs": "^1.11.13",
+      "fingerprintjs2": "^2.1.4",
+      "lodash-es": "^4.17.21",
+      "pinia": "^3.0.3",
+      "vue": "^3.5.17",
+      "vue-router": "^4.5.1",
+      "motion-v": "^1.6.1"
+    },
+    "peerDependencies": {
+    },
+    "peerDependenciesMeta": {
+    },
+    "resolutions": {
+      "rollup": "4.50.0"
+    }
+  }

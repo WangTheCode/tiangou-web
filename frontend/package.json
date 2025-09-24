@@ -1,0 +1,38 @@
+{
+  "name": "tiangou",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm --filter tiangou-pc dev",
+    "dev:pc": "pnpm --filter tiangou-pc dev",
+    "dev:h5": "pnpm --filter h5 dev",
+    "build:pc": "pnpm --filter tiangou-pc build",
+    "build:h5": "pnpm --filter h5 build",
+    "build:all": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "install:all": "pnpm install",
+    "format": "prettier \"**/*.{js,ts,vue,json,css,scss,md}\" --write",
+    "format:check": "prettier \"**/*.{js,ts,vue,json,css,scss,md}\" --check"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.29.0",
+    "eslint": "^9.29.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-vue": "~10.2.0",
+    "globals": "^16.2.0",
+    "prettier": "3.5.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "strip-ansi": "7.1.2",
+      "ansi-styles": "6.2.3"
+    }
+  },
+  "resolutions": {
+    "rollup": "4.50.0"
+  }
+}
