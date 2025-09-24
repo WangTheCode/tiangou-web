@@ -15,7 +15,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: 'mines-dist',
+    outDir: 'tiangou-pc-dist',
     assetsDir: 'assets',
     minify: false,
   },

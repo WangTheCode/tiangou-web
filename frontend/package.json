@@ -10,6 +10,7 @@
     "dev": "pnpm --filter tiangou-pc dev",
     "dev:pc": "pnpm --filter tiangou-pc dev",
     "dev:h5": "pnpm --filter h5 dev",
+    "build": "pnpm --filter tiangou-pc build",
     "build:pc": "pnpm --filter tiangou-pc build",
     "build:h5": "pnpm --filter h5 build",
     "build:all": "pnpm -r build",

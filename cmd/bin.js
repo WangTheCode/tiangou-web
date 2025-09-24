@@ -27,7 +27,7 @@ module.exports = {
    * ee-bin build
    */
   build: {
-    frontend: {
+    fe: {
       directory: './frontend',
       cmd: 'npm',
       args: ['run', 'build'],
@@ -90,7 +90,7 @@ module.exports = {
    */
   move: {
     frontend_dist: {
-      src: './frontend/dist',
+      src: './frontend/packages/pc/tiangou-pc-dist',
       dest: './public/dist'
     },
     go_static: {

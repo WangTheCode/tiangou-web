@@ -4,9 +4,12 @@
 
  const { logger } = require('ee-core/log');
  const { trayService } = require("../addon/tray");
+ const { sqlitedbService } = require('../service/database/sqlitedb');
+
  function preload() {
    logger.info('[preload] load 1');
    trayService.create();
+   sqlitedbService.init();
  }
  
  /**

@@ -2,7 +2,9 @@
 import { ipc } from './ipcRenderer'
 
 export const URLS = {
-    test: 'controller/example/test'
+    test: 'controller/example/test',
+    getMessagePageList: 'controller/chatMessage/getMessagePageList',
+    addMessage: 'controller/chatMessage/addMessage'
 }
 
 const apis = {}
