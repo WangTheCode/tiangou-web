@@ -9,5 +9,5 @@ const createOptions = (storage) => {
   }
 }
 
-export const WebStorage = createStorage(createOptions(sessionStorage))
+export const WebStorage = createStorage(createOptions(localStorage))
 export default WebStorage

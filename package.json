@@ -30,6 +30,7 @@
   "dependencies": {
     "better-sqlite3": "^11.7.0",
     "ee-core": "^4.1.5",
-    "electron-updater": "^6.3.8"
+    "electron-updater": "^6.3.8",
+    "wukongim-node-sdk": "file:../WuKongIMNodeSDK/wukongim-node-sdk-1.0.2.tgz"
   }
 }

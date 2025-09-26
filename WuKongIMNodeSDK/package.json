@@ -1,0 +1,57 @@
+{
+  "name": "wukongim-node-sdk",
+  "version": "1.0.2",
+  "description": "WuKong IM Node.js SDK - 悟空IM的Node.js版本SDK，支持TCP和WebSocket连接的完全私有化即时通讯解决方案",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/examples/basic.ts",
+    "dev:tcp": "ts-node src/examples/tcp-connection.ts",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write src/**/*.ts"
+  },
+  "keywords": [
+    "wukongim",
+    "im",
+    "instant-messaging",
+    "chat",
+    "tcp",
+    "websocket",
+    "nodejs",
+    "sdk"
+  ],
+  "author": "WuKongIM Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WuKongIM/WuKongIMNodeSDK"
+  },
+  "dependencies": {
+    "bignumber.js": "^9.3.1",
+    "buffer": "^6.0.3",
+    "crypto-js": "^4.1.1",
+    "curve25519-js": "^0.0.4",
+    "events": "^3.3.0",
+    "md5-typescript": "^1.0.5",
+    "ws": "^8.14.0"
+  },
+  "devDependencies": {
+    "@types/crypto-js": "^4.1.2",
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.8.0",
+    "@types/ws": "^8.5.5",
+    "@typescript-eslint/eslint-plugin": "^6.7.0",
+    "@typescript-eslint/parser": "^6.7.0",
+    "eslint": "^8.50.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.0.0",
+    "ts-jest": "^29.1.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.2.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

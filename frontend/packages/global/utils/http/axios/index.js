@@ -75,20 +75,20 @@ const request = (config) => {
       .then((res) => {
         const { data } = res;
         // 请求响应体中code不为200时，则认为请求失败
-        if (data.code != 0) {
-          const err = res;
-          err.response = {
-            data: data,
-          };
-          if (data.message) {
-            // showNotify({
-            //   message: data.message,
-            //   type: "danger",
-            // });
-          }
-          reject(err);
-          return;
-        }
+        // if (data.code != 0) {
+        //   const err = res;
+        //   err.response = {
+        //     data: data,
+        //   };
+        //   if (data.message) {
+        //     // showNotify({
+        //     //   message: data.message,
+        //     //   type: "danger",
+        //     // });
+        //   }
+        //   reject(err);
+        //   return;
+        // }
         resolve(data);
       })
       .catch((error) => {

@@ -1,36 +1,36 @@
 import { defineStore } from 'pinia'
 import piniaStore from '../counter'
 import Cache from '../../utils/cache'
-
+import { useTSDD } from '../../hooks/useTSDD'
 import authApi from '../../api/auth'
 export const useUserStore = defineStore('user', {
   state: () => ({
     token: '',
     userInfo: {},
     loginLoading: false,
+    // 通信连接状态
+    connectStatus: 'loading', // loading, success, error
   }),
   getters: {},
   actions: {
-    login(token) {
+    login(params) {
       if (this.loginLoading) {
         return
       }
       this.loginLoading = true
       return new Promise((resolve, reject) => {
-        // const params = getUrlParams(window.location.search)
-        // const token = params.token
-        if (!token) {
-          // router.push('/401')
-          reject(new Error('token is required'))
-          return
-        }
+        const { getDeviceInfo } = useTSDD()
         authApi
-          .login({ token })
+          .login({
+            ...params,
+            "flag": 1,
+            "device": getDeviceInfo()
+          })
           .then((res) => {
-            this.userInfo = res.data
-            this.token = token
+            this.userInfo = res
+            this.token = res.token
             Cache.set('USER_INFO', this.userInfo)
-            Cache.set('USER_TOKEN', token)
+            Cache.set('USER_TOKEN',  this.token)
             this.loginLoading = false
             resolve(res)
           })
@@ -60,9 +60,16 @@ export const useUserStore = defineStore('user', {
     setUserInfo(info) {
       this.userInfo = info
       Cache.set('USER_INFO', info)
+      if(info.token) {
+        this.token = info.token
+        Cache.set('USER_TOKEN', info.token)
+      }
     },
     asyncUserInfo(info) {
       this.userInfo = info
+    },
+    setConnectStatus(status) {
+      this.connectStatus = status
     },
   },
 })

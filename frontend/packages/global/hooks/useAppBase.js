@@ -3,13 +3,25 @@ import {useDevice} from './useDevice'
 import { useAppStore,useUserStore } from '../stores/index'
 import 'dayjs/locale/zh-cn' 
 import { getUrlParams } from '../utils/helper'
+import Cache from '../utils/cache'
+import { useRouter } from 'vue-router'
+import { useTSDD } from '@global/hooks/useTSDD'
 
 export const useAppBase = () => {
 
   useDevice()
   const userStore = useUserStore()
   const appStore = useAppStore()
-   
+  const router = useRouter()
+  const { connect } = useTSDD()
+  const cacheUserInfo = Cache.get('USER_INFO')
+  if(cacheUserInfo && cacheUserInfo.uid) {
+    userStore.setUserInfo(cacheUserInfo)
+
+  }else{
+    router.push('/login')
+    // userStore.setUserInfo({ "uid": "2194c7d5b9b0452ab27fb4731eb0db5d", "app_id": "", "name": "sead_test3", "username": "008615512345670", "sex": 1, "category": "", "short_no": "7138278", "zone": "0086", "phone": "15512345670", "token": "cccbbe6854ff4c6389204022ca323772", "chat_pwd": "", "lock_screen_pwd": "", "lock_after_minute": 0, "setting": { "search_by_phone": 1, "search_by_short": 1, "new_msg_notice": 1, "msg_show_detail": 1, "voice_on": 1, "shock_on": 1, "offline_protection": 0, "device_lock": 0, "mute_of_app": 0 }, "rsa_public_key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUE2ZmhjekRUMWVURWN5RDY2bWw3SApqNUd1SXhMMU5hTEhkZmlrNDZPSkpXZUdTc0xheDRZbG5hclRFYzZ6VXcyQlJVZlQ4eEdpMi9FRjFNRGF2ZjNKCmNoWXp6UmVHT1o5VDd2ajlxTjFpVEp0SklVTldSelBnU0EydFhXSndQR2htT0RRQW9CVnV1Z0RDOWRLZDlDTCsKbXp4MXdHMUtkSG5YZmVpUDMzK05pa21wTFhmdXF0aFM2VzFOa3JnbmoyQTI3UWRwS3lZTFRka2NoOHVwc1AxYgpsalQvbi84MlNMLzVhYmlQYlJiVmFxYjYzVGhESmo5Yzg3WUg3T0lQTnMxNVJZazluL3hKZ3pDcWNlWk9PY3l2CkkzOUpjRGdGb25SWnk0ZmtlV0ovYTR0K0k0bzNadFhMbENwdFk4OXJHdGoxWG5MVGRNeERKR2xRczRvQ21GaTAKL1FJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg==", "short_status": 0, "msg_expire_second": 0 })
+  }
 
 
   const onPlayVoice = async (url) => {

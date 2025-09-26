@@ -1,6 +1,6 @@
 import { post } from '../utils/http/axios'
 export const URL = {
-  login: '/api/member/memberAuth/loginByToken',
+  login: '/user/login',
   logout: '/api/member/memberAuth/logout',
 }
 

@@ -21,5 +21,13 @@ export default defineConfig({
   },
   server: {
     port: 8080,
+    proxy: {
+      "/v1": {
+        target: "https://tgdd-api.jx3kaihe.top",
+        changeOrigin: true,
+        secure: false,
+        // rewrite: (path) => path.replace(/^\/v1/, ""),
+      },
+    },
   },
 })

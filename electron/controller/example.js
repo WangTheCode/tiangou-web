@@ -2,6 +2,7 @@
 
 const { logger } = require('ee-core/log');
 const { exampleService } = require('../service/example');
+const { wkimService } = require('../service/wkim');
 
 /**
  * example
@@ -23,6 +24,22 @@ class ExampleController {
     logger.info('service result:', result);
 
     return 'hello electron-egg';
+  }
+
+
+  async connectTcp (args) {
+    const json = JSON.parse(args);
+    const result = await wkimService.connectTcp(json);
+
+    return result;
+  }
+
+  async sendText (args) {
+    const json = JSON.parse(args);
+    // const re
+    const result = await wkimService.sendText(json);
+
+    return result;
   }
 }
 ExampleController.toString = () => '[class ExampleController]';
