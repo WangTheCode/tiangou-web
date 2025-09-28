@@ -10,27 +10,30 @@ export const useChatStore = defineStore('chat', {
   state: () => ({
     // 通信连接状态
     connectStatus: 'loading', // loading, success, error
-     conversationList: [],
+    conversationList: [],
   }),
   getters: {},
   actions: {
     connect(userInfo) {
       this.connectStatus = 'loading'
       const { connect } = useTSDD()
-      connect(userInfo).then((res) => {
-        console.log(res)
-        this.connectStatus = 'success'
-        this.syncConversationList()
-      }).catch((err) => {
-        this.connectStatus = 'error'
-      })
+      connect(userInfo)
     },
-    syncConversationList() {
-      ipcApiRoute.syncConversationList().then((res) => {
-        console.log(res)
-        this.conversationList = res
-      })
-     }
+    setConnectStatus(status) {
+      this.connectStatus = status
+      if (status === 'success' && this.conversationList.length === 0) {
+        const { syncConversationList } = useTSDD()
+        syncConversationList().then(res => {
+          console.log(666,res)
+        })
+      }
+    },
+    // syncConversationList() {
+    //   ipcApiRoute.syncConversationList().then((res) => {
+    //     console.log(res)
+    //     this.conversationList = res
+    //   })
+    // }
   },
 })
 

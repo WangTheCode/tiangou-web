@@ -5,6 +5,12 @@ const http = require('http');
 const https = require('https');
 const { URL } = require('url');
 
+// 全局配置
+const globalOptions = {
+  baseUrl: '',
+  headers: {}
+};
+
 /**
  * 发起 HTTP 请求
  * @param {string} url - 请求地址
@@ -29,7 +35,16 @@ function request(url, options = {}) {
     throw new Error('request(url, options) 需要有效的 url 字符串');
   }
 
-  const urlObj = new URL(url);
+  // 处理 baseUrl
+  let fullUrl = url;
+  if (globalOptions.baseUrl && !url.startsWith('http://') && !url.startsWith('https://')) {
+    // 确保 baseUrl 和 url 之间有正确的斜杠
+    const base = globalOptions.baseUrl.endsWith('/') ? globalOptions.baseUrl.slice(0, -1) : globalOptions.baseUrl;
+    const path = url.startsWith('/') ? url : '/' + url;
+    fullUrl = base + path;
+  }
+
+  const urlObj = new URL(fullUrl);
   const isHttps = urlObj.protocol === 'https:';
 
   const agent = isHttps
@@ -42,7 +57,7 @@ function request(url, options = {}) {
     port: urlObj.port || (isHttps ? 443 : 80),
     path: urlObj.pathname + urlObj.search,
     method: String(method || 'GET').toUpperCase(),
-    headers: { ...headers },
+    headers: { ...globalOptions.headers, ...headers },
     agent
   };
 
@@ -140,12 +155,49 @@ function del(url, options = {}) {
   return request(url, { ...options, method: 'DELETE' });
 }
 
+/**
+ * 设置全局配置
+ * @param {Object} options
+ * @param {string} [options.baseUrl] - 基础URL，会自动拼接到相对路径前
+ * @param {Object} [options.headers] - 默认请求头，会与每次请求的headers合并
+ */
+function setHttpOption(options = {}) {
+  if (options.baseUrl !== undefined) {
+    globalOptions.baseUrl = String(options.baseUrl || '');
+  }
+  if (options.headers && typeof options.headers === 'object') {
+    globalOptions.headers = { ...globalOptions.headers, ...options.headers };
+  }
+}
+
+/**
+ * 获取当前全局配置
+ * @returns {Object} 当前的全局配置
+ */
+function getHttpOption() {
+  return {
+    baseUrl: globalOptions.baseUrl,
+    headers: { ...globalOptions.headers }
+  };
+}
+
+/**
+ * 清除全局配置
+ */
+function clearHttpOption() {
+  globalOptions.baseUrl = '';
+  globalOptions.headers = {};
+}
+
 module.exports = {
   request,
   get,
   post,
   put,
-  del
+  del,
+  setHttpOption,
+  getHttpOption,
+  clearHttpOption
 };
 
 

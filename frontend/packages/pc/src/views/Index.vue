@@ -6,7 +6,8 @@
       </div>
     </div>
     <div>
-      66
+      状态
+      {{ chatStore.connectStatus }}
     </div>
   </div>
 </template>
@@ -18,9 +19,11 @@ import ipcApiRoute from '@global/icp/ipcRoute'
 import authApi from '@global/api/auth'
 import { useUserStore } from '@global/stores/index'
 import { useWKSDK } from '@global/hooks/useWKSDK'
+import { useChatStore } from '@global/stores/index'
 
 const userStore = useUserStore()
 const { connectWebSocket } = useWKSDK()
+const chatStore = useChatStore()
 const test = () => {
   ipcApiRoute.test().then(res => {
     console.log(res)

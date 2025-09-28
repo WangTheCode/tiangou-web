@@ -4,6 +4,7 @@ import { useAppStore,useUserStore,useChatStore } from '../stores/index'
 import 'dayjs/locale/zh-cn' 
 import Cache from '../utils/cache'
 import { useRouter } from 'vue-router'
+import ipcListener from '../icp/ipcListener'
 
 export const useAppBase = () => {
 
@@ -53,6 +54,8 @@ export const useAppBase = () => {
     },
   )
 
+  
+
   onMounted(() => {
     if (window.requestIdleCallback) {
       requestIdleCallback(() => {
@@ -63,6 +66,7 @@ export const useAppBase = () => {
         appStore.createFingerprint()
       }, 100)
     } 
+    ipcListener.onConnectStatus()
   })
 
   

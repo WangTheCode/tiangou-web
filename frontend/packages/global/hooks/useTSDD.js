@@ -94,6 +94,21 @@ export const useTSDD = () => {
     })
   }
 
+  // 同步会话列表
+  const syncConversationList = () => {
+    return new Promise((resolve, reject) => {
+      if (isEE) {
+        ipcApiRoute.syncConversationList().then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      }else{
+        // 走 useWKSDK 实现
+      }
+    })
+  }
+
    
     
   return {
@@ -103,5 +118,6 @@ export const useTSDD = () => {
       generateUUID,
       getDeviceInfo,
       connect,
+      syncConversationList
   }
 }
