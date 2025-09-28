@@ -78,20 +78,23 @@ export const useTSDD = () => {
 
   // 连接通信
   const connect = (userInfo) => {
-    if (isEE) {
-      // ee 走tcp
-      ipcApiRoute.connectTcp({
-        ...userInfo,
-        host: import.meta.env.VITE_TCP_HOST,
-        port: import.meta.env.VITE_TCP_PORT,
-      }).then(res => {
-        console.log(res)
-      })
-    }else{
-      // web 走web socket
-      connectWebSocket(userInfo)
-    }
+    return new Promise((resolve, reject) => {
+      if (isEE) {
+        // ee 走tcp
+        ipcApiRoute.connectTcp(userInfo).then(res => {
+          console.log(res)
+          resolve(res)
+        })
+      }else{
+        // web 走web socket
+        connectWebSocket(userInfo).then(res => {
+          resolve(res)
+        })
+      } 
+    })
   }
+
+   
     
   return {
       getBrandsFromUserAgent,
@@ -99,5 +102,6 @@ export const useTSDD = () => {
       getDeviceIdFromStorage,
       generateUUID,
       getDeviceInfo,
+      connect,
   }
 }

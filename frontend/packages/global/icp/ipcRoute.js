@@ -27,8 +27,9 @@ export const URLS = {
     test: 'controller/example/test',
     getMessagePageList: 'controller/chatMessage/getMessagePageList',
     addMessage: 'controller/chatMessage/addMessage',
-    connectTcp: 'controller/example/connectTcp',
-    sendText: 'controller/example/sendText'
+    connectTcp: 'controller/chatManage/connectTcp',
+    syncConversationList: 'controller/chatManage/syncConversationList',
+    setImConfig: 'controller/chatManage/setImConfig',
 }
 
 const apis = {}

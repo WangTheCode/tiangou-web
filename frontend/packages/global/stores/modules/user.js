@@ -3,13 +3,13 @@ import piniaStore from '../counter'
 import Cache from '../../utils/cache'
 import { useTSDD } from '../../hooks/useTSDD'
 import authApi from '../../api/auth'
+import ipcApiRoute from '../../icp/ipcRoute'
 export const useUserStore = defineStore('user', {
   state: () => ({
     token: '',
     userInfo: {},
     loginLoading: false,
-    // 通信连接状态
-    connectStatus: 'loading', // loading, success, error
+    imConfig: {},
   }),
   getters: {},
   actions: {
@@ -32,7 +32,11 @@ export const useUserStore = defineStore('user', {
             Cache.set('USER_INFO', this.userInfo)
             Cache.set('USER_TOKEN',  this.token)
             this.loginLoading = false
-            resolve(res)
+            this.fetchImConfig().then(() => {
+              resolve(res)
+            }).catch((err) => {
+              reject(err)
+            })
           })
           .catch((err) => {
             this.loginLoading = false
@@ -58,19 +62,36 @@ export const useUserStore = defineStore('user', {
       })
     },
     setUserInfo(info) {
-      this.userInfo = info
-      Cache.set('USER_INFO', info)
-      if(info.token) {
-        this.token = info.token
-        Cache.set('USER_TOKEN', info.token)
-      }
+      return new Promise((resolve, reject) => {
+        this.userInfo = info
+        Cache.set('USER_INFO', info)
+        if(info.token) {
+          this.token = info.token
+          Cache.set('USER_TOKEN', info.token)
+        }
+        this.fetchImConfig().then(() => {
+          resolve(info)
+        }).catch((err) => {
+          reject(err)
+        })
+      })
     },
     asyncUserInfo(info) {
       this.userInfo = info
     },
-    setConnectStatus(status) {
-      this.connectStatus = status
-    },
+    fetchImConfig() {
+      return new Promise((resolve, reject) => {
+        authApi.imConfig(this.userInfo.uid).then((res) => {
+          this.imConfig = res
+          ipcApiRoute.setImConfig({...res,api_addr:import.meta.env.VITE_API_ADDR})
+          resolve(res)
+        })
+        .catch((err) => {
+          reject(err)
+        })
+      })
+    }
+    
   },
 })
 

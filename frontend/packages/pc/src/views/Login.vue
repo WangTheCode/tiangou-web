@@ -9,9 +9,10 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
-import { useUserStore } from '@global/stores/index'
+import { useUserStore,useChatStore } from '@global/stores/index'
 const userStore = useUserStore()
 const router = useRouter()
+const chatStore = useChatStore()
 const username = ref('008615512345670')
 const password = ref('a1234567')
 
@@ -20,8 +21,9 @@ const login = () => {
     userStore.login({
         username: username.value,
         password: password.value
-    }).then(()=>{
+    }).then((res)=>{
         
+        chatStore.connect(res)
         router.push('/')
     })
 }

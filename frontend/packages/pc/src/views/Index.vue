@@ -1,25 +1,19 @@
 <template>
-  <div>
-    home
+  <div class="h-[100vh] flex">
+    <div class="h-full overflow-y-auto w-[260px] border-r border-gray-200">
+      <div class="w-full">
+       <ConversationItem v-for="item in conversationList" :key="item.id" :item="item" />
+      </div>
+    </div>
     <div>
-
-      <Button @click="connectTcp">连接tcp</Button>
-      <Button @click="connectWebSocketFn">连接websocket</Button>
-
-      <Button @click="sendText">发送文本</Button>
-
-
-
-      <Button @click="test">按钮</Button>
-      <Button @click="getMessagePageList">获取消息列表</Button>
-      <Button @click="addMessage">添加消息</Button>
-
+      66
     </div>
   </div>
 </template>
 
 <script setup>
 import { Button } from '@global/components'
+import ConversationItem from '@global/components/chat/conversationItem.vue'
 import ipcApiRoute from '@global/icp/ipcRoute'
 import authApi from '@global/api/auth'
 import { useUserStore } from '@global/stores/index'
@@ -34,6 +28,21 @@ const test = () => {
 }
 const userInfo = computed(() => userStore.userInfo)
 
+const conversationList = ref([
+  {
+    avatar: 'https://picsum.photos/200/300',
+    nickname: '张三',
+    time: '2021-01-01',
+    content: '你好'
+  },
+  {
+    avatar: 'https://picsum.photos/200/300',
+    nickname: '李四',
+    time: '2021-01-01',
+    content: '你好a'
+  }
+])
+
 
 const connectWebSocketFn = () => {
   connectWebSocket({
@@ -43,13 +52,7 @@ const connectWebSocketFn = () => {
 }
 
 
-const connectTcp = () => {
-  ipcApiRoute.connectTcp({
-    ...userInfo.value
-  }).then(res => {
-    console.log(res)
-  })
-}
+
 
 const sendText = () => {
   ipcApiRoute.sendText({
