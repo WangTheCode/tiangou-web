@@ -24,7 +24,7 @@ export const useChatStore = defineStore('chat', {
       if (status === 'success' && this.conversationList.length === 0) {
         const { syncConversationList } = useTSDD()
         syncConversationList().then(res => {
-          console.log(666,res)
+          this.conversationList = res
         })
       }
     },

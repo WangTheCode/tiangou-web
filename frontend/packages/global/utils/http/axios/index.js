@@ -26,7 +26,7 @@ axiosInstance.interceptors.request.use(
         token = userToken;
       }
     }
-    config.headers["Authorization"] = token;
+    config.headers["token"] = token;
     return config;
   },
   (error) => {

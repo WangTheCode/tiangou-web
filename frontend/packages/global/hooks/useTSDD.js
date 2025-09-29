@@ -3,6 +3,11 @@ import Cache from '../utils/cache'
 import { isEE } from '../icp/ipcRenderer'
 import { useWKSDK } from './useWKSDK'
 import ipcApiRoute from '../icp/ipcRoute'
+import WKSDK, { MessageContentType } from "wukongimjssdk";
+import { ProhibitwordsService } from '../tsdd/ProhibitwordsService'
+import { ConversationWrap } from '../tsdd/ConversationWrap'
+import tsddApi from '../api/tsdd'
+import { Convert } from '../tsdd/Convert'
 
 export const useTSDD = () => {
   const { connectWebSocket } = useWKSDK()
@@ -96,16 +101,61 @@ export const useTSDD = () => {
 
   // 同步会话列表
   const syncConversationList = () => {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       if (isEE) {
-        ipcApiRoute.syncConversationList().then(res => {
-          resolve(res)
-        }).catch(err => {
-          reject(err)
-        })
-      }else{
-        // 走 useWKSDK 实现
+        const filter = await ipcApiRoute.syncConversationList()
+        const resp = await tsddApi.syncConversationList({"msg_count": 1})
+        let conversations = []
+        if (resp) {
+          resp.conversations.forEach((conversationMap) => {
+              let model = Convert.toConversation(conversationMap);
+              conversations.push(model);
+          });
+
+          const users = resp.users
+          if (users && users.length > 0) {
+              for (const user of users) {
+                  WKSDK.shared().channelManager.setChannleInfoForCache(Convert.userToChannelInfo(user))
+              }
+          }
+          const groups = resp.groups
+          if (groups && groups.length > 0) {
+              for (const group of groups) {
+                  WKSDK.shared().channelManager.setChannleInfoForCache(Convert.groupToChannelInfo(group))
+              }
+          }
+        }
+        const conversationWraps = []
+        if (conversations && conversations.length > 0) {
+            for (const conversation of conversations) {
+                if (conversation.lastMessage?.content && conversation.lastMessage?.contentType == MessageContentType.text) {
+                    conversation.lastMessage.content.text = ProhibitwordsService.shared.filter(conversation.lastMessage.content.text)
+                }
+                conversationWraps.push(conversation)
+            }
+        }
+        console.log(888,conversationWraps)
+        resolve(conversationWraps)
+        
       }
+          // console.log(777,filter)
+         
+          // const conversations = res.data
+          // const conversationWraps = []
+          // if (conversations && conversations.length > 0) {
+          //     for (const conversation of conversations) {
+          //         if (conversation.lastMessage?.content && conversation.lastMessage?.contentType == MessageContentType.text) {
+          //             conversation.lastMessage.content.text = ProhibitwordsService.shared.filter(conversation.lastMessage.content.text)
+          //         }
+          //         conversationWraps.push(new ConversationWrap(conversation))
+          //     }
+          // }
+          // console.log(888,conversationWraps)
+        //   resolve(conversationWraps)
+        // }).catch(err => {
+        //   reject(err)
+        // })
+       
     })
   }
 

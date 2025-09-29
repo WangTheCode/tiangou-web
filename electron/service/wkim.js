@@ -87,8 +87,16 @@ class WkimService {
     logger.info('syncConversationList');
     try {
       const conversations = await this.sdk.conversationManager.sync({});
-      console.log(`✅ 同步完成，共 ${conversations.length} 个会话`);
-      
+    //   if (conversations && conversations.length > 0) {
+    //     for (const conversation of conversations) {
+    //         if (conversation.lastMessage?.content && conversation.lastMessage?.contentType == MessageContentType.text) {
+    //             conversation.lastMessage.content.text = ProhibitwordsService.shared.filter(conversation.lastMessage.content.text)
+    //         }
+    //         conversationWraps.push(new ConversationWrap(conversation))
+    //     }
+    // }
+      // console.log(`✅ 同步完成，共 ${conversations.length} 个会话`);
+      // logger.info('conversations', 444);
       return conversations;
     } catch (error) {
       return [];
