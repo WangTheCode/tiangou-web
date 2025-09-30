@@ -1,7 +1,7 @@
-'use strict';
+'use strict'
 
-const path = require('path');
-const { getBaseDir } = require('ee-core/ps');
+const path = require('path')
+const { getBaseDir } = require('ee-core/ps')
 
 /**
  * 默认配置
@@ -31,28 +31,28 @@ module.exports = () => {
       outputJSON: false,
       appLogName: 'tiangou.log',
       coreLogName: 'tiangou-core.log',
-      errorLogName: 'tiangou-error.log' 
+      errorLogName: 'tiangou-error.log',
     },
     socketServer: {
       enable: false,
       port: 7070,
-      path: "/socket.io/",
+      path: '/socket.io/',
       connectTimeout: 45000,
       pingTimeout: 30000,
       pingInterval: 25000,
       maxHttpBufferSize: 1e8,
-      transports: ["polling", "websocket"],
+      transports: ['polling', 'websocket'],
       cors: {
         origin: true,
       },
-      channel: 'socket-channel'
+      channel: 'socket-channel',
     },
     httpServer: {
       enable: false,
       https: {
-        enable: false, 
+        enable: false,
         key: '/public/ssl/localhost+1.key',
-        cert: '/public/ssl/localhost+1.pem'
+        cert: '/public/ssl/localhost+1.pem',
       },
       host: '127.0.0.1',
       port: 7071,
@@ -61,17 +61,17 @@ module.exports = () => {
       indexPath: '/public/dist/index.html',
       channelSeparator: '/',
     },
-    addons:{
+    addons: {
       tray: {
         enable: true,
         title: '甜狗窝', // 托盘显示标题
-        icon: '/public/images/tray.png' // 托盘图标
+        icon: '/public/images/tray.png', // 托盘图标
       },
     },
     tray: {
       enable: true,
       title: '甜狗窝', // 托盘显示标题
-      icon: '/public/images/tray.png' // 托盘图标
+      icon: '/public/images/tray.png', // 托盘图标
     },
   }
 }

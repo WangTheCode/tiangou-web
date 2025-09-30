@@ -1,18 +1,16 @@
-'use strict';
+'use strict'
 
-const { logger } = require('ee-core/log');
-const { post } = require('../utils/http');
-const { Convert } = require('./tsddConvert');
-const { WKSDK } = require('wukongimjstcpsdk');
+const { logger } = require('ee-core/log')
+const { post } = require('../utils/http')
+const { Convert } = require('./tsddConvert')
+const { WKSDK } = require('wukongimjstcpsdk')
 /**
  * 示例服务
  * @class
  */
 class DataSourceService {
-
-   
   async setSyncConversationsCallback(sdk) {
-    sdk.config.provider.syncConversationsCallback = async (filter) => {
+    sdk.config.provider.syncConversationsCallback = async filter => {
       // let resp = null;
       // let conversations = [];
       // 模拟从服务器获取会话列表
@@ -38,16 +36,16 @@ class DataSourceService {
       //             WKSDK.shared().channelManager.setChannleInfoForCache(Convert.groupToChannelInfo(group))
       //         }
       //     }
-      // } 
+      // }
       // logger.info('conversations', 333);
       // return resp.data.conversations;
       return filter
-    };
+    }
   }
 }
-DataSourceService.toString = () => '[class DataSourceService]';
+DataSourceService.toString = () => '[class DataSourceService]'
 
 module.exports = {
   DataSourceService,
-  dataSourceService: new DataSourceService()
-};
+  dataSourceService: new DataSourceService(),
+}

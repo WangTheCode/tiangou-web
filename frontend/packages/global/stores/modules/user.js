@@ -23,22 +23,24 @@ export const useUserStore = defineStore('user', {
         authApi
           .login({
             ...params,
-            "flag": 1,
-            "device": getDeviceInfo()
+            flag: 1,
+            device: getDeviceInfo(),
           })
-          .then((res) => {
+          .then(res => {
             this.userInfo = res
             this.token = res.token
             Cache.set('USER_INFO', this.userInfo)
-            Cache.set('USER_TOKEN',  this.token)
+            Cache.set('USER_TOKEN', this.token)
             this.loginLoading = false
-            this.fetchImConfig().then(() => {
-              resolve(res)
-            }).catch((err) => {
-              reject(err)
-            })
+            this.fetchImConfig()
+              .then(() => {
+                resolve(res)
+              })
+              .catch(err => {
+                reject(err)
+              })
           })
-          .catch((err) => {
+          .catch(err => {
             this.loginLoading = false
             // router.push('/401')
             reject(err)
@@ -65,15 +67,17 @@ export const useUserStore = defineStore('user', {
       return new Promise((resolve, reject) => {
         this.userInfo = info
         Cache.set('USER_INFO', info)
-        if(info.token) {
+        if (info.token) {
           this.token = info.token
           Cache.set('USER_TOKEN', info.token)
         }
-        this.fetchImConfig().then(() => {
-          resolve(info)
-        }).catch((err) => {
-          reject(err)
-        })
+        this.fetchImConfig()
+          .then(() => {
+            resolve(info)
+          })
+          .catch(err => {
+            reject(err)
+          })
       })
     },
     asyncUserInfo(info) {
@@ -81,17 +85,18 @@ export const useUserStore = defineStore('user', {
     },
     fetchImConfig() {
       return new Promise((resolve, reject) => {
-        authApi.imConfig(this.userInfo.uid).then((res) => {
-          this.imConfig = res
-          ipcApiRoute.setImConfig({...res,api_addr:import.meta.env.VITE_API_ADDR})
-          resolve(res)
-        })
-        .catch((err) => {
-          reject(err)
-        })
+        authApi
+          .imConfig(this.userInfo.uid)
+          .then(res => {
+            this.imConfig = res
+            ipcApiRoute.setImConfig({ ...res, api_addr: import.meta.env.VITE_API_ADDR })
+            resolve(res)
+          })
+          .catch(err => {
+            reject(err)
+          })
       })
-    }
-    
+    },
   },
 })
 

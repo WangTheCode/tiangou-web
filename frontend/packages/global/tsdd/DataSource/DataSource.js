@@ -1,107 +1,107 @@
-import { Channel, ChannelInfo, ConversationExtra, Message, Subscriber } from "wukongimjssdk";
+import { Channel, ChannelInfo, ConversationExtra, Message, Subscriber } from 'wukongimjssdk'
 
 export class DataSource {
-    constructor() {
-        this.channelDataSource = null
-        this.commonDataSource = null
-        // ---------- 联系人数据 ----------
-        this.contactsList = []
-        this.contactsChangeListeners = []
-    }
+  constructor() {
+    this.channelDataSource = null
+    this.commonDataSource = null
+    // ---------- 联系人数据 ----------
+    this.contactsList = []
+    this.contactsChangeListeners = []
+  }
 
-    async contactsSync() {
-        const maxVersion = this.contactsMaxSyncVersion()
-        const results = await this.commonDataSource.contactsSync(maxVersion)
-        if (results && results.length > 0) {
-            const newContactsList = new Array()
-            for (let index = 0; index < this.contactsList.length; index++) {
-                const oldContacts = this.contactsList[index];
-                var exist = false
-                for (const newContacts of results) {
-                    if (oldContacts.uid === newContacts.uid) {
-                        exist = true
-                        break
-                    }
-                }
-                if (!exist) {
-                    newContactsList.push(oldContacts)
-                }
-            }
-            newContactsList.push(...results)
-
-            this.contactsList = newContactsList
-            this.notifyContactsChange()
+  async contactsSync() {
+    const maxVersion = this.contactsMaxSyncVersion()
+    const results = await this.commonDataSource.contactsSync(maxVersion)
+    if (results && results.length > 0) {
+      const newContactsList = new Array()
+      for (let index = 0; index < this.contactsList.length; index++) {
+        const oldContacts = this.contactsList[index]
+        var exist = false
+        for (const newContacts of results) {
+          if (oldContacts.uid === newContacts.uid) {
+            exist = true
+            break
+          }
         }
-    }
-
-    contactsMaxSyncVersion() {
-        if (this.contactsList && this.contactsList.length > 0) {
-            const lastContacts = this.contactsList[this.contactsList.length - 1]
-            return lastContacts.version
+        if (!exist) {
+          newContactsList.push(oldContacts)
         }
-        return ""
-    }
+      }
+      newContactsList.push(...results)
 
-    addContactsChangeListener(listener) {
-        this.contactsChangeListeners.push(listener)
+      this.contactsList = newContactsList
+      this.notifyContactsChange()
     }
-    removeContactsChangeListener(listener) {
-        const len = this.contactsChangeListeners.length;
-        for (let i = 0; i < len; i++) {
-            if (listener === this.contactsChangeListeners[i]) {
-                this.contactsChangeListeners.splice(i, 1)
-                return
-            }
-        }
-    }
+  }
 
-    notifyContactsChange() {
-        if (this.contactsChangeListeners) {
-            this.contactsChangeListeners.forEach((listener) => {
-                if (listener) {
-                    listener();
-                }
-            });
-        }
+  contactsMaxSyncVersion() {
+    if (this.contactsList && this.contactsList.length > 0) {
+      const lastContacts = this.contactsList[this.contactsList.length - 1]
+      return lastContacts.version
     }
+    return ''
+  }
+
+  addContactsChangeListener(listener) {
+    this.contactsChangeListeners.push(listener)
+  }
+  removeContactsChangeListener(listener) {
+    const len = this.contactsChangeListeners.length
+    for (let i = 0; i < len; i++) {
+      if (listener === this.contactsChangeListeners[i]) {
+        this.contactsChangeListeners.splice(i, 1)
+        return
+      }
+    }
+  }
+
+  notifyContactsChange() {
+    if (this.contactsChangeListeners) {
+      this.contactsChangeListeners.forEach(listener => {
+        if (listener) {
+          listener()
+        }
+      })
+    }
+  }
 }
 
 export const ContactsStatus = {
-    Blacklist: 2 // 黑明单
+  Blacklist: 2, // 黑明单
 }
 
 export class Contacts {
-    constructor() {
-        this.uid = ''
-        this.name = ''
-        this.mute = false
-        this.top = false
-        this.sex = 0
-        this.online = false
-        this.receipt = false
-        this.robot = false
-        this.lastOffline = 0
-        this.category = ''
-        this.follow = 0
-        this.remark = ''
-        this.chatPwdOn = false
-        this.status = null
-        this.shortNo = ''
-        this.sourceDesc = ''
-        this.vercode = ''
-        this.screenshot = false
-        this.revokeRemind = false
-        this.beBlacklist = false
-        this.beDeleted = false
-        this.version = ''
-        this.avatar = ''
-    }
+  constructor() {
+    this.uid = ''
+    this.name = ''
+    this.mute = false
+    this.top = false
+    this.sex = 0
+    this.online = false
+    this.receipt = false
+    this.robot = false
+    this.lastOffline = 0
+    this.category = ''
+    this.follow = 0
+    this.remark = ''
+    this.chatPwdOn = false
+    this.status = null
+    this.shortNo = ''
+    this.sourceDesc = ''
+    this.vercode = ''
+    this.screenshot = false
+    this.revokeRemind = false
+    this.beBlacklist = false
+    this.beDeleted = false
+    this.version = ''
+    this.avatar = ''
+  }
 }
 
 /**
  * ICommonDataSource 接口
  * 通用数据源接口，定义了通用的数据操作方法
- * 
+ *
  * 方法列表：
  * - imConnectAddr(): Promise<string> // im的连接地址
  * - imConnectAddrs(): Promise<string[]> // im的连接地址
@@ -124,16 +124,15 @@ export class Contacts {
  * - blacklistRemove(uid: string): Promise<void> // 黑名单移除
  */
 
-
 export class ChannelField {
-    static channelName = "name"
-    static notice = "notice"
+  static channelName = 'name'
+  static notice = 'notice'
 }
 
 /**
  * IChannelDataSource 接口
  * 频道数据源接口，定义了频道相关的数据操作方法
- * 
+ *
  * 方法列表：
  * - updateField(channel: Channel, field: string, value: string): Promise<void> // 修改频道属性
  * - qrcode(channel: Channel): Promise<ChannelQrcodeResp> // 获取频道二维码
@@ -154,13 +153,13 @@ export class ChannelField {
  */
 
 export class ChannelQrcodeResp {
-    constructor() {
-        this.qrcode = ''
-        this.expire = ''
-    }
-    
-    fill(data) {
-        this.qrcode = data.qrcode
-        this.expire = data.expire
-    }
+  constructor() {
+    this.qrcode = ''
+    this.expire = ''
+  }
+
+  fill(data) {
+    this.qrcode = data.qrcode
+    this.expire = data.expire
+  }
 }

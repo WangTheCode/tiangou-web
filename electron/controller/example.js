@@ -1,15 +1,14 @@
-'use strict';
+'use strict'
 
-const { logger } = require('ee-core/log');
-const { exampleService } = require('../service/example');
-const { wkimService } = require('../service/wkim');
+const { logger } = require('ee-core/log')
+const { exampleService } = require('../service/example')
+const { wkimService } = require('../service/wkim')
 
 /**
  * example
  * @class
  */
 class ExampleController {
-
   /**
    * 所有方法接收两个参数
    * @param args 前端传的参数
@@ -19,29 +18,28 @@ class ExampleController {
   /**
    * test
    */
-  async test () {
-    const result = await exampleService.test('electron');
-    logger.info('service result:', result);
+  async test() {
+    const result = await exampleService.test('electron')
+    logger.info('service result:', result)
 
-    return 'hello electron-egg';
+    return 'hello electron-egg'
   }
 
+  async connectTcp(args) {
+    const json = JSON.parse(args)
+    const result = await wkimService.connectTcp(json)
 
-  async connectTcp (args) {
-    const json = JSON.parse(args);
-    const result = await wkimService.connectTcp(json);
-
-    return result;
+    return result
   }
 
-  async sendText (args) {
-    const json = JSON.parse(args);
+  async sendText(args) {
+    const json = JSON.parse(args)
     // const re
-    const result = await wkimService.sendText(json);
+    const result = await wkimService.sendText(json)
 
-    return result;
+    return result
   }
 }
-ExampleController.toString = () => '[class ExampleController]';
+ExampleController.toString = () => '[class ExampleController]'
 
-module.exports = ExampleController; 
+module.exports = ExampleController

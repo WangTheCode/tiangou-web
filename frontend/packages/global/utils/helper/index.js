@@ -31,7 +31,7 @@ export const reloadHomePage = () => {
  * @param route
  * @returns
  */
-export const parseRouteKey = (route) => {
+export const parseRouteKey = route => {
   let key = encodeURIComponent(`${route.query.key}`)
   if (route.meta.keepKey) {
     key = route.meta.keepKey + ''
@@ -48,7 +48,7 @@ export const parseRouteKey = (route) => {
  * @param text
  * @returns
  */
-export const copyTextToClipboard = (text) => {
+export const copyTextToClipboard = text => {
   const element = document.createElement('textarea')
   element.value = text
   element.setAttribute('readonly', '')
@@ -85,7 +85,7 @@ export const copyTextToClipboard = (text) => {
  * @param {string} text
  * @returns
  */
-export const textToHtml = (text) => {
+export const textToHtml = text => {
   return text ? text.replace(/ /g, '&nbsp;').replace(/\r\n/g, '<br>') : ''
 }
 
@@ -127,7 +127,7 @@ export const setObjectValueByKey = (obj, key, value) => {
 }
 
 // 利用正则表达式判断字符串是否只包含数字
-export const isNumber = (str) => {
+export const isNumber = str => {
   const reg = /^\d+$/
   return reg.test(str)
 }
@@ -165,12 +165,12 @@ export const setUrlParameter = (field, val) => {
       path: newurl,
     },
     '',
-    newurl,
+    newurl
   )
 }
 
 // 获取url参数
-export const getUrlParams = (url) => {
+export const getUrlParams = url => {
   const params = {}
   const urlParams = new URLSearchParams(url)
   urlParams.forEach((value, key) => {

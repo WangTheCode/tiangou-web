@@ -9,9 +9,9 @@ export const useDevice = () => {
   const device = ref(setDevice(isMobile.value))
   watch(
     () => isMobile.value,
-    (is) => {
+    is => {
       device.value = setDevice(is)
-    },
+    }
   )
   function setDevice(is) {
     const deviceCode = is === true ? DeviceEnum.MOBILE : DeviceEnum.DESKTOP

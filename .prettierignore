@@ -1,0 +1,42 @@
+# 依赖
+node_modules
+**/node_modules
+
+# 构建输出
+dist
+**/dist
+build/icons
+build/extraResources
+out
+public/dist
+public/electron
+
+# 数据和日志
+data
+logs
+*.log
+
+# 前端构建产物
+frontend/**/tiangou-pc-dist
+frontend/**/dist
+
+# 缓存和临时文件
+.cache
+.temp
+*.min.js
+*.min.css
+
+# 自动生成的文件
+auto-imports.d.ts
+components.d.ts
+
+# 锁文件
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# 打包文件
+*.asar
+*.exe
+*.dmg
+*.AppImage

@@ -7,8 +7,8 @@
 export function treeToList(tree, childrenField = 'children') {
   const res = [] // 用于存储递归结果（扁平数据）
   // 递归函数
-  const fn = (source) => {
-    source.forEach((el) => {
+  const fn = source => {
+    source.forEach(el => {
       res.push(el)
       el[childrenField] && el[childrenField].length > 0 ? fn(el[childrenField]) : '' // 子级递归
     })
@@ -27,8 +27,8 @@ export function treeToList(tree, childrenField = 'children') {
 export function filterTree(tree, func, childrenField = 'children') {
   function listFilter(list) {
     return list
-      .map((node) => ({ ...node }))
-      .filter((node) => {
+      .map(node => ({ ...node }))
+      .filter(node => {
         node[childrenField] = node[childrenField] && listFilter(node[childrenField])
         return func(node) || (node[childrenField] && node[childrenField].length)
       })
@@ -47,8 +47,8 @@ export function filterTree(tree, func, childrenField = 'children') {
 export function deleteTreeNode(tree, func, childrenField = 'children') {
   function listFilter(list) {
     return list
-      .map((node) => ({ ...node }))
-      .filter((node) => {
+      .map(node => ({ ...node }))
+      .filter(node => {
         node[childrenField] = node[childrenField] && listFilter(node[childrenField])
         return !func(node)
       })
@@ -133,13 +133,13 @@ export function getTreePathByKeys(
   key = '',
   path = [],
   field = 'name',
-  childrenField = 'children',
+  childrenField = 'children'
 ) {
   if (!tree) return []
   for (let i = 0; i < tree.length; i++) {
     const item = tree[i]
     path.push(item)
-    const keyIndex = keys.findIndex((p) => p === key)
+    const keyIndex = keys.findIndex(p => p === key)
     if (item[field] === key && keyIndex >= keys.length - 1) {
       return path
     }
@@ -150,7 +150,7 @@ export function getTreePathByKeys(
         keys[keyIndex + 1],
         path,
         field,
-        childrenField,
+        childrenField
       )
       if (findChildren.length) return findChildren
     }

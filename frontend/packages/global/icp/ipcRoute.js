@@ -1,4 +1,3 @@
- 
 import { ipc } from './ipcRenderer'
 
 const huliInvoke = (url, params = null) => {
@@ -8,10 +7,10 @@ const huliInvoke = (url, params = null) => {
         params = JSON.stringify(params)
       }
       const res = await ipc.invoke(url, params)
-console.log(res)
+      console.log(res)
       // if (res && res.code != 0) {
       //   let msg = res.message
-         
+
       //   reject(new Error(msg))
       // } else {
       //   resolve(res)
@@ -24,19 +23,19 @@ console.log(res)
 }
 
 export const URLS = {
-    test: 'controller/example/test',
-    getMessagePageList: 'controller/chatMessage/getMessagePageList',
-    addMessage: 'controller/chatMessage/addMessage',
-    connectTcp: 'controller/chatManage/connectTcp',
-    syncConversationList: 'controller/chatManage/syncConversationList',
-    setImConfig: 'controller/chatManage/setImConfig',
+  test: 'controller/example/test',
+  getMessagePageList: 'controller/chatMessage/getMessagePageList',
+  addMessage: 'controller/chatMessage/addMessage',
+  connectTcp: 'controller/chatManage/connectTcp',
+  syncConversationList: 'controller/chatManage/syncConversationList',
+  setImConfig: 'controller/chatManage/setImConfig',
 }
 
 const apis = {}
 for (const key in URLS) {
   const url = URLS[key]
-  apis[key] = (data) => {
-    return huliInvoke(url,data)
+  apis[key] = data => {
+    return huliInvoke(url, data)
   }
 }
 export default apis

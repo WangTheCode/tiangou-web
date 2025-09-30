@@ -7,25 +7,22 @@ import { useChatStore } from '../stores/index'
 import { ConnectStatus } from 'wukongimjssdk'
 // const userStore = useUserStore()
 export const URLS = {
-  onConnectStatus : 'controller.web.onConnectStatus', 
+  onConnectStatus: 'controller.web.onConnectStatus',
 }
 
- 
 export default class ipcListener {
   static onConnectStatus = () => {
     const chatStore = useChatStore()
     ipc.removeAllListeners(URLS.onConnectStatus)
-    ipc.on(URLS.onConnectStatus, (_e,result)=>{
-      const {status,reasonCode} = result
-      if(status === ConnectStatus.Connecting){
+    ipc.on(URLS.onConnectStatus, (_e, result) => {
+      const { status, reasonCode } = result
+      if (status === ConnectStatus.Connecting) {
         chatStore.setConnectStatus('loading')
-      }else if(status === ConnectStatus.Connected){
+      } else if (status === ConnectStatus.Connected) {
         chatStore.setConnectStatus('success')
-      }else{
+      } else {
         chatStore.setConnectStatus('error')
       }
     })
   }
-
- 
 }

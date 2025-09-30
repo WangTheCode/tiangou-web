@@ -1,110 +1,118 @@
-import { Channel, ChannelInfo, ChannelTypePerson, Conversation, WKSDK, Message, MessageContentType, MessageStatus, MessageText } from "wukongimjssdk"
-import { getImageURL,getChannelAvatarTag } from './index'
+import {
+  Channel,
+  ChannelInfo,
+  ChannelTypePerson,
+  Conversation,
+  WKSDK,
+  Message,
+  MessageContentType,
+  MessageStatus,
+  MessageText,
+} from 'wukongimjssdk'
+import { getImageURL, getChannelAvatarTag } from './index'
 
 export class ConversationWrap {
-    constructor(conversation) {
-        this.conversation = conversation
-        this.avatarHashTag = ''
-    }
-    // channel: Channel;
-    // private _channelInfo;
-    // unread: number;
-    // timestamp: number;
-    // lastMessage: Message;
-    // isMentionMe: boolean;
-    // constructor();
-    // get channelInfo(): ChannelInfo;
-    // isEqual(c: Conversation): boolean;
+  constructor(conversation) {
+    this.conversation = conversation
+    this.avatarHashTag = ''
+  }
+  // channel: Channel;
+  // private _channelInfo;
+  // unread: number;
+  // timestamp: number;
+  // lastMessage: Message;
+  // isMentionMe: boolean;
+  // constructor();
+  // get channelInfo(): ChannelInfo;
+  // isEqual(c: Conversation): boolean;
 
+  get avatar() {
+    if (this.channelInfo && this.channelInfo.logo && this.channelInfo.logo !== '') {
+      return `${getImageURL(this.channelInfo.logo)}?v=${getChannelAvatarTag(this.channel)}`
+    }
+    return WKApp.shared.avatarChannel(this.channel)
+  }
 
-    get avatar() {
-        if (this.channelInfo && this.channelInfo.logo && this.channelInfo.logo !== "") {
-            return `${getImageURL(this.channelInfo.logo)}?v=${getChannelAvatarTag(this.channel)}`
-        }
-        return WKApp.shared.avatarChannel(this.channel)
-    }
+  get channel() {
+    return this.conversation.channel
+  }
 
-    get channel() {
-        return this.conversation.channel
-    }
+  get channelInfo() {
+    return this.conversation.channelInfo
+  }
 
-    get channelInfo() {
-        return this.conversation.channelInfo
-    }
-    
-    get unread() {
-        return this.conversation.unread
-    }
+  get unread() {
+    return this.conversation.unread
+  }
 
-    get timestamp() {
-        return this.conversation.timestamp
-    }
-    
-    set timestamp(timestamp) {
-        this.conversation.timestamp = timestamp
-    }
+  get timestamp() {
+    return this.conversation.timestamp
+  }
 
-    get lastMessage() {
-        return this.conversation.lastMessage
-    }
-    
-    set lastMessage(lastMessage) {
-        this.conversation.lastMessage = lastMessage
-    }
+  set timestamp(timestamp) {
+    this.conversation.timestamp = timestamp
+  }
 
-    get isMentionMe() {
-        return this.conversation.isMentionMe
-    }
+  get lastMessage() {
+    return this.conversation.lastMessage
+  }
 
-    get remoteExtra() {
-        return this.conversation.remoteExtra
-    }
+  set lastMessage(lastMessage) {
+    this.conversation.lastMessage = lastMessage
+  }
 
-    set isMentionMe(isMentionMe) {
-        this.conversation.isMentionMe = isMentionMe
-    }
+  get isMentionMe() {
+    return this.conversation.isMentionMe
+  }
 
-    get reminders() {
-        return this.conversation.reminders
-    }
+  get remoteExtra() {
+    return this.conversation.remoteExtra
+  }
 
-    get simpleReminders() {
-        return this.conversation.simpleReminders
-    }
+  set isMentionMe(isMentionMe) {
+    this.conversation.isMentionMe = isMentionMe
+  }
 
-    reloadIsMentionMe() {
-        return this.conversation.reloadIsMentionMe()
-    }
+  get reminders() {
+    return this.conversation.reminders
+  }
 
-    get extra() {
-        if (!this.conversation.extra) {
-            this.conversation.extra = {}
-        }
-        return this.conversation.extra
-    }
+  get simpleReminders() {
+    return this.conversation.simpleReminders
+  }
 
+  reloadIsMentionMe() {
+    return this.conversation.reloadIsMentionMe()
+  }
 
-    get category() {
-        if (!this.conversation.channelInfo || !this.conversation.channelInfo.orgData) {
-            return ""
-        }
-        const channelInfo = this.conversation.channelInfo;
-        if (channelInfo.orgData.category !== '' && channelInfo.orgData.category === 'solved') {
-            return channelInfo.orgData.category
-        }
-        if (channelInfo.orgData.category === '' && channelInfo.orgData.agent_uid === '') {
-            return "new"
-        }
-        if (channelInfo.orgData.agent_uid === WKApp.loginInfo.uid) {
-            return "assignMe"
-        }
-        if (channelInfo.orgData.agent_uid !== '') {
-            return "allAssigned"
-        }
-        return channelInfo.orgData.category
+  get extra() {
+    if (!this.conversation.extra) {
+      this.conversation.extra = {}
     }
+    return this.conversation.extra
+  }
 
-    isEqual(c) {
-        return this.conversation.isEqual(c.conversation)
+  get category() {
+    if (!this.conversation.channelInfo || !this.conversation.channelInfo.orgData) {
+      return ''
     }
+    const channelInfo = this.conversation.channelInfo
+    if (channelInfo.orgData.category !== '' && channelInfo.orgData.category === 'solved') {
+      return channelInfo.orgData.category
+    }
+    if (channelInfo.orgData.category === '' && channelInfo.orgData.agent_uid === '') {
+      return 'new'
+    }
+    if (channelInfo.orgData.agent_uid === WKApp.loginInfo.uid) {
+      return 'assignMe'
+    }
+    if (channelInfo.orgData.agent_uid !== '') {
+      return 'allAssigned'
+    }
+    return channelInfo.orgData.category
+  }
+
+  isEqual(c) {
+    return this.conversation.isEqual(c.conversation)
+  }
 }

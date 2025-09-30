@@ -32,9 +32,7 @@
   "linux": {
     "icon": "build/icons/icon.icns",
     "artifactName": "${productName}-${os}-${version}-${arch}.${ext}",
-    "target": [
-      "deb"
-    ],
+    "target": ["deb"],
     "category": "Utility"
   }
 }

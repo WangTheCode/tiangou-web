@@ -1,15 +1,15 @@
-'use strict';
+'use strict'
 
-const { logger } = require('ee-core/log');
-const http = require('http');
-const https = require('https');
-const { URL } = require('url');
+const { logger } = require('ee-core/log')
+const http = require('http')
+const https = require('https')
+const { URL } = require('url')
 
 // 全局配置
 const globalOptions = {
   baseUrl: '',
-  headers: {}
-};
+  headers: {},
+}
 
 /**
  * 发起 HTTP 请求
@@ -23,33 +23,27 @@ const globalOptions = {
  * @returns {Promise<{ status:number, headers:Object, data:any }>} 返回响应
  */
 function request(url, options = {}) {
-  const {
-    method = 'GET',
-    headers = {},
-    data,
-    timeout = 10000,
-    responseType = 'auto'
-  } = options;
+  const { method = 'GET', headers = {}, data, timeout = 10000, responseType = 'auto' } = options
 
   if (!url || typeof url !== 'string') {
-    throw new Error('request(url, options) 需要有效的 url 字符串');
+    throw new Error('request(url, options) 需要有效的 url 字符串')
   }
 
   // 处理 baseUrl
-  let fullUrl = url;
+  let fullUrl = url
   if (globalOptions.baseUrl && !url.startsWith('http://') && !url.startsWith('https://')) {
     // 确保 baseUrl 和 url 之间有正确的斜杠
-    const base = globalOptions.baseUrl.endsWith('/') ? globalOptions.baseUrl.slice(0, -1) : globalOptions.baseUrl;
-    const path = url.startsWith('/') ? url : '/' + url;
-    fullUrl = base + path;
+    const base = globalOptions.baseUrl.endsWith('/')
+      ? globalOptions.baseUrl.slice(0, -1)
+      : globalOptions.baseUrl
+    const path = url.startsWith('/') ? url : '/' + url
+    fullUrl = base + path
   }
 
-  const urlObj = new URL(fullUrl);
-  const isHttps = urlObj.protocol === 'https:';
+  const urlObj = new URL(fullUrl)
+  const isHttps = urlObj.protocol === 'https:'
 
-  const agent = isHttps
-    ? new https.Agent({ keepAlive: true })
-    : new http.Agent({ keepAlive: true });
+  const agent = isHttps ? new https.Agent({ keepAlive: true }) : new http.Agent({ keepAlive: true })
 
   const requestOptions = {
     protocol: urlObj.protocol,
@@ -58,101 +52,106 @@ function request(url, options = {}) {
     path: urlObj.pathname + urlObj.search,
     method: String(method || 'GET').toUpperCase(),
     headers: { ...globalOptions.headers, ...headers },
-    agent
-  };
+    agent,
+  }
 
-  let bodyBuffer = null;
+  let bodyBuffer = null
   if (typeof data !== 'undefined' && data !== null) {
     if (Buffer.isBuffer(data)) {
-      bodyBuffer = data;
+      bodyBuffer = data
     } else if (typeof data === 'string') {
-      bodyBuffer = Buffer.from(data, 'utf8');
+      bodyBuffer = Buffer.from(data, 'utf8')
       if (!requestOptions.headers['Content-Type']) {
-        requestOptions.headers['Content-Type'] = 'text/plain; charset=utf-8';
+        requestOptions.headers['Content-Type'] = 'text/plain; charset=utf-8'
       }
     } else {
       // 默认按 JSON 发送
-      bodyBuffer = Buffer.from(JSON.stringify(data), 'utf8');
+      bodyBuffer = Buffer.from(JSON.stringify(data), 'utf8')
       if (!requestOptions.headers['Content-Type']) {
-        requestOptions.headers['Content-Type'] = 'application/json; charset=utf-8';
+        requestOptions.headers['Content-Type'] = 'application/json; charset=utf-8'
       }
     }
-    requestOptions.headers['Content-Length'] = Buffer.byteLength(bodyBuffer);
+    requestOptions.headers['Content-Length'] = Buffer.byteLength(bodyBuffer)
   }
 
-  const transport = isHttps ? https : http;
+  const transport = isHttps ? https : http
 
   return new Promise((resolve, reject) => {
-    const req = transport.request(requestOptions, (res) => {
-      const chunks = [];
-      res.on('data', (chunk) => chunks.push(chunk));
+    const req = transport.request(requestOptions, res => {
+      const chunks = []
+      res.on('data', chunk => chunks.push(chunk))
       res.on('end', () => {
-        const buffer = Buffer.concat(chunks);
-        const contentType = String(res.headers['content-type'] || '');
+        const buffer = Buffer.concat(chunks)
+        const contentType = String(res.headers['content-type'] || '')
 
-        let parsed = buffer;
+        let parsed = buffer
         try {
           if (responseType === 'buffer') {
-            parsed = buffer;
+            parsed = buffer
           } else if (responseType === 'text') {
-            parsed = buffer.toString('utf8');
-          } else if (responseType === 'json' || (responseType === 'auto' && contentType.includes('application/json'))) {
-            parsed = buffer.length ? JSON.parse(buffer.toString('utf8')) : null;
+            parsed = buffer.toString('utf8')
+          } else if (
+            responseType === 'json' ||
+            (responseType === 'auto' && contentType.includes('application/json'))
+          ) {
+            parsed = buffer.length ? JSON.parse(buffer.toString('utf8')) : null
           } else if (responseType === 'auto') {
             // 默认按文本返回
-            parsed = buffer.toString('utf8');
+            parsed = buffer.toString('utf8')
           }
         } catch (err) {
           // JSON 解析失败时，保留原始文本
-          parsed = buffer.toString('utf8');
+          parsed = buffer.toString('utf8')
         }
 
         const result = {
           status: res.statusCode || 0,
           headers: res.headers,
-          data: parsed
-        };
+          data: parsed,
+        }
 
         if ((res.statusCode || 0) >= 200 && (res.statusCode || 0) < 300) {
-          resolve(result);
+          resolve(result)
         } else {
-          const error = new Error(`HTTP ${res.statusCode}: ${urlObj.pathname}`);
-          error.response = result;
-          reject(error);
+          const error = new Error(`HTTP ${res.statusCode}: ${urlObj.pathname}`)
+          error.response = result
+          reject(error)
         }
-      });
-    });
+      })
+    })
 
     req.setTimeout(timeout, () => {
-      req.destroy(new Error(`请求超时(${timeout}ms): ${urlObj.hostname}`));
-    });
+      req.destroy(new Error(`请求超时(${timeout}ms): ${urlObj.hostname}`))
+    })
 
-    req.on('error', (err) => {
-      logger && logger.error ? logger.error('HTTP请求错误', { url, method, err: String(err) }) : null;
-      reject(err);
-    });
+    req.on('error', err => {
+      logger && logger.error
+        ? logger.error('HTTP请求错误', { url, method, err: String(err) })
+        : null
+      reject(err)
+    })
 
     if (bodyBuffer) {
-      req.write(bodyBuffer);
+      req.write(bodyBuffer)
     }
-    req.end();
-  });
+    req.end()
+  })
 }
 
 function get(url, options = {}) {
-  return request(url, { ...options, method: 'GET' });
+  return request(url, { ...options, method: 'GET' })
 }
 
 function post(url, data, options = {}) {
-  return request(url, { ...options, method: 'POST', data });
+  return request(url, { ...options, method: 'POST', data })
 }
 
 function put(url, data, options = {}) {
-  return request(url, { ...options, method: 'PUT', data });
+  return request(url, { ...options, method: 'PUT', data })
 }
 
 function del(url, options = {}) {
-  return request(url, { ...options, method: 'DELETE' });
+  return request(url, { ...options, method: 'DELETE' })
 }
 
 /**
@@ -163,10 +162,10 @@ function del(url, options = {}) {
  */
 function setHttpOption(options = {}) {
   if (options.baseUrl !== undefined) {
-    globalOptions.baseUrl = String(options.baseUrl || '');
+    globalOptions.baseUrl = String(options.baseUrl || '')
   }
   if (options.headers && typeof options.headers === 'object') {
-    globalOptions.headers = { ...globalOptions.headers, ...options.headers };
+    globalOptions.headers = { ...globalOptions.headers, ...options.headers }
   }
 }
 
@@ -177,16 +176,16 @@ function setHttpOption(options = {}) {
 function getHttpOption() {
   return {
     baseUrl: globalOptions.baseUrl,
-    headers: { ...globalOptions.headers }
-  };
+    headers: { ...globalOptions.headers },
+  }
 }
 
 /**
  * 清除全局配置
  */
 function clearHttpOption() {
-  globalOptions.baseUrl = '';
-  globalOptions.headers = {};
+  globalOptions.baseUrl = ''
+  globalOptions.headers = {}
 }
 
 module.exports = {
@@ -197,7 +196,5 @@ module.exports = {
   del,
   setHttpOption,
   getHttpOption,
-  clearHttpOption
-};
-
-
+  clearHttpOption,
+}

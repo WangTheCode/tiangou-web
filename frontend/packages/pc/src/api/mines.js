@@ -13,7 +13,7 @@ const apis = {}
 for (const key in URLS) {
   const url = URLS[key]
   apis[key] = (data, option = {}) => {
-    return post({ url, data, ...option,baseURL: baseUrl })
+    return post({ url, data, ...option, baseURL: baseUrl })
   }
 }
 export default apis

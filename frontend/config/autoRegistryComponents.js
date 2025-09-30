@@ -3,7 +3,7 @@
  * @description 按需加载，自动引入组件
  */
 import Components from 'unplugin-vue-components/vite'
-import {  VueUseComponentsResolver } from 'unplugin-vue-components/resolvers'
+import { VueUseComponentsResolver } from 'unplugin-vue-components/resolvers'
 import MotionResolver from 'motion-v/resolver'
 export const AutoRegistryComponents = () => {
   return Components({

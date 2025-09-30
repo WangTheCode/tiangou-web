@@ -1,6 +1,6 @@
 import { createStorage } from './webStorage'
 
-const createOptions = (storage) => {
+const createOptions = storage => {
   let prefixKey = import.meta.env.VITE_CACHE_PREFIX || ''
 
   return {

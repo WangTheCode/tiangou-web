@@ -19,7 +19,7 @@ module.exports = {
       cmd: 'electron',
       args: ['.', '--env=local'],
       watch: false,
-    }
+    },
   },
 
   /**
@@ -34,7 +34,7 @@ module.exports = {
     },
     electron: {
       type: 'javascript',
-      bundleType: 'copy'
+      bundleType: 'copy',
     },
     win64: {
       cmd: 'electron-builder',
@@ -86,34 +86,34 @@ module.exports = {
 
   /**
    * 移动资源
-   * ee-bin move 
+   * ee-bin move
    */
   move: {
     frontend_dist: {
       src: './frontend/packages/pc/tiangou-pc-dist',
-      dest: './public/dist'
+      dest: './public/dist',
     },
     go_static: {
       src: './frontend/dist',
-      dest: './go/public/dist'
+      dest: './go/public/dist',
     },
     go_config: {
       src: './go/config',
-      dest: './go/public/config'
+      dest: './go/public/config',
     },
     go_package: {
       src: './package.json',
-      dest: './go/public/package.json'
+      dest: './go/public/package.json',
     },
     go_images: {
       src: './public/images',
-      dest: './go/public/images'
+      dest: './go/public/images',
     },
     python_dist: {
       src: './python/dist',
-      dest: './build/extraResources/py'
+      dest: './build/extraResources/py',
     },
-  },  
+  },
 
   /**
    * 预发布模式（prod）
@@ -122,48 +122,41 @@ module.exports = {
   start: {
     directory: './',
     cmd: 'electron',
-    args: ['.', '--env=prod']
+    args: ['.', '--env=prod'],
   },
 
   /**
    * 加密
-   */  
+   */
   encrypt: {
     frontend: {
       type: 'none',
-      files: [
-        './public/dist/**/*.(js|json)',
-      ],
+      files: ['./public/dist/**/*.(js|json)'],
       cleanFiles: ['./public/dist'],
       confusionOptions: {
-        compact: true,      
+        compact: true,
         stringArray: true,
         stringArrayEncoding: ['none'],
         stringArrayCallsTransform: true,
         numbersToExpressions: true,
         target: 'browser',
-      }
+      },
     },
     electron: {
       type: 'confusion',
-      files: [
-        './public/electron/**/*.(js|json)',
-      ],
+      files: ['./public/electron/**/*.(js|json)'],
       cleanFiles: ['./public/electron'],
-      specificFiles: [
-        './public/electron/main.js',
-        './public/electron/preload/bridge.js',
-      ],
+      specificFiles: ['./public/electron/main.js', './public/electron/preload/bridge.js'],
       confusionOptions: {
-        compact: true,      
+        compact: true,
         stringArray: true,
         stringArrayEncoding: ['rc4'],
         deadCodeInjection: false,
         stringArrayCallsTransform: true,
         numbersToExpressions: true,
         target: 'node',
-      }
-    }
+      },
+    },
   },
 
   /**
@@ -175,25 +168,25 @@ module.exports = {
     go: {
       directory: './go',
       cmd: 'air',
-      args: ['-c=config/.air.toml' ],
+      args: ['-c=config/.air.toml'],
     },
-    // windows 单独调试，air 实现 go 热重载 
+    // windows 单独调试，air 实现 go 热重载
     go_w: {
       directory: './go',
       cmd: 'air',
-      args: ['-c=config/.air.windows.toml' ],
-    },    
+      args: ['-c=config/.air.windows.toml'],
+    },
     // 单独调试，以基础方式启动 go
     go2: {
       directory: './go',
       cmd: 'go',
-      args: ['run', './main.go', '--env=dev','--basedir=../', '--port=7073'],
-    },     
+      args: ['run', './main.go', '--env=dev', '--basedir=../', '--port=7073'],
+    },
     python: {
       directory: './python',
       cmd: 'python',
       args: ['./main.py', '--port=7074'],
-      stdio: "inherit", // ignore
+      stdio: 'inherit', // ignore
     },
-  },  
-};
+  },
+}

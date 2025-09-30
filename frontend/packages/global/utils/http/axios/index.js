@@ -1,79 +1,75 @@
-import axios from "axios";
+import axios from 'axios'
 // import { notification } from 'ant-design-vue'
-import Cache from "../../cache";
-import { useUserStore } from "../../../stores/counter";
+import Cache from '../../cache'
+import { useUserStore } from '../../../stores/counter'
 // import { showNotify } from "vant";
 
 //请求超时时间
-axios.defaults.timeout = 30000;
+axios.defaults.timeout = 30000
 
-let token = "";
+let token = ''
 
 //请求地址
-let baseURL = import.meta.env.VITE_HTTP_URL; 
- 
+let baseURL = import.meta.env.VITE_HTTP_URL
+
 const axiosInstance = axios.create({
   baseURL: baseURL,
-});
+})
 
 // axios实例拦截请求
 axiosInstance.interceptors.request.use(
-  (config) => {
+  config => {
     // 请求头添加token
     if (!token) {
-      const userToken = Cache.get("USER_TOKEN");
+      const userToken = Cache.get('USER_TOKEN')
       if (userToken) {
-        token = userToken;
+        token = userToken
       }
     }
-    config.headers["token"] = token;
-    return config;
+    config.headers['token'] = token
+    return config
   },
-  (error) => {
-    return Promise.reject(error);
-  },
-);
+  error => {
+    return Promise.reject(error)
+  }
+)
 
 // axios实例拦截响应
 axiosInstance.interceptors.response.use(
-  (response) => {
-    return response;
+  response => {
+    return response
   },
   // 请求失败
-  (error) => {
+  error => {
     if (error.status === 401) {
       //登录
-      const userStore = useUserStore();
-      userStore.setUserInfo({});
-      userStore.noticeLogin();
+      const userStore = useUserStore()
+      userStore.setUserInfo({})
+      userStore.noticeLogin()
       // router.push('/login')
     } else {
       //提示错误
       // const status = error.response ? error.response.status : '提示'
-      let message = "";
-      if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message
-      ) {
-        message = error.response.data.message;
+      let message = ''
+      if (error.response && error.response.data && error.response.data.message) {
+        message = error.response.data.message
       }
       // showNotify({
       //   message: message,
       //   type: "danger",
       // });
     }
-    return Promise.reject(error);
-  },
-);
+    return Promise.reject(error)
+  }
+)
 
-const request = (config) => {
-  const conf = config;
+const request = config => {
+  const conf = config
   return new Promise((resolve, reject) => {
     axiosInstance
       .request(conf)
-      .then((res) => {
-        const { data } = res;
+      .then(res => {
+        const { data } = res
         // 请求响应体中code不为200时，则认为请求失败
         // if (data.code != 0) {
         //   const err = res;
@@ -89,20 +85,20 @@ const request = (config) => {
         //   reject(err);
         //   return;
         // }
-        resolve(data);
+        resolve(data)
       })
-      .catch((error) => {
-        reject(error);
-      });
-  });
-};
+      .catch(error => {
+        reject(error)
+      })
+  })
+}
 
 export function get(config) {
-  return request({ ...config, method: "GET" });
+  return request({ ...config, method: 'GET' })
 }
 
 export function post(config) {
-  return request({ ...config, method: "POST" });
+  return request({ ...config, method: 'POST' })
 }
 
-export default request;
+export default request
