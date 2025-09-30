@@ -27,14 +27,37 @@ export default [
       },
     },
     rules: {
-      // 放宽少量规则，交由 Prettier 处理风格
+      // 代码质量规则
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-      // 显式关闭与 Prettier 冲突且导致“跳动/黄色波浪线”的 vue 规则
+      'no-console': 'warn',
+
+      // 代码长度限制
+      'max-len': [
+        'warn',
+        {
+          code: 120,
+          ignoreStrings: true,
+          ignoreTemplateLiterals: true,
+          ignoreRegExpLiterals: true,
+          ignoreUrls: true,
+          ignoreComments: true,
+        },
+      ],
+
+      // Vue 规则 - 关闭与 Prettier 冲突的规则
       'vue/max-attributes-per-line': 'off',
       'vue/first-attribute-linebreak': 'off',
       'vue/singleline-html-element-content-newline': 'off',
       'vue/multiline-html-element-content-newline': 'off',
       'vue/html-self-closing': 'off',
+      'vue/html-indent': 'off',
+      'vue/html-closing-bracket-newline': 'off',
+
+      // Vue 最佳实践
+      'vue/multi-word-component-names': 'warn',
+      'vue/no-unused-vars': 'warn',
+      'vue/require-default-prop': 'off',
+      'vue/require-explicit-emits': 'off',
     },
   },
   // 关闭与 Prettier 冲突的所有风格类规则（含 vue 插件）

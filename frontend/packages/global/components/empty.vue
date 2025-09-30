@@ -1,6 +1,10 @@
 <template>
   <div class="h-full w-full flex items-center justify-center flex-col">
-    <img class="w-14" :src="imgSrc" :style="{ width: `${imgSize}px` }" />
+    <img
+      class="w-14"
+      :src="imgSrc"
+      :style="{ width: `${imgSize}px` }"
+    />
     <div
       class="text-sm leading-normal text-mb-gray-80 font-normal text-center"
       :style="{ fontSize: `12px` }"

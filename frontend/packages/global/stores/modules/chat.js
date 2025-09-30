@@ -11,6 +11,7 @@ export const useChatStore = defineStore('chat', {
     connectStatus: 'loading', // loading, success, error
     conversationList: [],
     currentConversation: null,
+    sendMessageMode: 'enter',
   }),
   getters: {},
   actions: {
@@ -30,6 +31,10 @@ export const useChatStore = defineStore('chat', {
     },
     setCurrentConversation(conversation) {
       this.currentConversation = conversation
+    },
+    setSendMessageMode(mode) {
+      this.sendMessageMode = mode
+      Cache.set('sendMessageMode', mode)
     },
     // syncConversationList() {
     //   ipcApiRoute.syncConversationList().then((res) => {

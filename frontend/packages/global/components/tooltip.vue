@@ -1,7 +1,14 @@
 <template>
-  <div class="relative inline-block" ref="tooltipRef">
+  <div
+    ref="tooltipRef"
+    class="relative inline-block"
+  >
     <!-- 触发元素 -->
-    <div class="cursor-pointer" @click="toggleTooltip" ref="triggerRef">
+    <div
+      ref="triggerRef"
+      class="cursor-pointer"
+      @click="toggleTooltip"
+    >
       <slot></slot>
     </div>
 
@@ -16,21 +23,28 @@
     >
       <div
         v-if="visible"
+        ref="tooltipContentRef"
         :class="[
-          'absolute z-50 px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-sm',
+          'absolute z-50 px-3 py-2 text-sm font-medium rounded-md',
+          'shadow-lg',
           'max-w-xs whitespace-nowrap',
           positionClasses,
-          'before:content-[\'\'] before:absolute before:border-4 before:border-transparent',
+          themeClasses,
+          'before:content-[\'\'] before:absolute before:border-[9px] before:border-transparent',
+          'after:content-[\'\'] after:absolute after:border-[8px] after:border-transparent',
           arrowClasses,
         ]"
-        ref="tooltipContentRef"
       >
         <slot name="content"></slot>
       </div>
     </transition>
 
     <!-- 点击外部关闭的遮罩 -->
-    <div v-if="visible" class="fixed inset-0 z-40" @click="hideTooltip"></div>
+    <div
+      v-if="visible"
+      class="fixed inset-0 z-40"
+      @click="hideTooltip"
+    ></div>
   </div>
 </template>
 
@@ -41,16 +55,25 @@ const props = defineProps({
   placement: {
     type: String,
     default: 'top',
-    validator: (value) => ['top', 'right', 'bottom', 'left'].includes(value),
+    validator: value => ['top', 'right', 'bottom', 'left'].includes(value),
   },
   trigger: {
     type: String,
     default: 'click',
-    validator: (value) => ['click', 'hover'].includes(value),
+    validator: value => ['click', 'hover'].includes(value),
   },
   offset: {
     type: Number,
     default: 4,
+  },
+  theme: {
+    type: String,
+    default: 'light',
+    validator: value => ['light', 'dark'].includes(value),
+  },
+  border: {
+    type: Boolean,
+    default: true,
   },
 })
 
@@ -58,6 +81,14 @@ const visible = ref(false)
 const tooltipRef = ref(null)
 const triggerRef = ref(null)
 const tooltipContentRef = ref(null)
+
+// 主题样式类
+const themeClasses = computed(() => {
+  if (props.theme === 'dark') {
+    return 'bg-gray-900 text-white border border-gray-700'
+  }
+  return 'bg-white text-gray-900 border border-gray-200'
+})
 
 // 位置样式类
 const positionClasses = computed(() => {
@@ -76,20 +107,26 @@ const positionClasses = computed(() => {
   }
 })
 
-// 箭头样式类
+// 箭头样式类（双层箭头：before=边框，after=填充）
 const arrowClasses = computed(() => {
-  switch (props.placement) {
-    case 'top':
-      return 'before:top-full before:left-1/2 before:-translate-x-1/2 before:border-t-gray-900'
-    case 'bottom':
-      return 'before:bottom-full before:left-1/2 before:-translate-x-1/2 before:border-b-gray-900'
-    case 'left':
-      return 'before:left-full before:top-1/2 before:-translate-y-1/2 before:border-l-gray-900'
-    case 'right':
-      return 'before:right-full before:top-1/2 before:-translate-y-1/2 before:border-r-gray-900'
-    default:
-      return 'before:top-full before:left-1/2 before:-translate-x-1/2 before:border-t-gray-900'
+  const isDark = props.theme === 'dark'
+
+  const arrows = {
+    top: isDark
+      ? 'before:top-full before:left-1/2 before:-translate-x-1/2 before:border-t-gray-700 after:top-full after:left-1/2 after:-translate-x-1/2 after:border-t-gray-900 after:-mt-px'
+      : 'before:top-full before:left-1/2 before:-translate-x-1/2 before:border-t-gray-200 after:top-full after:left-1/2 after:-translate-x-1/2 after:border-t-white after:-mt-px',
+    bottom: isDark
+      ? 'before:bottom-full before:left-1/2 before:-translate-x-1/2 before:border-b-gray-700 after:bottom-full after:left-1/2 after:-translate-x-1/2 after:border-b-gray-900 after:-mb-px'
+      : 'before:bottom-full before:left-1/2 before:-translate-x-1/2 before:border-b-gray-200 after:bottom-full after:left-1/2 after:-translate-x-1/2 after:border-b-white after:-mb-px',
+    left: isDark
+      ? 'before:left-full before:top-1/2 before:-translate-y-1/2 before:border-l-gray-700 after:left-full after:top-1/2 after:-translate-y-1/2 after:border-l-gray-900 after:-ml-px'
+      : 'before:left-full before:top-1/2 before:-translate-y-1/2 before:border-l-gray-200 after:left-full after:top-1/2 after:-translate-y-1/2 after:border-l-white after:-ml-px',
+    right: isDark
+      ? 'before:right-full before:top-1/2 before:-translate-y-1/2 before:border-r-gray-700 after:right-full after:top-1/2 after:-translate-y-1/2 after:border-r-gray-900 after:-mr-px'
+      : 'before:right-full before:top-1/2 before:-translate-y-1/2 before:border-r-gray-200 after:right-full after:top-1/2 after:-translate-y-1/2 after:border-r-white after:-mr-px',
   }
+
+  return arrows[props.placement] || arrows.top
 })
 
 // 切换显示状态
@@ -121,7 +158,7 @@ const handleMouseLeave = () => {
 }
 
 // 处理键盘事件（ESC 关闭）
-const handleKeydown = (event) => {
+const handleKeydown = event => {
   if (event.key === 'Escape') {
     hideTooltip()
   }

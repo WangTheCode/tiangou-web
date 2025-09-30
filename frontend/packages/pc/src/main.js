@@ -4,6 +4,7 @@ import router from './router'
 import piniaStore from '@global/stores/counter'
 
 // 导入共享样式
+import 'ant-design-vue/dist/reset.css'
 import '@global/assets/main.css'
 import '@global/assets/theme.css'
 

@@ -2,8 +2,8 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
-import { AutoImportDeps } from '../../config/autoImport.js'
-import { AutoRegistryComponents } from '../../config/autoRegistryComponents.js'
+import { AutoImportDeps } from './config/autoImport.js'
+import { AutoRegistryComponents } from './config/autoRegistryComponents.js'
 
 export default defineConfig({
   base: './',
