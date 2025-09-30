@@ -11,6 +11,7 @@ export const useChatStore = defineStore('chat', {
     // 通信连接状态
     connectStatus: 'loading', // loading, success, error
     conversationList: [],
+    currentConversation: null,
   }),
   getters: {},
   actions: {
@@ -27,6 +28,9 @@ export const useChatStore = defineStore('chat', {
           this.conversationList = res
         })
       }
+    },
+    setCurrentConversation(conversation) {
+      this.currentConversation = conversation
     },
     // syncConversationList() {
     //   ipcApiRoute.syncConversationList().then((res) => {

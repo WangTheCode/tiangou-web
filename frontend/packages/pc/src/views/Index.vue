@@ -1,9 +1,7 @@
 <template>
   <div class="h-[100vh] flex">
-    <div class="h-full overflow-y-auto w-[260px] border-r border-gray-200">
-      <div class="w-full">
-       <ConversationItem v-for="item in conversationList" :key="item.id" :item="item" />
-      </div>
+    <div class="h-full overflow-y-auto w-[320px] border-r border-gray-200 p-2">
+      <ChatConversationList />
     </div>
     <div>
       状态
@@ -13,10 +11,8 @@
 </template>
 
 <script setup>
-import { Button } from '@global/components'
-import ConversationItem from '@global/components/chat/conversationItem.vue'
+import ChatConversationList from '../components/ChatConversationList.vue'
 import ipcApiRoute from '@global/icp/ipcRoute'
-import authApi from '@global/api/auth'
 import { useUserStore } from '@global/stores/index'
 import { useWKSDK } from '@global/hooks/useWKSDK'
 import { useChatStore } from '@global/stores/index'

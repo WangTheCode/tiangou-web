@@ -33,7 +33,7 @@ export function getChannelAvatarTag(channel) {
     if (!channel) {
       return "";
     }
-    let avatarTag = this.getChannelAvatarTag(channel);
+    let avatarTag = getChannelAvatarTag(channel);
     const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel);
     if (channelInfo && channelInfo.logo && channelInfo.logo !== "") {
       let logo = channelInfo.logo;
