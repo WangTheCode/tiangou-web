@@ -46,8 +46,6 @@ class WkimService {
   }
 
   setImConfig(imConfig) {
-    logger.info('setImConfig', imConfig)
-
     this.imConfig = imConfig
   }
 

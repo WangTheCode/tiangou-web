@@ -84,7 +84,6 @@ export const useTSDD = () => {
       if (isEE) {
         // ee 走tcp
         ipcApiRoute.connectTcp(userInfo).then(res => {
-          console.log(res)
           resolve(res)
         })
       } else {
@@ -101,63 +100,45 @@ export const useTSDD = () => {
     return new Promise(async (resolve, reject) => {
       if (isEE) {
         const filter = await ipcApiRoute.syncConversationList()
-        const resp = await tsddApi.syncConversationList({ msg_count: 1 })
-        let conversations = []
-        if (resp) {
-          resp.conversations.forEach(conversationMap => {
-            let model = Convert.toConversation(conversationMap)
-            conversations.push(model)
-          })
-
-          const users = resp.users
-          if (users && users.length > 0) {
-            for (const user of users) {
-              WKSDK.shared().channelManager.setChannleInfoForCache(Convert.userToChannelInfo(user))
-            }
-          }
-          const groups = resp.groups
-          if (groups && groups.length > 0) {
-            for (const group of groups) {
-              WKSDK.shared().channelManager.setChannleInfoForCache(
-                Convert.groupToChannelInfo(group)
-              )
-            }
-          }
-        }
-        const conversationWraps = []
-        if (conversations && conversations.length > 0) {
-          for (const conversation of conversations) {
-            if (
-              conversation.lastMessage?.content &&
-              conversation.lastMessage?.contentType == MessageContentType.text
-            ) {
-              conversation.lastMessage.content.text = ProhibitwordsService.shared.filter(
-                conversation.lastMessage.content.text
-              )
-            }
-            conversationWraps.push(conversation)
-          }
-        }
-        console.log(888, conversationWraps)
-        resolve(conversationWraps)
+      } else {
+        const filter = await WKSDK.shared().conversationManager.sync({})
       }
-      // console.log(777,filter)
+      const resp = await tsddApi.syncConversationList({ msg_count: 1 })
+      let conversations = []
+      if (resp) {
+        resp.conversations.forEach(conversationMap => {
+          let model = Convert.toConversation(conversationMap)
+          conversations.push(model)
+        })
 
-      // const conversations = res.data
-      // const conversationWraps = []
-      // if (conversations && conversations.length > 0) {
-      //     for (const conversation of conversations) {
-      //         if (conversation.lastMessage?.content && conversation.lastMessage?.contentType == MessageContentType.text) {
-      //             conversation.lastMessage.content.text = ProhibitwordsService.shared.filter(conversation.lastMessage.content.text)
-      //         }
-      //         conversationWraps.push(new ConversationWrap(conversation))
-      //     }
-      // }
-      // console.log(888,conversationWraps)
-      //   resolve(conversationWraps)
-      // }).catch(err => {
-      //   reject(err)
-      // })
+        const users = resp.users
+        if (users && users.length > 0) {
+          for (const user of users) {
+            WKSDK.shared().channelManager.setChannleInfoForCache(Convert.userToChannelInfo(user))
+          }
+        }
+        const groups = resp.groups
+        if (groups && groups.length > 0) {
+          for (const group of groups) {
+            WKSDK.shared().channelManager.setChannleInfoForCache(Convert.groupToChannelInfo(group))
+          }
+        }
+      }
+      const conversationWraps = []
+      if (conversations && conversations.length > 0) {
+        for (const conversation of conversations) {
+          if (
+            conversation.lastMessage?.content &&
+            conversation.lastMessage?.contentType == MessageContentType.text
+          ) {
+            conversation.lastMessage.content.text = ProhibitwordsService.shared.filter(
+              conversation.lastMessage.content.text
+            )
+          }
+          conversationWraps.push(conversation)
+        }
+      }
+      resolve(conversationWraps)
     })
   }
 

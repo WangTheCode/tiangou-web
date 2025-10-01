@@ -1,13 +1,23 @@
-import { ipc } from './ipcRenderer'
+import { ipc, isEE } from './ipcRenderer'
 
 const huliInvoke = (url, params = null) => {
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve, reject) => {
     try {
       if (params && typeof params === 'object') {
         params = JSON.stringify(params)
       }
-      const res = await ipc.invoke(url, params)
-      console.log(res)
+      if (!isEE) {
+        reject()
+        return
+      }
+      ipc
+        .invoke(url, params)
+        .then(res => {
+          resolve(res)
+        })
+        .catch(err => {
+          reject(err)
+        })
       // if (res && res.code != 0) {
       //   let msg = res.message
 
@@ -15,7 +25,6 @@ const huliInvoke = (url, params = null) => {
       // } else {
       //   resolve(res)
       // }
-      resolve(res)
     } catch (error) {
       reject(error)
     }

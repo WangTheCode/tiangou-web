@@ -1,6 +1,8 @@
 import { ref } from 'vue'
 import WKSDK, { ConnectStatus } from 'wukongimjssdk'
+import { useChatStore } from '../stores/index'
 export const useWKSDK = () => {
+  const chatStore = useChatStore()
   const connectWebSocket = options => {
     return new Promise((resolve, reject) => {
       const { uid, token } = options
@@ -11,16 +13,35 @@ export const useWKSDK = () => {
       WKSDK.shared().config.token = token // 用户token （需要在悟空通讯端注册过）
 
       WKSDK.shared().connectManager.addConnectStatusListener((status, reasonCode) => {
-        console.log('连接状态', status, reasonCode)
-        if (status === ConnectStatus.Connected) {
-          console.log('连接成功')
+        if (status === ConnectStatus.Connecting) {
+          chatStore.setConnectStatus('loading')
+        } else if (status === ConnectStatus.Connected) {
+          chatStore.setConnectStatus('success')
+          resolve(true)
         } else {
-          console.log('连接失败', reasonCode) //  reasonCode: 2表示认证失败（uid或token错误）
+          chatStore.setConnectStatus('error')
+          reject(reasonCode)
         }
       })
 
+      WKSDK.shared().chatManager.addMessageListener(message => {
+        console.log('📨 收到消息:' + JSON.stringify(message))
+      })
+
+      // 监听消息发送状态
+      WKSDK.shared().chatManager.addMessageStatusListener(ack => {
+        if (ack.reasonCode === 1) {
+          console.log('✅ 消息发送成功')
+        } else {
+          console.log(`❌ 消息发送失败 (错误码: ${ack.reasonCode})`)
+        }
+      })
+
+      WKSDK.shared().config.provider.syncConversationsCallback = async filter => {
+        return filter
+      }
+
       WKSDK.shared().connectManager.connect()
-      resolve(true)
     })
   }
 

@@ -4,6 +4,7 @@ import Cache from '../../utils/cache'
 import { useTSDD } from '../../hooks/useTSDD'
 import authApi from '../../api/auth'
 import ipcApiRoute from '../../icp/ipcRoute'
+import { isEE } from '../../icp/ipcRenderer'
 export const useUserStore = defineStore('user', {
   state: () => ({
     token: '',
@@ -89,7 +90,9 @@ export const useUserStore = defineStore('user', {
           .imConfig(this.userInfo.uid)
           .then(res => {
             this.imConfig = res
-            ipcApiRoute.setImConfig({ ...res, api_addr: import.meta.env.VITE_API_ADDR })
+            if (isEE) {
+              ipcApiRoute.setImConfig({ ...res, api_addr: import.meta.env.VITE_API_ADDR })
+            }
             resolve(res)
           })
           .catch(err => {

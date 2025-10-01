@@ -5,6 +5,7 @@ import 'dayjs/locale/zh-cn'
 import Cache from '../utils/cache'
 import { useRouter } from 'vue-router'
 import ipcListener from '../icp/ipcListener'
+import { isEE } from '../icp/ipcRenderer'
 
 export const useAppBase = () => {
   useDevice()
@@ -61,6 +62,8 @@ export const useAppBase = () => {
         appStore.createFingerprint()
       }, 100)
     }
-    ipcListener.onConnectStatus()
+    if (isEE) {
+      ipcListener.onConnectStatus()
+    }
   })
 }

@@ -2,6 +2,7 @@ import { post } from '../utils/http/axios'
 export const URLS = {
   reminderSync: '/message/reminder/sync',
   syncConversationList: '/conversation/sync',
+  syncChannelMessageList: '/message/channel/sync',
 }
 
 const apis = {}

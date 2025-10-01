@@ -8,12 +8,14 @@
     </div>
     <div class="chat-bubble-content">
       <div class="chat-bubble-content_name">
-        {{ item.nickname ? item.nickname : item.username }}
+        {{ item.nickname }}
       </div>
+      <!-- eslint-disable vue/no-v-html -->
       <div
         class="chat-bubble-content_text"
-        v-html="renderContent(item)"
+        v-html="renderContent(item.content)"
       ></div>
+      <!-- eslint-enable vue/no-v-html -->
       <div class="chat-bubble-content_time">{{ item.created_at }}</div>
     </div>
     <div
@@ -42,10 +44,9 @@ defineOptions({
   name: 'ChatBubble',
 })
 
-const renderContent = item => {
-  if (!item.content) return ''
-
-  return item.content.replace(/\n/g, '<br>')
+const renderContent = content => {
+  if (!content) return ''
+  return content.replace(/\n/g, '<br>')
 }
 </script>
 
