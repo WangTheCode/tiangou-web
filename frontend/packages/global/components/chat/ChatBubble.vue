@@ -1,7 +1,7 @@
 <template>
   <div :class="['chat-bubble', align]">
     <div
-      v-if="align == 'left'"
+      v-if="align == 'left' && isAvatar"
       class="chat-bubble-avatar"
     >
       <Avatar :channel="item.channel" />
@@ -13,7 +13,7 @@
       <!-- eslint-disable vue/no-v-html -->
       <div
         class="chat-bubble-content_text"
-        v-html="renderContent(item.content)"
+        v-html="renderContent(item.message)"
       ></div>
       <!-- eslint-enable vue/no-v-html -->
       <div class="chat-bubble-content_time">{{ item.created_at }}</div>
@@ -28,25 +28,46 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import Avatar from '../Avatar.vue'
-defineProps({
+import { BubblePosition } from '../../tsdd/Model'
+import { WKSDK, Channel, ChannelTypePerson } from 'wukongimjssdk'
+const props = defineProps({
   item: {
     type: Object,
     required: true,
   },
-  align: {
-    type: String,
-    default: 'left',
-    validator: value => ['left', 'right'].includes(value),
-  },
+  // align: {
+  //   type: String,
+  //   default: 'left',
+  //   validator: value => ['left', 'right'].includes(value),
+  // },
 })
+const message = props.item.message
+const channelInfo = WKSDK.shared().channelManager.getChannelInfo(
+  new Channel(props.item.message.fromUID, ChannelTypePerson)
+)
+const align = computed(() => {
+  return message.send ? 'right' : 'left'
+})
+
+const isAvatar = computed(() => {
+  return (
+    (message.bubblePosition === BubblePosition.last ||
+      message.bubblePosition === BubblePosition.single) &&
+    channelInfo
+  )
+})
+
 defineOptions({
   name: 'ChatBubble',
 })
 
-const renderContent = content => {
-  if (!content) return ''
-  return content.replace(/\n/g, '<br>')
+console.log(333, channelInfo)
+
+const renderContent = message => {
+  if (!(message && message.content && message.content.text)) return ''
+  return message.content.text.replace(/\n/g, '<br>')
 }
 </script>
 

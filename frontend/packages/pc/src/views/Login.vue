@@ -2,13 +2,13 @@
   <div>
     <h1>Login</h1>
     <input
-      type="text"
       v-model="username"
+      type="text"
       placeholder="Username"
     />
     <input
-      type="password"
       v-model="password"
+      type="password"
       placeholder="Password"
     />
     <button @click="login">Login</button>
@@ -16,13 +16,14 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore, useChatStore } from '@global/stores/index'
 const userStore = useUserStore()
 const router = useRouter()
 const chatStore = useChatStore()
-const username = ref('008615512345670')
-const password = ref('a1234567')
+const username = ref('008613155550002')
+const password = ref('123456')
 
 const login = () => {
   userStore

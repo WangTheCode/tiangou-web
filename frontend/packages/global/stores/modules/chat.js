@@ -4,7 +4,8 @@ import Cache from '../../utils/cache'
 import { useTSDD } from '../../hooks/useTSDD'
 import tsddApi from '../../api/tsdd'
 import ipcApiRoute from '../../icp/ipcRoute'
-import { Convert } from '../tsdd/Convert'
+import { Convert } from '../../tsdd/Convert'
+import { Conversation } from '../../tsdd/Conversation'
 
 export const useChatStore = defineStore('chat', {
   state: () => ({
@@ -13,7 +14,7 @@ export const useChatStore = defineStore('chat', {
     conversationList: [],
     currentConversation: null,
     sendMessageMode: 'enter',
-    chatMessages: [],
+    chatMessagesByChannelId: {},
   }),
   getters: {},
   actions: {
@@ -32,14 +33,17 @@ export const useChatStore = defineStore('chat', {
       }
     },
     setCurrentConversation(conversation) {
+      console.log(conversation)
+
       if (
         this.currentConversation &&
-        this.currentConversation.channelID === conversation.channelID
+        this.currentConversation.channel &&
+        this.currentConversation.channel.channelID === conversation.channel.channelID
       ) {
         return
       }
       this.currentConversation = conversation
-      this.syncChannelMessageList(conversation, {
+      this.syncChannelMessageList(conversation.channel, {
         limit: 30,
         startMessageSeq: 0,
         endMessageSeq: 0,
@@ -67,10 +71,13 @@ export const useChatStore = defineStore('chat', {
           if (messageList) {
             messageList.forEach(msg => {
               const message = Convert.toMessage(msg)
-              messages.push(message)
+              const messageWrap = Convert.toMessageWrap(message)
+              messages.push(messageWrap)
             })
           }
-          this.chatMessages = messages
+
+          const conversation = new Conversation()
+          this.chatMessagesByChannelId[channel.channelID] = conversation.refreshMessages(messages)
         })
     },
     // syncConversationList() {

@@ -5,6 +5,7 @@
       :items="chatMessages"
       :min-item-size="76"
       class="chat-message-wraper"
+      key-field="messageID"
       @resize="scrollToBottom()"
       @scroll="onScroll"
     >
@@ -31,7 +32,7 @@
           :data-active="active"
           :class="['chat-message', item.position]"
         >
-          <ChatBubble
+          <MessageCell
             :item="item"
             :align="item.position"
           />
@@ -42,23 +43,39 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 import ChatBubble from './ChatBubble.vue'
+import MessageCell from './messageCell/Index.vue'
+import { useChatStore } from '../../stores/index'
 
-const chatMessages = ref([
-  {
-    id: 1,
-    content: 'Hello, world!',
-    position: 'left',
-  },
-  {
-    id: 2,
-    content: 'Hello, world!',
-    position: 'right',
-  },
-])
+const chatStore = useChatStore()
+// const chatMessages = ref([
+//   {
+//     id: 1,
+//     content: 'Hello, world!',
+//     position: 'left',
+//   },
+//   {
+//     id: 2,
+//     content: 'Hello, world!',
+//     position: 'right',
+//   },
+// ])
+const chatMessages = computed(() => {
+  if (
+    chatStore.chatMessagesByChannelId &&
+    chatStore.currentConversation &&
+    chatStore.currentConversation.channel &&
+    chatStore.currentConversation.channel.channelID &&
+    chatStore.chatMessagesByChannelId[chatStore.currentConversation.channel.channelID]
+  ) {
+    console.log(chatStore.chatMessagesByChannelId[chatStore.currentConversation.channel.channelID])
+    return chatStore.chatMessagesByChannelId[chatStore.currentConversation.channel.channelID]
+  }
+  return []
+})
 const loading = ref(false)
 const noMore = ref(false)
 
@@ -71,6 +88,8 @@ const onScroll = e => {
     // })
   }
 }
+
+const scrollToBottom = () => {}
 </script>
 
 <style lang="less" scoped>
@@ -96,58 +115,63 @@ const onScroll = e => {
     padding: 10px;
     // height: 600px;
   }
+  // .chat-message {
+  //   margin-bottom: 20px;
+  //   min-height: 76px;
+  //   box-sizing: border-box;
+  // }
 
-  .chat-message {
-    display: flex;
-    font-size: 12px;
-    margin-bottom: 20px;
-    min-height: 76px;
-    box-sizing: border-box;
+  // .chat-message {
+  //   display: flex;
+  //   font-size: 12px;
+  //   margin-bottom: 20px;
+  //   min-height: 76px;
+  //   box-sizing: border-box;
 
-    .chat-message-content {
-      flex: 1;
-      padding-top: 4px;
-      .chat-message-content_name {
-        margin-bottom: 5px;
-      }
-      .chat-message-content_text {
-        font-size: 14px;
-        padding: 10px;
-        display: inline-block;
-        border-radius: 6px;
-        margin-bottom: 4px;
-        word-wrap: break-word;
-        word-break: break-all;
-        white-space: pre-wrap;
-        max-width: calc(100% - 42px);
-      }
-      .chat-message-content_time {
-        color: #999;
-      }
-    }
-    &.left {
-      .chat-message-avatar {
-        margin-right: 10px;
-      }
-      .chat-message-content_text {
-        background-color: #fff;
-        color: #333;
-      }
-    }
-    &.right {
-      text-align: right;
-      .chat-message-avatar {
-        margin-left: 10px;
-      }
-      .chat-message-content_text {
-        background-color: var(--primary);
-        color: #fff;
-        text-align: left;
-        a {
-          color: #fff;
-        }
-      }
-    }
-  }
+  //   .chat-message-content {
+  //     flex: 1;
+  //     padding-top: 4px;
+  //     .chat-message-content_name {
+  //       margin-bottom: 5px;
+  //     }
+  //     .chat-message-content_text {
+  //       font-size: 14px;
+  //       padding: 10px;
+  //       display: inline-block;
+  //       border-radius: 6px;
+  //       margin-bottom: 4px;
+  //       word-wrap: break-word;
+  //       word-break: break-all;
+  //       white-space: pre-wrap;
+  //       max-width: calc(100% - 42px);
+  //     }
+  //     .chat-message-content_time {
+  //       color: #999;
+  //     }
+  //   }
+  //   &.left {
+  //     .chat-message-avatar {
+  //       margin-right: 10px;
+  //     }
+  //     .chat-message-content_text {
+  //       background-color: #fff;
+  //       color: #333;
+  //     }
+  //   }
+  //   &.right {
+  //     text-align: right;
+  //     .chat-message-avatar {
+  //       margin-left: 10px;
+  //     }
+  //     .chat-message-content_text {
+  //       background-color: var(--primary);
+  //       color: #fff;
+  //       text-align: left;
+  //       a {
+  //         color: #fff;
+  //       }
+  //     }
+  //   }
+  // }
 }
 </style>

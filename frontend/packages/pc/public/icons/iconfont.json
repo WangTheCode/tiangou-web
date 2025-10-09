@@ -1,100 +1,23 @@
 {
-  "id": "4986254",
-  "name": "dest-game",
+  "id": "5036710",
+  "name": "tiangou",
   "font_family": "iconfont",
   "css_prefix_text": "icon-",
   "description": "",
   "glyphs": [
     {
-      "icon_id": "736511",
-      "name": "问号 (1)",
-      "font_class": "help",
-      "unicode": "e61a",
-      "unicode_decimal": 58906
-    },
-    {
-      "icon_id": "18371944",
-      "name": "声音-关",
-      "font_class": "sound-off",
-      "unicode": "e6bf",
-      "unicode_decimal": 59071
-    },
-    {
-      "icon_id": "18371945",
-      "name": "声音-开",
-      "font_class": "sound-on",
-      "unicode": "e6c0",
-      "unicode_decimal": 59072
-    },
-    {
-      "icon_id": "34177944",
-      "name": "天平_面性",
-      "font_class": "scale",
-      "unicode": "e643",
-      "unicode_decimal": 58947
-    },
-    {
-      "icon_id": "45320384",
-      "name": "friends",
-      "font_class": "friends",
-      "unicode": "e60d",
-      "unicode_decimal": 58893
-    },
-    {
-      "icon_id": "45460441",
-      "name": "menu-dots",
-      "font_class": "menu-dots",
-      "unicode": "e60e",
-      "unicode_decimal": 58894
-    },
-    {
-      "icon_id": "3318698",
-      "name": "上下箭头",
-      "font_class": "arrow-down",
-      "unicode": "e600",
-      "unicode_decimal": 58880
-    },
-    {
-      "icon_id": "19964328",
-      "name": "上下箭头",
-      "font_class": "arrow-up",
-      "unicode": "e615",
-      "unicode_decimal": 58901
-    },
-    {
-      "icon_id": "20587660",
-      "name": "感叹号",
-      "font_class": "warning",
-      "unicode": "e64b",
-      "unicode_decimal": 58955
-    },
-    {
-      "icon_id": "3248455",
-      "name": "USTD（单位）",
-      "font_class": "USTDdanwei",
-      "unicode": "e667",
-      "unicode_decimal": 58983
-    },
-    {
-      "icon_id": "3969871",
-      "name": "火箭(1)",
-      "font_class": "huojian",
-      "unicode": "e639",
-      "unicode_decimal": 58937
-    },
-    {
-      "icon_id": "34960798",
-      "name": "1火箭-copy",
-      "font_class": "up",
+      "icon_id": "45724633",
+      "name": "bubble-tail-left",
+      "font_class": "bubble-tail-left",
       "unicode": "e612",
       "unicode_decimal": 58898
     },
     {
-      "icon_id": "44473999",
-      "name": "ustd",
-      "font_class": "ustd",
-      "unicode": "e65b",
-      "unicode_decimal": 58971
+      "icon_id": "45724653",
+      "name": "bubble-tail-right",
+      "font_class": "bubble-tail-right",
+      "unicode": "e613",
+      "unicode_decimal": 58899
     }
   ]
 }

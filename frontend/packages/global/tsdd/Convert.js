@@ -13,6 +13,7 @@ import {
   Reminder,
   MessageExtra,
 } from 'wukongimjssdk'
+import { MessageWrap } from './Model'
 
 class Convert {
   static toConversation(conversationMap) {
@@ -104,10 +105,15 @@ class Convert {
     if (contentObj) {
       messageContent.decode(this.stringToUint8Array(JSON.stringify(contentObj)))
     }
+
     message.content = messageContent
 
     message.isDeleted = msgMap['is_deleted'] === 1
     return message
+  }
+
+  static toMessageWrap(message) {
+    return new MessageWrap(message)
   }
 
   static toMessageExtra(msgExtraMap) {
