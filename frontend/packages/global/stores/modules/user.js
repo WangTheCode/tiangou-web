@@ -5,6 +5,8 @@ import { useTSDD } from '../../hooks/useTSDD'
 import authApi from '../../api/auth'
 import ipcApiRoute from '../../icp/ipcRoute'
 import { isEE } from '../../icp/ipcRenderer'
+import { Channel, ChannelTypePerson } from 'wukongimjssdk'
+
 export const useUserStore = defineStore('user', {
   state: () => ({
     token: '',
@@ -28,18 +30,21 @@ export const useUserStore = defineStore('user', {
             device: getDeviceInfo(),
           })
           .then(res => {
-            this.userInfo = res
-            this.token = res.token
-            Cache.set('USER_INFO', this.userInfo)
-            Cache.set('USER_TOKEN', this.token)
             this.loginLoading = false
-            this.fetchImConfig()
-              .then(() => {
-                resolve(res)
-              })
-              .catch(err => {
-                reject(err)
-              })
+            this.setUserInfo(res).then(() => {
+              resolve(res)
+            })
+            // this.userInfo = res
+            // this.token = res.token
+            // Cache.set('USER_INFO', this.userInfo)
+            // Cache.set('USER_TOKEN', this.token)
+            // this.fetchImConfig()
+            //   .then(() => {
+            //     resolve(res)
+            //   })
+            //   .catch(err => {
+            //     reject(err)
+            //   })
           })
           .catch(err => {
             this.loginLoading = false
@@ -66,6 +71,7 @@ export const useUserStore = defineStore('user', {
     },
     setUserInfo(info) {
       return new Promise((resolve, reject) => {
+        info.channel = new Channel(info.uid, ChannelTypePerson)
         this.userInfo = info
         Cache.set('USER_INFO', info)
         if (info.token) {

@@ -46,7 +46,6 @@
 import { ref, computed } from 'vue'
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
-import ChatBubble from './ChatBubble.vue'
 import MessageCell from './messageCell/Index.vue'
 import { useChatStore } from '../../stores/index'
 
@@ -101,6 +100,7 @@ const scrollToBottom = () => {}
   // overflow-y: auto;
   position: relative;
   // height: 700px;
+  background: url(/svg/chat_bg.svg) rgb(245, 247, 249);
 
   .loading-more,
   .no-more {
@@ -115,63 +115,5 @@ const scrollToBottom = () => {}
     padding: 10px;
     // height: 600px;
   }
-  // .chat-message {
-  //   margin-bottom: 20px;
-  //   min-height: 76px;
-  //   box-sizing: border-box;
-  // }
-
-  // .chat-message {
-  //   display: flex;
-  //   font-size: 12px;
-  //   margin-bottom: 20px;
-  //   min-height: 76px;
-  //   box-sizing: border-box;
-
-  //   .chat-message-content {
-  //     flex: 1;
-  //     padding-top: 4px;
-  //     .chat-message-content_name {
-  //       margin-bottom: 5px;
-  //     }
-  //     .chat-message-content_text {
-  //       font-size: 14px;
-  //       padding: 10px;
-  //       display: inline-block;
-  //       border-radius: 6px;
-  //       margin-bottom: 4px;
-  //       word-wrap: break-word;
-  //       word-break: break-all;
-  //       white-space: pre-wrap;
-  //       max-width: calc(100% - 42px);
-  //     }
-  //     .chat-message-content_time {
-  //       color: #999;
-  //     }
-  //   }
-  //   &.left {
-  //     .chat-message-avatar {
-  //       margin-right: 10px;
-  //     }
-  //     .chat-message-content_text {
-  //       background-color: #fff;
-  //       color: #333;
-  //     }
-  //   }
-  //   &.right {
-  //     text-align: right;
-  //     .chat-message-avatar {
-  //       margin-left: 10px;
-  //     }
-  //     .chat-message-content_text {
-  //       background-color: var(--primary);
-  //       color: #fff;
-  //       text-align: left;
-  //       a {
-  //         color: #fff;
-  //       }
-  //     }
-  //   }
-  // }
 }
 </style>

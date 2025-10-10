@@ -1,12 +1,12 @@
 <template>
-  <div :class="['chat-bubble', align]">
+  <div :class="['chat-bubble', align, { 'is-avatar': isAvatar }]">
     <div
       v-if="align == 'left'"
       class="mr-4 min-w-[50px]"
     >
       <Avatar
         v-if="isAvatar"
-        :channel="message.channel"
+        :channel="fromChannel"
         shape="circle"
       />
     </div>
@@ -21,14 +21,19 @@
             :class="`icon-bubble-tail-${align}`"
           ></i>
         </div>
-        <div class="chat-bubble-content_name">
-          {{ message.nickname }}
-        </div>
+        <MessageHead
+          v-if="
+            align === 'left' &&
+            (item.bubblePosition === BubblePosition.first ||
+              item.bubblePosition === BubblePosition.single)
+          "
+          :message="message"
+        />
         <!-- eslint-disable vue/no-v-html -->
-        <div
-          class="chat-bubble-content_text"
-          v-html="content"
-        ></div>
+        <div class="chat-bubble-content_text">
+          <span v-html="content"></span>
+          <MessageTrail :message="message" />
+        </div>
         <!-- eslint-enable vue/no-v-html -->
         <div class="chat-bubble-content_time">{{ message.created_at }}</div>
       </div>
@@ -39,7 +44,7 @@
     >
       <Avatar
         v-if="isAvatar"
-        :channel="message.channel"
+        :channel="userInfo.channel"
         shape="circle"
       />
     </div>
@@ -52,6 +57,8 @@ import Avatar from '../../Avatar.vue'
 import { BubblePosition } from '../../../tsdd/Model'
 import { WKSDK, Channel, ChannelTypePerson } from 'wukongimjssdk'
 import { useUserStore } from '../../../stores'
+import MessageHead from './MessageHead.vue'
+import MessageTrail from './MessageTrail.vue'
 const userStore = useUserStore()
 const props = defineProps({
   item: {
@@ -66,9 +73,11 @@ const props = defineProps({
 })
 const userInfo = computed(() => userStore.userInfo)
 const message = computed(() => props.item.message)
-const channelInfo = WKSDK.shared().channelManager.getChannelInfo(
-  new Channel(message.value.fromUID, ChannelTypePerson)
-)
+
+const fromChannel = new Channel(props.item.message.fromUID, ChannelTypePerson)
+// const channelInfo = WKSDK.shared().channelManager.getChannelInfo(
+//   new Channel(message.value.fromUID, ChannelTypePerson)
+// )
 const align = computed(() => {
   return message.value.send ? 'right' : 'left'
 })
@@ -106,8 +115,7 @@ const renderContent = message => {
     font-size: 14px;
     padding: 10px;
     display: inline-block;
-    border-radius: 6px;
-    margin-bottom: 4px;
+    border-radius: 10px;
     word-wrap: break-word;
     word-break: break-all;
     white-space: pre-wrap;
@@ -121,7 +129,7 @@ const renderContent = message => {
       line-height: 1;
       .iconfont {
         font-size: 30px;
-        color: #333;
+        color: #515151;
       }
       &.right {
         left: auto;
@@ -137,9 +145,13 @@ const renderContent = message => {
   }
   &.left {
     .chat-bubble-content {
-      background-color: #333;
+      background-color: #515151;
       color: #fff;
-      border-bottom-left-radius: 0;
+    }
+    &.is-avatar {
+      .chat-bubble-content {
+        border-bottom-left-radius: 0;
+      }
     }
   }
   &.right {
@@ -149,9 +161,13 @@ const renderContent = message => {
       background-color: var(--primary-color);
       color: #fff;
       text-align: left;
-      border-bottom-right-radius: 0;
       a {
         color: #fff;
+      }
+    }
+    &.is-avatar {
+      .chat-bubble-content {
+        border-bottom-right-radius: 0;
       }
     }
   }

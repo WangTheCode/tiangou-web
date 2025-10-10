@@ -6,6 +6,8 @@ import tsddApi from '../../api/tsdd'
 import ipcApiRoute from '../../icp/ipcRoute'
 import { Convert } from '../../tsdd/Convert'
 import { Conversation } from '../../tsdd/Conversation'
+import { useWKSDK } from '../../hooks/useWKSDK'
+import { Channel, ChannelTypePerson } from 'wukongimjssdk'
 
 export const useChatStore = defineStore('chat', {
   state: () => ({
@@ -21,7 +23,10 @@ export const useChatStore = defineStore('chat', {
     connect(userInfo) {
       this.connectStatus = 'loading'
       const { connect } = useTSDD()
-      connect(userInfo)
+      connect(userInfo).then(() => {
+        const { fetchChannelInfoIfNeed } = useWKSDK()
+        fetchChannelInfoIfNeed(new Channel(userInfo.uid, ChannelTypePerson))
+      })
     },
     setConnectStatus(status) {
       this.connectStatus = status
@@ -42,7 +47,9 @@ export const useChatStore = defineStore('chat', {
       ) {
         return
       }
+      const { fetchChannelInfoIfNeed } = useWKSDK()
       this.currentConversation = conversation
+      fetchChannelInfoIfNeed(conversation.channel)
       this.syncChannelMessageList(conversation.channel, {
         limit: 30,
         startMessageSeq: 0,
@@ -50,6 +57,7 @@ export const useChatStore = defineStore('chat', {
         pullMode: 0,
       })
     },
+
     setSendMessageMode(mode) {
       this.sendMessageMode = mode
       Cache.set('sendMessageMode', mode)

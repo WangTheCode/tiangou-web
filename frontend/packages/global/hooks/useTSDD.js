@@ -84,11 +84,13 @@ export const useTSDD = () => {
       if (isEE) {
         // ee 走tcp
         ipcApiRoute.connectTcp(userInfo).then(res => {
+          // initWKSDK()
           resolve(res)
         })
       } else {
         // web 走web socket
         connectWebSocket(userInfo).then(res => {
+          // initWKSDK()
           resolve(res)
         })
       }
@@ -99,46 +101,12 @@ export const useTSDD = () => {
   const syncConversationList = () => {
     return new Promise(async (resolve, reject) => {
       if (isEE) {
-        const filter = await ipcApiRoute.syncConversationList()
+        const conversations = await ipcApiRoute.syncConversationList()
+        resolve(conversations)
       } else {
-        const filter = await WKSDK.shared().conversationManager.sync({})
+        const conversations = await WKSDK.shared().conversationManager.sync({})
+        resolve(conversations)
       }
-      const resp = await tsddApi.syncConversationList({ msg_count: 1 })
-      let conversations = []
-      if (resp) {
-        resp.conversations.forEach(conversationMap => {
-          let model = Convert.toConversation(conversationMap)
-          conversations.push(model)
-        })
-
-        const users = resp.users
-        if (users && users.length > 0) {
-          for (const user of users) {
-            WKSDK.shared().channelManager.setChannleInfoForCache(Convert.userToChannelInfo(user))
-          }
-        }
-        const groups = resp.groups
-        if (groups && groups.length > 0) {
-          for (const group of groups) {
-            WKSDK.shared().channelManager.setChannleInfoForCache(Convert.groupToChannelInfo(group))
-          }
-        }
-      }
-      const conversationWraps = []
-      if (conversations && conversations.length > 0) {
-        for (const conversation of conversations) {
-          if (
-            conversation.lastMessage?.content &&
-            conversation.lastMessage?.contentType == MessageContentType.text
-          ) {
-            conversation.lastMessage.content.text = ProhibitwordsService.shared.filter(
-              conversation.lastMessage.content.text
-            )
-          }
-          conversationWraps.push(conversation)
-        }
-      }
-      resolve(conversationWraps)
     })
   }
 

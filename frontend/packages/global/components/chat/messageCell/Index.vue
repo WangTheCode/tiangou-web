@@ -4,8 +4,12 @@
       v-if="message.contentType === MessageContentTypeConst.text"
       :item="item"
     />
+    <TimeLine
+      v-else-if="message.contentType === MessageContentTypeConst.time"
+      :message="message"
+    />
     <System
-      v-if="message.contentType <= 2000 && message.contentType >= 1000"
+      v-else-if="message.contentType <= 2000 && message.contentType >= 1000"
       :message="message"
     />
   </div>
@@ -14,9 +18,10 @@
 <script setup>
 import { computed } from 'vue'
 // import { WKSDK, Channel, ChannelTypePerson } from 'wukongimjssdk'
+import { MessageContentTypeConst } from '../../../tsdd/Const'
 import Bubble from './Bubble.vue'
 import System from './System.vue'
-import { MessageContentTypeConst } from '../../../tsdd/Const'
+import TimeLine from './TimeLine.vue'
 const props = defineProps({
   item: {
     type: Object,
