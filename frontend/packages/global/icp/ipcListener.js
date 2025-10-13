@@ -4,10 +4,16 @@
 
 import { ipc } from './ipcRenderer'
 import { useChatStore } from '../stores/index'
-import { ConnectStatus } from 'wukongimjssdk'
+import { ConnectStatus, Channel } from 'wukongimjssdk'
+import { useImListener } from '../hooks/useImListener'
+import { useImCallback } from '../hooks/useImCallback'
+
 // const userStore = useUserStore()
 export const URLS = {
   onConnectStatus: 'controller.web.onConnectStatus',
+  onAddMessageListener: 'controller.web.addMessageListener',
+  onAddConversationListener: 'controller.web.addConversationListener',
+  onSyncConversationList: 'controller.web.syncConversationList',
 }
 
 export default class ipcListener {
@@ -23,6 +29,38 @@ export default class ipcListener {
       } else {
         chatStore.setConnectStatus('error')
       }
+    })
+  }
+  static onAddMessageListener = () => {
+    ipc.removeAllListeners(URLS.onAddMessageListener)
+    ipc.on(URLS.onAddMessageListener, (_e, result) => {
+      console.log('📨 tcp收到消息:', result)
+    })
+  }
+  static onAddConversationListener = () => {
+    ipc.removeAllListeners(URLS.onAddConversationListener)
+    ipc.on(URLS.onAddConversationListener, (_e, result) => {
+      console.log('📨 tcp收到会话:', result)
+      const { conversationListener } = useImListener()
+      if (result.conversation.channel) {
+        result.conversation.channel = new Channel(
+          result.conversation.channel.channelID,
+          result.conversation.channel.channelType
+        )
+      }
+      conversationListener(result.conversation, result.action)
+    })
+  }
+  static onSyncConversationList = () => {
+    ipc.removeAllListeners(URLS.onSyncConversationList)
+    ipc.on(URLS.onSyncConversationList, (_e, result) => {
+      console.log('📨 tcp收到会话列表:', result)
+
+      const { handleSyncConversations } = useImCallback()
+      const conversations = handleSyncConversations(result)
+      const chatStore = useChatStore()
+      chatStore.setConversationList(conversations)
+      console.log('📨 tcp收到会话列表:', conversations)
     })
   }
 }

@@ -27,9 +27,9 @@ class WkimService {
     // 监听连接状态
     sdk.connectManager.addConnectStatusListener(webService.setConnectStatus)
 
-    sdk.chatManager.addMessageListener(message => {
-      logger.info('📨 收到消息:' + JSON.stringify(message))
-    })
+    sdk.chatManager.addMessageListener(webService.addMessageListener)
+
+    sdk.conversationManager.addConversationListener(webService.addConversationListener)
 
     // 监听消息发送状态
     sdk.chatManager.addMessageStatusListener(ack => {
@@ -76,17 +76,26 @@ class WkimService {
     logger.info('syncConversationList')
     try {
       const conversations = await this.sdk.conversationManager.sync({})
-      //   if (conversations && conversations.length > 0) {
-      //     for (const conversation of conversations) {
-      //         if (conversation.lastMessage?.content && conversation.lastMessage?.contentType == MessageContentType.text) {
-      //             conversation.lastMessage.content.text = ProhibitwordsService.shared.filter(conversation.lastMessage.content.text)
-      //         }
-      //         conversationWraps.push(new ConversationWrap(conversation))
-      //     }
-      // }
-      // console.log(`✅ 同步完成，共 ${conversations.length} 个会话`);
-      // logger.info('conversations', 444);
-      return conversations
+
+      // 序列化 Conversation 对象，保留 getter 属性
+      const serializedConversations = conversations.map(conversation => ({
+        // 基础属性
+        channel: conversation.channel,
+        unread: conversation.unread,
+        timestamp: conversation.timestamp,
+        lastMessage: conversation.lastMessage,
+        extra: conversation.extra,
+        simpleReminders: conversation.simpleReminders,
+
+        // Getter 属性 - 手动获取值并作为普通属性
+        channelInfo: conversation.channelInfo,
+        isMentionMe: conversation.isMentionMe,
+        logicUnread: conversation.logicUnread,
+        reminders: conversation.reminders,
+        remoteExtra: conversation.remoteExtra,
+      }))
+
+      return serializedConversations
     } catch (error) {
       return []
     }

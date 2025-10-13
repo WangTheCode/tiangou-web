@@ -38,13 +38,14 @@ export const useWKSDK = () => {
         }
       })
 
-      const { initImCallback } = useImCallback()
-      initImCallback()
+      // const { initImCallback } = useImCallback()
+      // initImCallback()
 
-      const { messageListener, messageStatusListener } = useImListener()
+      const { messageListener, messageStatusListener, conversationListener } = useImListener()
 
       WKSDK.shared().chatManager.addMessageListener(messageListener)
       WKSDK.shared().chatManager.addMessageStatusListener(messageStatusListener)
+      WKSDK.shared().conversationManager.addConversationListener(conversationListener)
 
       // WKSDK.shared().chatManager.addMessageListener(message => {
       //   console.log('📨 收到消息:' + JSON.stringify(message))

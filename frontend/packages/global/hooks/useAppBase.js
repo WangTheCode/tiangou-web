@@ -64,6 +64,9 @@ export const useAppBase = () => {
     }
     if (isEE) {
       ipcListener.onConnectStatus()
+      ipcListener.onAddMessageListener()
+      ipcListener.onAddConversationListener()
+      ipcListener.onSyncConversationList()
     }
   })
 }

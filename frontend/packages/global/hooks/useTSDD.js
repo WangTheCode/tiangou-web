@@ -3,15 +3,17 @@ import Cache from '../utils/cache'
 import { isEE } from '../icp/ipcRenderer'
 import { useWKSDK } from './useWKSDK'
 import ipcApiRoute from '../icp/ipcRoute'
-import WKSDK, { MessageContentType } from 'wukongimjssdk'
+import WKSDK, { Channel } from 'wukongimjssdk'
 import { ProhibitwordsService } from '../tsdd/ProhibitwordsService'
 import { ConversationWrap } from '../tsdd/ConversationWrap'
 import tsddApi from '../api/tsdd'
 import { Convert } from '../tsdd/Convert'
+import { useImCallback } from './useImCallback'
+import { useChatStore } from '../stores/index'
 
 export const useTSDD = () => {
   const { connectWebSocket } = useWKSDK()
-
+  const chatStore = useChatStore()
   const getBrandsFromUserAgent = () => {
     const userAgent = navigator.userAgent
 
@@ -81,6 +83,8 @@ export const useTSDD = () => {
   // 连接通信
   const connect = userInfo => {
     return new Promise((resolve, reject) => {
+      const { initImCallback } = useImCallback()
+      initImCallback()
       if (isEE) {
         // ee 走tcp
         ipcApiRoute.connectTcp(userInfo).then(res => {
@@ -101,10 +105,17 @@ export const useTSDD = () => {
   const syncConversationList = () => {
     return new Promise(async (resolve, reject) => {
       if (isEE) {
-        const conversations = await ipcApiRoute.syncConversationList()
-        resolve(conversations)
+        const res = await ipcApiRoute.syncConversationList()
+        // const conversations = res.data.map(item => {
+        //   item.channel = new Channel(item.channel['channelID'], item.channel['channelType'])
+        //   return item
+        // })
+        // console.log('同步会话列表----->', conversations)
+
+        resolve(res.data)
       } else {
         const conversations = await WKSDK.shared().conversationManager.sync({})
+        chatStore.setConversationList(conversations)
         resolve(conversations)
       }
     })

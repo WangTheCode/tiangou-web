@@ -17,6 +17,9 @@ export const useChatStore = defineStore('chat', {
     currentConversation: null,
     sendMessageMode: 'enter',
     chatMessagesByChannelId: {},
+    chatMessagesOfOrigin: [],
+    // 当前对话是否需要设置未读
+    // needSetUnread: false,
   }),
   getters: {},
   actions: {
@@ -33,13 +36,15 @@ export const useChatStore = defineStore('chat', {
       if (status === 'success' && this.conversationList.length === 0) {
         const { syncConversationList } = useTSDD()
         syncConversationList().then(res => {
-          this.conversationList = res
+          // console.log('666', res)
+          // this.conversationList = res
         })
       }
     },
+    setConversationList(conversations) {
+      this.conversationList = conversations
+    },
     setCurrentConversation(conversation) {
-      console.log(conversation)
-
       if (
         this.currentConversation &&
         this.currentConversation.channel &&
@@ -88,6 +93,52 @@ export const useChatStore = defineStore('chat', {
           this.chatMessagesByChannelId[channel.channelID] = conversation.refreshMessages(messages)
         })
     },
+
+    findConversation(channel) {
+      if (this.conversationList) {
+        for (const conversation of this.conversationList) {
+          if (conversation.channel.isEqual(channel)) {
+            return conversation
+          }
+        }
+      }
+    },
+
+    updateConversation(conversation) {
+      console.log('updateConversation----->', this.conversationList, conversation)
+      this.conversationList = this.conversationList.map(item => {
+        if (item.channel.isEqual(conversation.channel)) {
+          item.unread = conversation.unread
+          item.lastMessage = conversation.lastMessage
+          // return { ...item, unread: conversation.unread, lastMessage: conversation.lastMessage }
+        }
+        return item
+      })
+    },
+    sortConversations(conversations) {
+      let newConversations = conversations
+      if (!newConversations) {
+        newConversations = this.conversationList
+      }
+      if (!newConversations || newConversations.length <= 0) {
+        return []
+      }
+      let sortAfter = newConversations.sort((a, b) => {
+        let aScore = a.timestamp
+        let bScore = b.timestamp
+        if (a.extra?.top === 1) {
+          aScore += 1000000000000
+        }
+        if (b.extra?.top === 1) {
+          bScore += 1000000000000
+        }
+        return bScore - aScore
+      })
+      return sortAfter
+    },
+    // setNeedSetUnread(needSetUnread) {
+    //   this.needSetUnread = needSetUnread
+    // },
     // syncConversationList() {
     //   ipcApiRoute.syncConversationList().then((res) => {
     //     console.log(res)

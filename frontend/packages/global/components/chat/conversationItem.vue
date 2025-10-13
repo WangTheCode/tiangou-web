@@ -26,7 +26,7 @@
           <h4 class="truncate">{{ channelInfo.orgData.displayName }}</h4>
           <span
             v-if="channelInfo.orgData.identityIcon"
-            class="flex-shrink-0 ml-1"
+            class="flex-shrink-0 ml-1 pt-2"
           >
             <img
               :style="{
@@ -68,16 +68,26 @@
         </div>
       </div>
       <div
-        class="text-xs truncate leading-4"
+        class="text-xs truncate leading-4 flex items-center"
         :class="isCurrent ? 'text-white/80' : 'text-gray-500'"
       >
-        <label
-          v-for="r in item.simpleReminders"
-          :key="r.reminderID"
+        <div>
+          <label
+            v-for="r in item.simpleReminders"
+            :key="r.reminderID"
+          >
+            {{ r.text }}
+          </label>
+        </div>
+        <div
+          class="flex-1"
+          style="width: calc(100% - 20px)"
         >
-          {{ r.text }}
-        </label>
-        <span>{{ lastContent(item) }}</span>
+          <div class="truncate w-full">{{ lastContent(item) }}</div>
+        </div>
+        <div v-if="item.unread > 0">
+          <Badge :count="item.unread" />
+        </div>
       </div>
     </div>
   </div>
@@ -89,6 +99,7 @@ import { avatarChannel } from '@global/tsdd/index'
 import { getTimeStringAutoShort2 } from '@global/utils/chat/time'
 import { getRevokeTip, getFlameTip } from '@global/utils/chat/index'
 import WKSDK, { Channel, ChannelTypePerson } from 'wukongimjssdk'
+import Badge from '@global/components/Badge.vue'
 
 const props = defineProps({
   item: {

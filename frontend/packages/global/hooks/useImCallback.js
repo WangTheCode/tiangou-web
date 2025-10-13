@@ -71,46 +71,75 @@ export const useImCallback = () => {
     }
   }
 
+  const handleSyncConversations = data => {
+    let conversations = []
+    if (data) {
+      // 先将 channelInfo 添加到 channelManager 缓存
+      const users = data.users
+      if (users && users.length > 0) {
+        for (const user of users) {
+          WKSDK.shared().channelManager.setChannleInfoForCache(Convert.userToChannelInfo(user))
+        }
+      }
+      const groups = data.groups
+      if (groups && groups.length > 0) {
+        for (const group of groups) {
+          WKSDK.shared().channelManager.setChannleInfoForCache(Convert.groupToChannelInfo(group))
+        }
+      }
+
+      // 然后再创建 conversation 对象（此时 channelInfo 已经在缓存中）
+      data.conversations.forEach(conversationMap => {
+        let model = Convert.toConversation(conversationMap)
+        conversations.push(model)
+      })
+
+      // 过滤敏感词
+      // const conversationWraps = []
+      // if (conversations && conversations.length > 0) {
+      //   for (const conversation of conversations) {
+      //     if (
+      //       conversation.lastMessage?.content &&
+      //       conversation.lastMessage?.contentType == MessageContentType.text
+      //     ) {
+      //       conversation.lastMessage.content.text = ProhibitwordsService.shared.filter(
+      //         conversation.lastMessage.content.text
+      //       )
+      //     }
+      //     conversationWraps.push(conversation)
+      //   }
+      // }
+    }
+    return conversations
+  }
+
   const setSyncConversationsCallback = () => {
-    console.log(111)
     WKSDK.shared().config.provider.syncConversationsCallback = async filter => {
       const resp = await tsddApi.syncConversationList({ msg_count: 1 })
-      let conversations = []
-      if (resp) {
-        resp.conversations.forEach(conversationMap => {
-          let model = Convert.toConversation(conversationMap)
-          conversations.push(model)
-        })
+      // let conversations = []
+      // if (resp) {
+      //   // 先将 channelInfo 添加到 channelManager 缓存
+      //   const users = resp.users
+      //   if (users && users.length > 0) {
+      //     for (const user of users) {
+      //       WKSDK.shared().channelManager.setChannleInfoForCache(Convert.userToChannelInfo(user))
+      //     }
+      //   }
+      //   const groups = resp.groups
+      //   if (groups && groups.length > 0) {
+      //     for (const group of groups) {
+      //       WKSDK.shared().channelManager.setChannleInfoForCache(Convert.groupToChannelInfo(group))
+      //     }
+      //   }
 
-        const users = resp.users
-        if (users && users.length > 0) {
-          for (const user of users) {
-            WKSDK.shared().channelManager.setChannleInfoForCache(Convert.userToChannelInfo(user))
-          }
-        }
-        const groups = resp.groups
-        if (groups && groups.length > 0) {
-          for (const group of groups) {
-            WKSDK.shared().channelManager.setChannleInfoForCache(Convert.groupToChannelInfo(group))
-          }
-        }
-      }
-      const conversationWraps = []
-      if (conversations && conversations.length > 0) {
-        for (const conversation of conversations) {
-          if (
-            conversation.lastMessage?.content &&
-            conversation.lastMessage?.contentType == MessageContentType.text
-          ) {
-            conversation.lastMessage.content.text = ProhibitwordsService.shared.filter(
-              conversation.lastMessage.content.text
-            )
-          }
-          conversationWraps.push(conversation)
-        }
-      }
+      //   // 然后再创建 conversation 对象（此时 channelInfo 已经在缓存中）
+      //   resp.conversations.forEach(conversationMap => {
+      //     let model = Convert.toConversation(conversationMap)
+      //     conversations.push(model)
+      //   })
+      // }
 
-      return conversationWraps
+      return handleSyncConversations(resp)
     }
   }
 
@@ -121,5 +150,6 @@ export const useImCallback = () => {
 
   return {
     initImCallback,
+    handleSyncConversations,
   }
 }
