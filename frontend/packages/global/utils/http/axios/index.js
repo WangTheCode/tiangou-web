@@ -101,4 +101,7 @@ export function post(config) {
   return request({ ...config, method: 'POST' })
 }
 
+export function put(config) {
+  return request({ ...config, method: 'PUT' })
+}
 export default request

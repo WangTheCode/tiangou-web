@@ -7,24 +7,32 @@ import ipcApiRoute from '../../icp/ipcRoute'
 import { Convert } from '../../tsdd/Convert'
 import { Conversation } from '../../tsdd/Conversation'
 import { useWKSDK } from '../../hooks/useWKSDK'
-import { Channel, ChannelTypePerson } from 'wukongimjssdk'
+import { WKSDK, Channel, ChannelTypePerson, MessageText, Mention, Setting } from 'wukongimjssdk'
+import { avatarChannel } from '@global/tsdd/index'
+import { useAppOutsideStore } from '@global/stores/modules/app'
+import { MessageWrap } from '../../tsdd/Model'
 
 export const useChatStore = defineStore('chat', {
   state: () => ({
+    connectUserInfo: null,
     // 通信连接状态
     connectStatus: 'loading', // loading, success, error
     conversationList: [],
     currentConversation: null,
     sendMessageMode: 'enter',
-    chatMessagesByChannelId: {},
+    chatMessages: [],
     chatMessagesOfOrigin: [],
     // 当前对话是否需要设置未读
     // needSetUnread: false,
+    // 用户设置是否显示消息通知,1=通知,0=不通知
+    isMessageNotification: 1,
+    sendMessageQueue: {},
   }),
   getters: {},
   actions: {
     connect(userInfo) {
       this.connectStatus = 'loading'
+      this.connectUserInfo = userInfo
       const { connect } = useTSDD()
       connect(userInfo).then(() => {
         const { fetchChannelInfoIfNeed } = useWKSDK()
@@ -52,6 +60,7 @@ export const useChatStore = defineStore('chat', {
       ) {
         return
       }
+      WKSDK.shared().conversationManager.openConversation = conversation
       const { fetchChannelInfoIfNeed } = useWKSDK()
       this.currentConversation = conversation
       fetchChannelInfoIfNeed(conversation.channel)
@@ -90,7 +99,26 @@ export const useChatStore = defineStore('chat', {
           }
 
           const conversation = new Conversation()
-          this.chatMessagesByChannelId[channel.channelID] = conversation.refreshMessages(messages)
+          this.chatMessagesOfOrigin = messages
+          this.chatMessages = conversation.refreshMessages(messages)
+          this.markConversationUnread(channel, 0)
+        })
+    },
+    // 标记会话已读
+    markConversationUnread(channel, unread) {
+      tsddApi
+        .clearUnread({
+          channel_id: channel.channelID,
+          channel_type: channel.channelType,
+          unread: unread > 0 ? unread : 0,
+        })
+        .then(() => {
+          this.conversationList = this.conversationList.map(item => {
+            if (item.channel.isEqual(channel)) {
+              item.unread = unread > 0 ? unread : 0
+            }
+            return item
+          })
         })
     },
 
@@ -105,7 +133,6 @@ export const useChatStore = defineStore('chat', {
     },
 
     updateConversation(conversation) {
-      console.log('updateConversation----->', this.conversationList, conversation)
       this.conversationList = this.conversationList.map(item => {
         if (item.channel.isEqual(conversation.channel)) {
           item.unread = conversation.unread
@@ -136,15 +163,115 @@ export const useChatStore = defineStore('chat', {
       })
       return sortAfter
     },
-    // setNeedSetUnread(needSetUnread) {
-    //   this.needSetUnread = needSetUnread
-    // },
-    // syncConversationList() {
-    //   ipcApiRoute.syncConversationList().then((res) => {
-    //     console.log(res)
-    //     this.conversationList = res
-    //   })
-    // }
+    tipsAudio() {
+      const appStore = useAppOutsideStore()
+      appStore.setPlayAudioUrl('')
+      setTimeout(() => {
+        appStore.setPlayAudioUrl('/audio/msg-tip.mp3')
+      }, 10)
+    },
+    sendNotification(message, description) {
+      let channelInfo = WKSDK.shared().channelManager.getChannelInfo(message.channel)
+      if (channelInfo && channelInfo.mute) {
+        return
+      }
+      if (this.isMessageNotification === 0) {
+        // 用户设置不显示消息通知
+        return
+      }
+      if (!message.header.reddot) {
+        // 不显示红点的消息不发通知
+        return
+      }
+      if (description == undefined || description === '') {
+        return
+      }
+      if (message.header.noPersist) {
+        return
+      }
+      if (WKSDK.shared().isSystemMessage(message.contentType)) {
+        // 系统消息不发通知
+        return
+      }
+      if (message.fromUID === this.connectUserInfo.uid) {
+        // 自己发的消息不发通知
+        return
+      }
+      this.tipsAudio()
+      console.log('sendNotification----->', message, description)
+      // if (window.Notification && Notification.permission !== 'denied') {
+      //   if (this.messageNotification) {
+      //     if (this.messageNotificationTimeoutId) {
+      //       clearTimeout(this.messageNotificationTimeoutId)
+      //     }
+      //     this.messageNotification.close()
+      //   }
+
+      //   this.messageNotification = new Notification(
+      //     channelInfo ? channelInfo.orgData.displayName : '通知',
+      //     {
+      //       body: description,
+      //       icon: avatarChannel(message.channel),
+      //       lang: 'zh-CN',
+      //       tag: 'message',
+      //       // renotify: true,
+      //     }
+      //   )
+
+      //   this.messageNotification.onclick = () => {
+      //     this.messageNotification?.close()
+      //     window.focus()
+      //     // TODO: 打开会话
+      //     console.log('TODO: 打开会话')
+
+      //     // WKApp.endpoints.showConversation(message.channel)
+      //   }
+      //   this.messageNotification.onshow = () => {
+      //     console.log('显示通知')
+      //   }
+      //   this.messageNotification.onclose = () => {
+      //     console.log('通知关闭')
+      //   }
+      //   // 5秒后关闭消息框
+      //   const self = this
+      //   this.messageNotificationTimeoutId = window.setTimeout(function () {
+      //     self.messageNotification?.close()
+      //   }, 5000)
+      // }
+    },
+    appendMessage(messageWrap) {
+      // const senderIsSelf = messageWrap.fromUID === this.connectUserInfo.uid
+      this.chatMessagesOfOrigin.push(messageWrap)
+      const conversation = new Conversation()
+      this.chatMessages = conversation.refreshMessages(this.chatMessagesOfOrigin)
+    },
+    async sendMessage(data) {
+      const { sendMessage } = useTSDD()
+      // const message = await WKSDK.shared().chatManager.send(content, channel, setting)
+      const message = await sendMessage(data)
+      const messageWrap = new MessageWrap(message)
+      this.addSendMessageToQueue(messageWrap)
+    },
+    // 添加消息到发送队列
+    addSendMessageToQueue(messageWrap) {
+      const channelKey = messageWrap.channel.getChannelKey()
+      if (this.sendMessageQueue[channelKey]) {
+        this.sendMessageQueue[channelKey].push(messageWrap)
+        return
+      }
+      this.sendMessageQueue[channelKey] = [messageWrap]
+    },
+    // 获取发送队列
+    getSendMessageQueue(channelKey) {
+      return this.sendMessageQueue[channelKey]
+    },
+    // 删除消息从发送队列
+    removeSendMessageFromQueue(clientSeq, channel) {
+      const channelKey = channel.getChannelKey()
+      this.sendMessageQueue[channelKey] = this.sendMessageQueue[channelKey].filter(
+        item => item.clientSeq !== clientSeq
+      )
+    },
   },
 })
 

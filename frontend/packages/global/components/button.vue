@@ -4,14 +4,13 @@
     style="overflow: unset"
     :disabled="disabled"
     :class="{ 'opacity-50': disabled }"
-    @click="handleClick"
   >
     <slot />
   </button>
 </template>
 
 <script setup>
-const props = defineProps({
+defineProps({
   color: {
     type: String,
     default: '',
@@ -21,13 +20,6 @@ const props = defineProps({
     default: false,
   },
 })
-
-const emit = defineEmits(['click'])
-
-const handleClick = () => {
-  if (props.disabled) return
-  emit('click')
-}
 </script>
 
 <style lang="less" scoped></style>

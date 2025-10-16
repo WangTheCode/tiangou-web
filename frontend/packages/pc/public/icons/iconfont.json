@@ -6,6 +6,111 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "5800661",
+      "name": "菜单",
+      "font_class": "menu-dot",
+      "unicode": "e60c",
+      "unicode_decimal": 58892
+    },
+    {
+      "icon_id": "9338640",
+      "name": "搜索",
+      "font_class": "search",
+      "unicode": "e66c",
+      "unicode_decimal": 58988
+    },
+    {
+      "icon_id": "27992185",
+      "name": "添加",
+      "font_class": "add",
+      "unicode": "e6ea",
+      "unicode_decimal": 59114
+    },
+    {
+      "icon_id": "201525",
+      "name": "礼物 活动",
+      "font_class": "activity",
+      "unicode": "e601",
+      "unicode_decimal": 58881
+    },
+    {
+      "icon_id": "1071024",
+      "name": "表情1",
+      "font_class": "emoji",
+      "unicode": "e657",
+      "unicode_decimal": 58967
+    },
+    {
+      "icon_id": "2019601",
+      "name": "附件",
+      "font_class": "attachment",
+      "unicode": "e620",
+      "unicode_decimal": 58912
+    },
+    {
+      "icon_id": "11372711",
+      "name": "图片",
+      "font_class": "image",
+      "unicode": "e8ba",
+      "unicode_decimal": 59578
+    },
+    {
+      "icon_id": "19849324",
+      "name": "盒子",
+      "font_class": "box",
+      "unicode": "e602",
+      "unicode_decimal": 58882
+    },
+    {
+      "icon_id": "24056319",
+      "name": "电话",
+      "font_class": "tel",
+      "unicode": "e621",
+      "unicode_decimal": 58913
+    },
+    {
+      "icon_id": "38322603",
+      "name": "视频03-L",
+      "font_class": "video",
+      "unicode": "e655",
+      "unicode_decimal": 58965
+    },
+    {
+      "icon_id": "9277382",
+      "name": "打勾",
+      "font_class": "message-success",
+      "unicode": "e6e7",
+      "unicode_decimal": 59111
+    },
+    {
+      "icon_id": "4183394",
+      "name": "AK-YK_感叹号",
+      "font_class": "tip",
+      "unicode": "e600",
+      "unicode_decimal": 58880
+    },
+    {
+      "icon_id": "8675081",
+      "name": "错误",
+      "font_class": "error",
+      "unicode": "e628",
+      "unicode_decimal": 58920
+    },
+    {
+      "icon_id": "32730030",
+      "name": "时间",
+      "font_class": "time",
+      "unicode": "e744",
+      "unicode_decimal": 59204
+    },
+    {
+      "icon_id": "36642156",
+      "name": "已读",
+      "font_class": "message-read",
+      "unicode": "e680",
+      "unicode_decimal": 59008
+    },
+    {
       "icon_id": "45724633",
       "name": "bubble-tail-left",
       "font_class": "bubble-tail-left",

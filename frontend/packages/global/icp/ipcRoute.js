@@ -38,6 +38,7 @@ export const URLS = {
   connectTcp: 'controller/chatManage/connectTcp',
   syncConversationList: 'controller/chatManage/syncConversationList',
   setImConfig: 'controller/chatManage/setImConfig',
+  sendMessage: 'controller/chatManage/sendMessage',
 }
 
 const apis = {}

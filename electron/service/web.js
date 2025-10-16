@@ -25,6 +25,24 @@ function serializeConversation(conversation) {
     remoteExtra: conversation.remoteExtra,
   }
 }
+function serializeMessage(message) {
+  if (!message) return message
+
+  return {
+    ...message,
+    contentType: message.contentType,
+    send: message.send,
+  }
+}
+function serializeMessageContent(content) {
+  if (!content) return content
+
+  return {
+    ...content,
+    contentType: content.contentType,
+    conversationDigest: content.conversationDigest,
+  }
+}
 
 /**
  * 发送消息到web监听器
@@ -42,10 +60,13 @@ class WebService {
     }
   }
   addMessageListener(message) {
+    if (message.content) {
+      message.content = serializeMessageContent(message.content)
+    }
     const channel = 'controller.web.addMessageListener'
     const mainWindow = BrowserWindow.getAllWindows().find(win => win.id == 1)
     if (mainWindow) {
-      mainWindow.webContents.send(channel, message)
+      mainWindow.webContents.send(channel, serializeMessage(message))
     }
   }
   addConversationListener(conversation, action) {

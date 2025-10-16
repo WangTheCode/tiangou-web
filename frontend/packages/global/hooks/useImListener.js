@@ -26,7 +26,7 @@ export const useImListener = () => {
       message.order = OrderFactor * message.messageSeq
       return
     }
-    const maxMessage = this.getMessageMax()
+    const maxMessage = chatStore.getMessageMax()
 
     if (maxMessage) {
       if (message.clientMsgNo === maxMessage.clientMsgNo) {
@@ -61,8 +61,8 @@ export const useImListener = () => {
     //     chatStore.setNeedSetUnread(true)
     // }
     const messageWrap = new MessageWrap(message)
-    this.fillOrder(messageWrap)
-    this.appendMessage(messageWrap)
+    fillOrder(messageWrap)
+    chatStore.appendMessage(messageWrap)
   }
 
   // 监听消息发送状态

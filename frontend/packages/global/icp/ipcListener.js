@@ -4,7 +4,7 @@
 
 import { ipc } from './ipcRenderer'
 import { useChatStore } from '../stores/index'
-import { ConnectStatus, Channel } from 'wukongimjssdk'
+import { ConnectStatus, Channel, Message } from 'wukongimjssdk'
 import { useImListener } from '../hooks/useImListener'
 import { useImCallback } from '../hooks/useImCallback'
 
@@ -35,6 +35,11 @@ export default class ipcListener {
     ipc.removeAllListeners(URLS.onAddMessageListener)
     ipc.on(URLS.onAddMessageListener, (_e, result) => {
       console.log('📨 tcp收到消息:', result)
+      const { messageListener } = useImListener()
+      result.channel = new Channel(result.channel.channelID, result.channel.channelType)
+      // result.message = new Message(result.message)
+      // result.message.contentType = result.message.contentType
+      messageListener(result)
     })
   }
   static onAddConversationListener = () => {

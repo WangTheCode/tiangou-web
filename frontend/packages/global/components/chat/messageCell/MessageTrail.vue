@@ -15,15 +15,15 @@
     <template v-if="message.send && message.status !== MessageStatus.Fail">
       <i
         v-if="message.status == MessageStatus.Wait"
-        class="icon-message-pending"
+        class="iconfont icon-time"
       ></i>
       <i
         v-else-if="message.readedCount >= 1"
-        class="icon-message-read"
+        class="iconfont icon-message-read"
       ></i>
       <i
         v-else
-        class="icon-message-succeeded"
+        class="iconfont icon-message-success"
       ></i>
     </template>
   </span>

@@ -7,6 +7,8 @@ const {
   MessageText,
   Channel,
   ChannelTypePerson,
+  Mention,
+  Setting,
 } = require('wukongimjstcpsdk')
 const { post, setHttpOption } = require('../utils/http')
 const { dataSourceService } = require('./dataSource')
@@ -73,7 +75,6 @@ class WkimService {
   }
 
   async syncConversationList() {
-    logger.info('syncConversationList')
     try {
       const conversations = await this.sdk.conversationManager.sync({})
 
@@ -101,12 +102,28 @@ class WkimService {
     }
   }
 
-  sendText({ toUid, text }) {
-    const channel = WKChannel.personWithChannelID(toUid)
-    logger.info('sendText', channel)
-    const content = new WKTextContent(text)
-    logger.info('sendText content', content)
-    return this.sdk.chatManager.sendMessage(content, channel)
+  async sendMessage(data) {
+    const { text, mention } = data
+    const content = new MessageText(text)
+    if (mention) {
+      const mn = new Mention()
+      mn.all = mention.all
+      mn.uids = mention.uids
+      content.mention = mn
+    }
+    const channel = this.currentConversation.channel
+    const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel)
+    let setting = new Setting()
+    if (channelInfo?.orgData.receipt === 1) {
+      setting.receiptEnabled = true
+    }
+    const message = await this.sdk.chatManager.send(content, channel, setting)
+    return message
+    // const channel = WKChannel.personWithChannelID(toUid)
+    // logger.info('sendText', channel)
+    // const content = new WKTextContent(text)
+    // logger.info('sendText content', content)
+    // return this.sdk.chatManager.sendMessage(content, channel)
   }
 
   stop() {

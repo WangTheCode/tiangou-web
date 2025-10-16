@@ -9,6 +9,7 @@
     <i
       v-if="icon"
       :class="`iconfont ${icon}`"
+      :style="{ fontSize: iconSize }"
     />
   </button>
 </template>
@@ -35,6 +36,10 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: false,
+  },
+  iconSize: {
+    type: String,
+    default: '16px',
   },
 })
 

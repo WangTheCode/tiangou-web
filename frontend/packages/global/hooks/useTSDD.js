@@ -3,7 +3,7 @@ import Cache from '../utils/cache'
 import { isEE } from '../icp/ipcRenderer'
 import { useWKSDK } from './useWKSDK'
 import ipcApiRoute from '../icp/ipcRoute'
-import WKSDK, { Channel } from 'wukongimjssdk'
+import WKSDK, { Channel, MessageText, Mention, Setting } from 'wukongimjssdk'
 import { ProhibitwordsService } from '../tsdd/ProhibitwordsService'
 import { ConversationWrap } from '../tsdd/ConversationWrap'
 import tsddApi from '../api/tsdd'
@@ -106,17 +106,39 @@ export const useTSDD = () => {
     return new Promise(async (resolve, reject) => {
       if (isEE) {
         const res = await ipcApiRoute.syncConversationList()
-        // const conversations = res.data.map(item => {
-        //   item.channel = new Channel(item.channel['channelID'], item.channel['channelType'])
-        //   return item
-        // })
-        // console.log('同步会话列表----->', conversations)
-
         resolve(res.data)
       } else {
         const conversations = await WKSDK.shared().conversationManager.sync({})
         chatStore.setConversationList(conversations)
         resolve(conversations)
+      }
+    })
+  }
+
+  const sendMessage = data => {
+    return new Promise(async (resolve, reject) => {
+      if (isEE) {
+        const res = await ipcApiRoute.sendMessage(data)
+        console.log('tcp sendMessage----->', res)
+        resolve(res)
+      } else {
+        const { text, mention } = data
+        const content = new MessageText(text)
+        if (mention) {
+          const mn = new Mention()
+          mn.all = mention.all
+          mn.uids = mention.uids
+          content.mention = mn
+        }
+        const channel = this.currentConversation.channel
+        const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel)
+        let setting = new Setting()
+        if (channelInfo?.orgData.receipt === 1) {
+          setting.receiptEnabled = true
+        }
+        const message = await WKSDK.shared().chatManager.send(content, channel, setting)
+        console.log('tcp sendMessage----->', message)
+        resolve(message)
       }
     })
   }
@@ -129,5 +151,6 @@ export const useTSDD = () => {
     getDeviceInfo,
     connect,
     syncConversationList,
+    sendMessage,
   }
 }

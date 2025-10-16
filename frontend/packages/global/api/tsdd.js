@@ -1,10 +1,11 @@
-import { post, get } from '../utils/http/axios'
+import { post, get, put } from '../utils/http/axios'
 import { getUrl } from './index'
 export const URLS = {
   reminderSync: '/message/reminder/sync',
   syncConversationList: '/conversation/sync',
   syncChannelMessageList: '/message/channel/sync',
   getChannelInfo: '/channels/{channelID}/{channelType}',
+  clearUnread: 'coversation/clearUnread',
 }
 
 export default class tsddApi {
@@ -12,6 +13,7 @@ export default class tsddApi {
   static syncConversationList = async data => post({ url: URLS.syncConversationList, data })
   static syncChannelMessageList = async data => post({ url: URLS.syncChannelMessageList, data })
   static getChannelInfo = async data => get({ url: getUrl(URLS.getChannelInfo, data) })
+  static clearUnread = async data => put({ url: URLS.clearUnread, data })
 }
 
 // const apis = {}

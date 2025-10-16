@@ -43,35 +43,18 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick, watch } from 'vue'
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 import MessageCell from './messageCell/Index.vue'
 import { useChatStore } from '../../stores/index'
 
 const chatStore = useChatStore()
-// const chatMessages = ref([
-//   {
-//     id: 1,
-//     content: 'Hello, world!',
-//     position: 'left',
-//   },
-//   {
-//     id: 2,
-//     content: 'Hello, world!',
-//     position: 'right',
-//   },
-// ])
+const scrollerRef = ref(null)
+
 const chatMessages = computed(() => {
-  if (
-    chatStore.chatMessagesByChannelId &&
-    chatStore.currentConversation &&
-    chatStore.currentConversation.channel &&
-    chatStore.currentConversation.channel.channelID &&
-    chatStore.chatMessagesByChannelId[chatStore.currentConversation.channel.channelID]
-  ) {
-    console.log(chatStore.chatMessagesByChannelId[chatStore.currentConversation.channel.channelID])
-    return chatStore.chatMessagesByChannelId[chatStore.currentConversation.channel.channelID]
+  if (chatStore.chatMessages) {
+    return chatStore.chatMessages
   }
   return []
 })
@@ -88,7 +71,40 @@ const onScroll = e => {
   }
 }
 
-const scrollToBottom = () => {}
+const scrollToBottom = () => {
+  nextTick(() => {
+    if (scrollerRef.value) {
+      // 方法1: 使用 DynamicScroller 的 scrollToBottom 方法
+      if (typeof scrollerRef.value.scrollToBottom === 'function') {
+        scrollerRef.value.scrollToBottom()
+      } else if (scrollerRef.value.$el) {
+        // 方法2: 直接操作 DOM 元素
+        const scrollContainer = scrollerRef.value.$el.querySelector(
+          '.vue-recycle-scroller__item-wrapper'
+        )?.parentElement
+        if (scrollContainer) {
+          scrollContainer.scrollTop = scrollContainer.scrollHeight
+        }
+      }
+    }
+  })
+}
+
+// 监听消息列表变化，自动滚动到底部
+watch(
+  chatMessages,
+  newMessages => {
+    if (newMessages && newMessages.length > 0) {
+      scrollToBottom()
+    }
+  },
+  { deep: true }
+)
+
+// 暴露方法给父组件
+defineExpose({
+  scrollToBottom,
+})
 </script>
 
 <style lang="less" scoped>
