@@ -34,13 +34,7 @@ class WkimService {
     sdk.conversationManager.addConversationListener(webService.addConversationListener)
 
     // 监听消息发送状态
-    sdk.chatManager.addMessageStatusListener(ack => {
-      if (ack.reasonCode === 1) {
-        console.log('✅ 消息发送成功')
-      } else {
-        console.log(`❌ 消息发送失败 (错误码: ${ack.reasonCode})`)
-      }
-    })
+    sdk.chatManager.addMessageStatusListener(webService.addMessageStatusListener)
 
     dataSourceService.setSyncConversationsCallback(sdk)
 
@@ -103,7 +97,7 @@ class WkimService {
   }
 
   async sendMessage(data) {
-    const { text, mention } = data
+    const { text, mention, channel } = data
     const content = new MessageText(text)
     if (mention) {
       const mn = new Mention()
@@ -111,8 +105,8 @@ class WkimService {
       mn.uids = mention.uids
       content.mention = mn
     }
-    const channel = this.currentConversation.channel
-    const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel)
+    const channelObject = new Channel(channel.channelID, channel.channelType)
+    const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channelObject)
     let setting = new Setting()
     if (channelInfo?.orgData.receipt === 1) {
       setting.receiptEnabled = true

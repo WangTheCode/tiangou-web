@@ -247,10 +247,12 @@ export const useChatStore = defineStore('chat', {
     },
     async sendMessage(data) {
       const { sendMessage } = useTSDD()
+      console.log('chatStore sendMessage----->', data)
       // const message = await WKSDK.shared().chatManager.send(content, channel, setting)
       const message = await sendMessage(data)
-      const messageWrap = new MessageWrap(message)
-      this.addSendMessageToQueue(messageWrap)
+      console.log('sendMessage----->', message)
+      // const messageWrap = new MessageWrap(message)
+      // this.addSendMessageToQueue(messageWrap)
     },
     // 添加消息到发送队列
     addSendMessageToQueue(messageWrap) {
@@ -271,6 +273,18 @@ export const useChatStore = defineStore('chat', {
       this.sendMessageQueue[channelKey] = this.sendMessageQueue[channelKey].filter(
         item => item.clientSeq !== clientSeq
       )
+    },
+    // 通过clientSeq获取消息对象
+    findMessageWithClientSeq(clientSeq) {
+      if (!this.chatMessagesOfOrigin || this.chatMessagesOfOrigin.length <= 0) {
+        return
+      }
+      for (let i = this.chatMessagesOfOrigin.length - 1; i >= 0; i--) {
+        const message = this.chatMessagesOfOrigin[i]
+        if (message.clientSeq === clientSeq) {
+          return message
+        }
+      }
     },
   },
 })

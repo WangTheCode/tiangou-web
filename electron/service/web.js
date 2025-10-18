@@ -86,6 +86,13 @@ class WebService {
       mainWindow.webContents.send(channel, data)
     }
   }
+  addMessageStatusListener(ack) {
+    const channel = 'controller.web.addMessageStatusListener'
+    const mainWindow = BrowserWindow.getAllWindows().find(win => win.id == 1)
+    if (mainWindow) {
+      mainWindow.webContents.send(channel, ack)
+    }
+  }
 }
 WebService.toString = () => '[class WebService]'
 

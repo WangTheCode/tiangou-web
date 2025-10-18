@@ -1,6 +1,6 @@
 import { ConnectStatus } from 'wukongimjssdk'
 import { useChatStore } from '../stores/index'
-import WKSDK, { ConversationAction, MessageContentType } from 'wukongimjssdk'
+import WKSDK, { ConversationAction } from 'wukongimjssdk'
 import { ConversationWrap } from '../tsdd/ConversationWrap'
 import { MessageContentTypeConst, OrderFactor } from '../tsdd/Const'
 import { MessageWrap } from '../tsdd/Model'
@@ -66,12 +66,27 @@ export const useImListener = () => {
   }
 
   // 监听消息发送状态
-  const messageStatusListener = ack => {
-    if (ack.reasonCode === 1) {
-      console.log('✅ 消息发送成功')
-    } else {
-      console.log(`❌ 消息发送失败 (错误码: ${ack.reasonCode})`)
+  const messageStatusListener = ackPacket => {
+    const message = chatStore.findMessageWithClientSeq(ackPacket.clientSeq)
+    if (message) {
+      message.message.messageID = ackPacket.messageID.toString()
+      message.message.messageSeq = ackPacket.messageSeq
+      // if (ackPacket.reasonCode === 1) {
+      //     this.updateLastMessageIfNeed(message)
+      //     message.status = MessageStatus.Normal
+      //     this.removeSendingMessageIfNeed(ackPacket.clientSeq, this.channel)
+      // } else {
+      //     message.status = MessageStatus.Fail
+      //     const sendingMessage = this.getSendingMessageWithClientMsgNo(message.clientMsgNo)
+      //     if (sendingMessage) {
+      //         sendingMessage.reasonCode = ackPacket.reasonCode
+      //         this.fillOrder(sendingMessage)
+      //     }
+
+      // }
+      message.reasonCode = ackPacket.reasonCode
     }
+    // chatStore.notifyListener()
   }
 
   const conversationListener = (conversation, action) => {

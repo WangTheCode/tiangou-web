@@ -6,7 +6,7 @@
     <div class="flex-1 flex flex-col">
       <ChatHeader />
       <ChatMessageList />
-      <ChatInput @send-message="onSendMessage" />
+      <ChatInput @send-message="chatStore.sendMessage" />
     </div>
   </div>
 </template>
@@ -24,7 +24,7 @@ import ChatInput from '@global/components/chat/ChatInput.vue'
 
 const userStore = useUserStore()
 const chatStore = useChatStore()
-const onSendMessage = chatStore.sendMessage()
+// const onSendMessage = chatStore.sendMessage()
 </script>
 
 <style lang="less" scoped></style>

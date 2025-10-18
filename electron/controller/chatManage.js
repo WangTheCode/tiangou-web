@@ -27,6 +27,11 @@ class ChatManageController {
     wkimService.setImConfig(json)
     return show(true)
   }
+  async sendMessage(args) {
+    const json = getJson(args)
+    const result = await wkimService.sendMessage(json)
+    return show(result)
+  }
 }
 ChatManageController.toString = () => '[class ChatManageController]'
 

@@ -117,7 +117,12 @@ export const useTSDD = () => {
 
   const sendMessage = data => {
     return new Promise(async (resolve, reject) => {
+      if (!chatStore.currentConversation) {
+        reject(new Error('当前会话不存在'))
+        return
+      }
       if (isEE) {
+        data.channel = chatStore.currentConversation.channel
         const res = await ipcApiRoute.sendMessage(data)
         console.log('tcp sendMessage----->', res)
         resolve(res)
@@ -130,7 +135,7 @@ export const useTSDD = () => {
           mn.uids = mention.uids
           content.mention = mn
         }
-        const channel = this.currentConversation.channel
+        const channel = chatStore.currentConversation.channel
         const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel)
         let setting = new Setting()
         if (channelInfo?.orgData.receipt === 1) {
