@@ -3,34 +3,17 @@
  * @description 按需加载，自动引入
  */
 import AutoImport from 'unplugin-auto-import/vite'
-
+import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 export const AutoImportDeps = () => {
   return AutoImport({
+    // dts: 'types/auto-imports.d.ts',
+    resolvers: [ElementPlusResolver()],
     imports: [
       'vue',
       'pinia',
       'vue-router',
       {
-        '@vueuse/core': [
-          'useStorage',
-          'useLocalStorage',
-          'useSessionStorage',
-          'useDark',
-          'useToggle',
-          'useClipboard',
-          'useEventListener',
-          'useWindowSize',
-          'useResizeObserver',
-          'useIntersectionObserver',
-          'useMutationObserver',
-          'useWebSocket',
-          'useNow',
-          'useTimestamp',
-          'useInterval',
-          'useTimeout',
-          'useDebounce',
-          'useThrottle',
-        ],
+        '@vueuse/core': [],
       },
     ],
   })

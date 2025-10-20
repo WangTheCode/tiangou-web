@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.v3-emoji-picker {
+  box-shadow: none;
+}
+
+.bubble-base {
+  padding: 10px;
+  line-height: 20px;
+  margin-bottom: 4px;
+}

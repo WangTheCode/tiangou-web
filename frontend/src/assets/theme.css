@@ -1,0 +1,32 @@
+:root {
+  --page-background: #fff;
+  --text-color: #333;
+  --scrollbar-color: rgba(157, 165, 183, 0.5);
+  --color-primary: #1890ff;
+
+  --border-line-color: #ddd;
+
+  --font-color-grey: #999;
+  --sider-bg: #f5f8fd;
+  --primary-color: #1677ff;
+  --primary-color-grey: #e6f4ff;
+  --hover-bg-grey: rgba(0, 0, 0, 0.04);
+  --slot-area-color: rgba(230, 61, 61, 0.5);
+  --mask-color: rgba(0, 0, 0, 0.3);
+  --text-color: #333;
+  --success-color: #52c41a;
+  --warning-color: #faad14;
+  --error-color: #ff4d4f;
+}
+.theme-light {
+  --page-background: #fff;
+  --text-color: #333;
+  --scrollbar-color: rgba(157, 165, 183, 0.5);
+  --color-primary: #1890ff;
+}
+.theme-dark {
+  --page-background: #1f1f1f;
+  --text-color: #fff;
+  --scrollbar-color: rgba(157, 165, 183, 0.5);
+  --color-primary: #1890ff;
+}
