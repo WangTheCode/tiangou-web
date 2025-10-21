@@ -6,11 +6,7 @@
     @click="handleClick"
   >
     <slot />
-    <i
-      v-if="icon"
-      :class="`iconfont ${icon}`"
-      :style="{ fontSize: iconSize }"
-    />
+    <i v-if="icon" :class="`iconfont ${icon}`" :style="{ fontSize: iconSize }" />
   </button>
 </template>
 
@@ -21,7 +17,7 @@ const props = defineProps({
   size: {
     type: String,
     default: 'md',
-    validator: value => ['sm', 'md', 'lg'].includes(value),
+    validator: (value) => ['sm', 'md', 'lg'].includes(value),
   },
   icon: {
     type: String,
@@ -48,9 +44,9 @@ const emit = defineEmits(['click'])
 // 尺寸类
 const sizeClass = computed(() => {
   const sizes = {
-    sm: 'w-8 h-8 text-sm',
-    md: 'w-10 h-10 text-base',
-    lg: 'w-12 h-12 text-lg',
+    sm: 'w-8 h-8 text-sm leading-8',
+    md: 'w-10 h-10 text-base leading-10',
+    lg: 'w-12 h-12 text-lg leading-12',
   }
   return sizes[props.size]
 })

@@ -1,11 +1,12 @@
 <template>
-  <div class="border-t border-gray-200 p-2">
+  <div class="border-t border-gray-200 px-2 pb-2">
+    <ReplyMessage />
     <div v-if="userInfo.ban_speech" class="ban-speech-wraper">
       <div class="ban-speech-text">您已被禁言/全员禁言</div>
     </div>
     <div v-else class="chat-window-footer-wraper">
       <div class="chat-input-wraper">
-        <div class="tools flex">
+        <div class="tools flex py-1">
           <div class="flex-1">
             <!-- <Tooltip v-model:open="isShowEmojiPicker" placement="top" trigger="click"> -->
             <el-tooltip placement="top" trigger="click" effect="light">
@@ -17,17 +18,17 @@
                   @select="onSelectEmoji"
                 />
               </template>
-              <IconButton icon="icon-emoji" icon-size="20px" round />
+              <IconButton size="sm" icon="icon-emoji" icon-size="20px" round class="mr-1" />
             </el-tooltip>
-            <IconButton icon="icon-image" icon-size="20px" round />
-            <IconButton icon="icon-attachment" icon-size="20px" round />
-            <IconButton icon="icon-box" icon-size="20px" round />
-            <IconButton icon="icon-activity" icon-size="20px" round />
+            <IconButton size="sm" icon="icon-image" icon-size="20px" round class="mr-1" />
+            <IconButton size="sm" icon="icon-attachment" icon-size="20px" round class="mr-1" />
+            <IconButton size="sm" icon="icon-box" icon-size="20px" round class="mr-1" />
+            <IconButton size="sm" icon="icon-activity" icon-size="20px" round class="mr-1" />
           </div>
           <div v-if="device != 'mobile'">
             <!-- <Tooltip v-model:open="isShowEmojiPicker" placement="left" trigger="click"> -->
             <el-tooltip placement="left" effect="light">
-              <IconButton icon="icon-menu-dot" round icon-size="20px" />
+              <IconButton size="sm" icon="icon-menu-dot" round icon-size="20px" />
               <template #content>
                 <div>
                   <a href="javascript:;" class="block p-2" @click="setSendMessageMode('enter')">
@@ -45,17 +46,16 @@
             </el-tooltip>
           </div>
         </div>
-        <div class="textarea">
-          <!-- <textarea
-            id="chatTextarea"
-            v-model="currentText"
-            :bordered="false"
+        <div class="textarea mb-1">
+          <el-mention
+            ref="mentionsRef"
             placeholder="请输入消息"
-            auto-size
-            class="w-full p-2 border-none outline-none focus:outline-none focus:border-none"
+            v-model="currentText"
+            :options="mentionOptions"
+            :rows="2"
+            type="textarea"
             @keydown.enter="onTextareaPressEnter"
-          /> -->
-          <el-mention ref="mentionsRef" v-model:value="currentText" :rows="2" />
+          />
         </div>
         <div class="text-right" @click="setTextareaFocus">
           <el-button
@@ -101,6 +101,7 @@ const userInfo = ref({})
 const isShowEmojiPicker = ref(false)
 const currentText = ref('')
 const mentionsRef = ref(null)
+const mentionOptions = ref([])
 let isEmojiPickerBtnClick = false
 let textareaDom = null
 let mentionCache = {}
@@ -115,7 +116,9 @@ const onToggleEmojiPickerShow = () => {
   }, 100)
 }
 const setTextareaFocus = () => {
-  textareaDom && textareaDom.focus()
+  // textareaDom && textareaDom.focus()
+  console.log(mentionsRef.value)
+  mentionsRef.value?.focus()
 }
 
 const onTextareaPressEnter = (e) => {
@@ -213,8 +216,8 @@ const onSendMessage = (content) => {
   // 5. 调用回调函数
   // this.props.onSend(formatValue, mention);
   // }
-  console.log(formatValue, mention)
   emit('sendMessage', { text: formatValue, mention })
+  currentText.value = ''
 }
 
 const insertAtCursor = (content) => {
@@ -261,51 +264,35 @@ const setSendMessageMode = (mode) => {
 
 // 在组件挂载后添加键盘事件监听
 onMounted(() => {
-  nextTick(() => {
-    // 查找 Mentions 组件内部的 textarea 元素
-    const mentionsEl = mentionsRef.value?.$el || mentionsRef.value
-    if (mentionsEl) {
-      textareaDom = mentionsEl.querySelector('textarea')
-      if (textareaDom) {
-        textareaDom.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.keyCode === 13) {
-            onTextareaPressEnter(e)
-          }
-        })
-      }
-    }
-  })
+  // nextTick(() => {
+  //   // 查找 Mentions 组件内部的 textarea 元素
+  //   const mentionsEl = mentionsRef.value?.$el || mentionsRef.value
+  //   if (mentionsEl) {
+  //     textareaDom = mentionsEl.querySelector('textarea')
+  //     if (textareaDom) {
+  //       textareaDom.addEventListener('keydown', (e) => {
+  //         if (e.key === 'Enter' || e.keyCode === 13) {
+  //           onTextareaPressEnter(e)
+  //         }
+  //       })
+  //     }
+  //   }
+  // })
 })
 </script>
 
 <style lang="less" scoped>
-// .chat-window-footer {
-//   background: #fff;
-//   padding: 0 10px 10px 10px;
-//   .tools {
-//     .tools-item {
-//       padding: 6px 10px;
-//       display: inline-block;
-//       font-size: 20px;
-//       cursor: pointer;
-//     }
-//   }
-//   .quick-actions {
-//     padding: 10px;
-//     border-bottom: 1px solid #f1f1f1;
-//     overflow-x: auto;
-//   }
-//   .actions {
-//     text-align: right;
-//   }
-//   .ban-speech-wraper {
-//     height: 99px;
-//     text-align: center;
-//     line-height: 99px;
-//     .ban-speech-text {
-//       color: #999;
-//       font-size: 14px;
-//     }
-//   }
-// }
+.chat-input-wraper {
+  .textarea {
+    :deep(textarea) {
+      border: none;
+      outline: none;
+      box-shadow: none;
+      &:focus {
+        outline: none;
+        border: none;
+      }
+    }
+  }
+}
 </style>

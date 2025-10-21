@@ -11,7 +11,7 @@
       <img :src="avatar" alt="" class="w-full h-full object-cover" />
     </div>
     <div class="flex-1 pl-3" style="width: calc(100% - 50px)">
-      <div v-if="channelInfo" class="flex leading-8 items-center">
+      <div v-if="channelInfo && channelInfo.orgData" class="flex leading-8 items-center">
         <div class="font-bold flex flex-1 min-w-0">
           <h4 class="truncate">{{ channelInfo.orgData.displayName }}</h4>
           <span v-if="channelInfo.orgData.identityIcon" class="flex-shrink-0 ml-1 pt-2">
@@ -64,7 +64,7 @@
           </label>
         </div>
         <div class="flex-1" style="width: calc(100% - 20px)">
-          <div class="truncate w-full">{{ lastContent(item) }}</div>
+          <div class="truncate w-full">{{ lastContent }}</div>
         </div>
         <div v-if="item.unread > 0">
           <Badge :count="item.unread" />
@@ -99,15 +99,24 @@ const props = defineProps({
 const channelInfo = computed(() => props.item.channelInfo || {})
 const avatar = computed(() => avatarChannel(channelInfo.value.channel))
 
-const lastContent = (conversationWrap) => {
-  if (!conversationWrap.lastMessage) {
-    return
+const lastContent = computed(() => {
+  console.log('lastContent----->', props.item)
+  const conversationWrap = props.item
+  // 依赖更新时间戳，确保每次更新都能触发重新计算
+  // eslint-disable-next-line no-unused-vars
+  const _ = conversationWrap._updateTime
+  // 明确依赖 lastMessage，确保当它变化时重新计算
+  const lastMessage = conversationWrap.lastMessage
+
+  if (!lastMessage) {
+    return ''
   }
-  const draft = conversationWrap.remoteExtra.draft
+
+  const draft = conversationWrap.remoteExtra?.draft
   if (draft && draft !== '') {
     return draft
   }
-  const lastMessage = { ...conversationWrap.lastMessage }
+
   if (lastMessage.isDeleted) {
     return ''
   }
@@ -118,7 +127,7 @@ const lastContent = (conversationWrap) => {
     return getFlameTip()
   }
   if (lastMessage.channel && lastMessage.channel.channelType === ChannelTypePerson) {
-    return lastMessage.content?.conversationDigest
+    return lastMessage.content?.conversationDigest || ''
   } else {
     let from = ''
     if (lastMessage.fromUID && lastMessage.fromUID !== '') {
@@ -133,7 +142,7 @@ const lastContent = (conversationWrap) => {
 
     return `${from}${lastMessage.content?.conversationDigest || ''}`
   }
-}
+})
 
 const emit = defineEmits(['click'])
 

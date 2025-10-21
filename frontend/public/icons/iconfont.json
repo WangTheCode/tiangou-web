@@ -6,6 +6,83 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "200970",
+      "name": "3.1转发",
+      "font_class": "share",
+      "unicode": "e603",
+      "unicode_decimal": 58883
+    },
+    {
+      "icon_id": "300409",
+      "name": "复制",
+      "font_class": "copy",
+      "unicode": "e61b",
+      "unicode_decimal": 58907
+    },
+    {
+      "icon_id": "1304965",
+      "name": "Clear-1",
+      "font_class": "clean",
+      "unicode": "e681",
+      "unicode_decimal": 59009
+    },
+    {
+      "icon_id": "4679081",
+      "name": "关闭",
+      "font_class": "close",
+      "unicode": "e622",
+      "unicode_decimal": 58914
+    },
+    {
+      "icon_id": "5270852",
+      "name": "收 藏-产品详情",
+      "font_class": "xin",
+      "unicode": "e614",
+      "unicode_decimal": 58900
+    },
+    {
+      "icon_id": "9336736",
+      "name": "回复",
+      "font_class": "relay",
+      "unicode": "e687",
+      "unicode_decimal": 59015
+    },
+    {
+      "icon_id": "11352856",
+      "name": "30show_多选",
+      "font_class": "radio",
+      "unicode": "e604",
+      "unicode_decimal": 58884
+    },
+    {
+      "icon_id": "20226463",
+      "name": "置顶",
+      "font_class": "fixed",
+      "unicode": "e634",
+      "unicode_decimal": 58932
+    },
+    {
+      "icon_id": "20484294",
+      "name": "免打扰",
+      "font_class": "mute",
+      "unicode": "e7ba",
+      "unicode_decimal": 59322
+    },
+    {
+      "icon_id": "26086691",
+      "name": "引用字段",
+      "font_class": "quote",
+      "unicode": "e6c8",
+      "unicode_decimal": 59080
+    },
+    {
+      "icon_id": "27734611",
+      "name": "清空",
+      "font_class": "delete",
+      "unicode": "e618",
+      "unicode_decimal": 58904
+    },
+    {
       "icon_id": "5800661",
       "name": "菜单",
       "font_class": "menu-dot",

@@ -4,7 +4,7 @@ import Cache from '@/utils/cache'
 import chatApi from '@/api/chat'
 import ipcApiRoute from '@/utils/icp/ipcRoute'
 import { Convert } from '@/wksdk/dataConvert'
-import { WKSDK } from 'wukongimjssdk'
+import { WKSDK, MessageStatus } from 'wukongimjssdk'
 import { useAppStore } from '@/stores'
 import { isEE } from '@/utils/icp/ipcRenderer'
 import { connectWebSocket } from '@/wksdk/web'
@@ -32,6 +32,10 @@ export const useChatStore = defineStore('chat', {
     // 用户设置是否显示消息通知,1=通知,0=不通知
     isMessageNotification: 1,
     sendMessageQueue: {},
+    // 当前会话未读消息数，如果大于0，则在离开时请求清空未读
+    currentConversationUnread: 0,
+    // 当前聊天窗口回复的消息
+    replyMessage: null,
   }),
   getters: {},
   actions: {
@@ -72,7 +76,7 @@ export const useChatStore = defineStore('chat', {
     setConnectStatus(status) {
       this.connectStatus = status
       if (status === 'success' && this.conversationList.length === 0) {
-        syncConversationList().then((res) => {
+        syncConversationList().then(() => {
           // console.log('666', res)
           // this.conversationList = res
         })
@@ -89,6 +93,16 @@ export const useChatStore = defineStore('chat', {
       ) {
         return
       }
+      if (
+        this.currentConversationUnread > 0 &&
+        this.currentConversation &&
+        this.currentConversation.channel
+      ) {
+        this.markConversationUnread(this.currentConversation.channel, 0)
+        this.currentConversationUnread = 0
+      }
+      this.chatMessagesOfOrigin = []
+      this.chatMessages = []
       setOpenConversation(conversation)
       this.currentConversation = conversation
       fetchChannelInfoIfNeed(conversation.channel)
@@ -160,14 +174,23 @@ export const useChatStore = defineStore('chat', {
     },
 
     updateConversation(conversation) {
-      this.conversationList = this.conversationList.map((item) => {
-        if (item.channel.isEqual(conversation.channel)) {
-          item.unread = conversation.unread
-          item.lastMessage = conversation.lastMessage
-          // return { ...item, unread: conversation.unread, lastMessage: conversation.lastMessage }
-        }
-        return item
-      })
+      const index = this.conversationList.findIndex((item) =>
+        item.channel.isEqual(conversation.channel),
+      )
+      if (index !== -1) {
+        // 修改原 Conversation 实例的属性，保留类的所有方法和 getter
+        const item = this.conversationList[index]
+        item.unread = conversation.unread
+        item.lastMessage = conversation.lastMessage
+        item.timestamp = conversation.timestamp || item.timestamp
+        // 添加更新时间戳，强制触发 Vue 的响应式更新
+        item._updateTime = Date.now()
+
+        // 创建新的数组引用以确保触发响应式更新
+        // 这样既保留了 Conversation 类实例，又能触发组件的 props 更新
+        this.conversationList = [...this.conversationList]
+      }
+      console.log('updateConversation----->', this.conversationList)
     },
     sortConversations(conversations) {
       let newConversations = conversations
@@ -231,6 +254,7 @@ export const useChatStore = defineStore('chat', {
       // const senderIsSelf = messageWrap.fromUID === this.connectUserInfo.uid
       this.chatMessagesOfOrigin.push(messageWrap)
       this.chatMessages = refreshMessages(this.chatMessagesOfOrigin)
+      this.currentConversationUnread++
     },
     sendMessage(data) {
       return new Promise((resolve, reject) => {
@@ -253,6 +277,7 @@ export const useChatStore = defineStore('chat', {
           const channel = this.currentConversation.channel
           sendMessage(channel, data).then((message) => {
             console.log('ws sendMessage----->', message)
+            this.setReplyMessage(null)
             resolve(message)
           })
         }
@@ -290,7 +315,28 @@ export const useChatStore = defineStore('chat', {
         }
       }
     },
+    updateMessageStatus(ackPacket) {
+      if (!this.chatMessagesOfOrigin || this.chatMessagesOfOrigin.length <= 0) {
+        return
+      }
+      // 更新
+      for (let i = this.chatMessagesOfOrigin.length - 1; i >= 0; i--) {
+        const message = this.chatMessagesOfOrigin[i]
+        if (message.clientSeq === ackPacket.clientSeq) {
+          message.message.messageID = ackPacket.messageID.toString()
+          message.message.messageSeq = ackPacket.messageSeq
+          if (ackPacket.reasonCode === 1) {
+            message.status = MessageStatus.Normal
+          } else {
+            message.status = MessageStatus.Fail
+          }
+        }
+      }
+    },
     getMessageMax() {},
+    setReplyMessage(message) {
+      this.replyMessage = message
+    },
   },
 })
 

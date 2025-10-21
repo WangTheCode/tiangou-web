@@ -54,25 +54,28 @@ export const messageListener = (message) => {
 // 监听消息发送状态
 export const messageStatusListener = (ackPacket) => {
   const chatStore = useChatStore()
-  const message = chatStore.findMessageWithClientSeq(ackPacket.clientSeq)
-  if (message) {
-    message.message.messageID = ackPacket.messageID.toString()
-    message.message.messageSeq = ackPacket.messageSeq
-    // if (ackPacket.reasonCode === 1) {
-    //     this.updateLastMessageIfNeed(message)
-    //     message.status = MessageStatus.Normal
-    //     this.removeSendingMessageIfNeed(ackPacket.clientSeq, this.channel)
-    // } else {
-    //     message.status = MessageStatus.Fail
-    //     const sendingMessage = this.getSendingMessageWithClientMsgNo(message.clientMsgNo)
-    //     if (sendingMessage) {
-    //         sendingMessage.reasonCode = ackPacket.reasonCode
-    //         this.fillOrder(sendingMessage)
-    //     }
+  chatStore.updateMessageStatus(ackPacket)
+  // 更新消息状态
+  // const message = chatStore.findMessageWithClientSeq(ackPacket.clientSeq)
+  // console.log('📨 收到消息发送状态:', ackPacket, message)
+  // if (message) {
+  //   message.message.messageID = ackPacket.messageID.toString()
+  //   message.message.messageSeq = ackPacket.messageSeq
+  //   // if (ackPacket.reasonCode === 1) {
+  //   //     this.updateLastMessageIfNeed(message)
+  //   //     message.status = MessageStatus.Normal
+  //   //     this.removeSendingMessageIfNeed(ackPacket.clientSeq, this.channel)
+  //   // } else {
+  //   //     message.status = MessageStatus.Fail
+  //   //     const sendingMessage = this.getSendingMessageWithClientMsgNo(message.clientMsgNo)
+  //   //     if (sendingMessage) {
+  //   //         sendingMessage.reasonCode = ackPacket.reasonCode
+  //   //         this.fillOrder(sendingMessage)
+  //   //     }
 
-    // }
-    message.reasonCode = ackPacket.reasonCode
-  }
+  //   // }
+  //   message.reasonCode = ackPacket.reasonCode
+  // }
   // chatStore.notifyListener()
 }
 

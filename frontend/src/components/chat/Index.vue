@@ -1,13 +1,28 @@
 <template>
   <div class="h-[100vh] flex">
-    <div class="h-full overflow-y-auto w-[320px] border-r border-gray-200 p-2">
+    <!-- <div class="h-full overflow-y-auto w-[320px] border-r border-gray-200 p-2">
       <ChatConversationList />
     </div>
     <div class="flex-1 flex flex-col">
       <ChatHeader />
       <ChatMessageList />
       <ChatInput @send-message="chatStore.sendMessage" />
-    </div>
+    </div> -->
+    <el-splitter>
+      <el-splitter-panel size="320px" min="220px" max="520px">
+        <div class="h-full overflow-y-auto w-full p-2">
+          <ChatConversationList />
+        </div>
+      </el-splitter-panel>
+      <el-splitter-panel :min="200">
+        <div class="flex-1 flex flex-col h-full">
+          <ChatHeader />
+          <ChatMessageList />
+          
+          <ChatInput @send-message="chatStore.sendMessage" />
+        </div>
+      </el-splitter-panel>
+    </el-splitter>
   </div>
 </template>
 

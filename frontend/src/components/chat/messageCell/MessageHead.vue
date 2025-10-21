@@ -96,7 +96,6 @@ const init = () => {
   // if (!channelInfo) {
   //   WKSDK.shared().channelManager.fetchChannelInfo(fromChannel)
   // }
-  console.log(channelInfo)
 
   displayName.value =
     channelInfo && channelInfo.orgData && channelInfo.orgData.displayName

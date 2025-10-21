@@ -82,6 +82,7 @@ export const handleSyncConversations = (data) => {
       let model = Convert.toConversation(conversationMap)
       conversations.push(model)
     })
+    console.log('conversations----->', conversations)
 
     // 过滤敏感词
     // const conversationWraps = []

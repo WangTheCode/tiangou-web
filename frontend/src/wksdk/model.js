@@ -1,8 +1,20 @@
-import { OrderFactor, MessageContentTypeConst } from './const'
 import { useUserStore } from '../stores'
-import { WKSDK, Channel, ChannelTypePerson } from 'wukongimjssdk'
+import { WKSDK, Channel, ChannelTypePerson, MessageStatus } from 'wukongimjssdk'
 import { getUUID } from '../utils/helper'
-import { BubblePosition } from '@/wksdk/const'
+import { BubblePosition, MessageReasonCode, OrderFactor, MessageContentTypeConst } from './const'
+
+export class Part {
+  type // 文本内容： text:普通文本 emoji: emoji文本 mention：@文本
+  text
+  data
+
+  constructor(type, text, data) {
+    this.type = type
+    this.text = text
+    this.data = data
+  }
+}
+
 /* eslint-disable no-undef */
 export class MessageWrap {
   constructor(message) {

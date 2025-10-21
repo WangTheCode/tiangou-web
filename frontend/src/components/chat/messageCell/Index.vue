@@ -1,6 +1,10 @@
 <template>
   <div class="chat-message-cell">
-    <Bubble v-if="message.contentType === MessageContentTypeConst.text" :item="item" />
+    <Bubble
+      v-if="message.contentType === MessageContentTypeConst.text"
+      :item="item"
+      @contextmenu="onBubbleContextmenu"
+    />
     <TimeLine v-else-if="message.contentType === MessageContentTypeConst.time" :message="message" />
     <System
       v-else-if="message.contentType <= 2000 && message.contentType >= 1000"
@@ -25,7 +29,10 @@ const message = computed(() => props.item.message)
 // const channelInfo = WKSDK.shared().channelManager.getChannelInfo(
 //   new Channel(props.item.message.fromUID, ChannelTypePerson)
 // )
-
+const emit = defineEmits(['bubbleContextmenu'])
+const onBubbleContextmenu = (event) => {
+  emit('bubbleContextmenu', event)
+}
 defineOptions({
   name: 'MessageCell',
 })

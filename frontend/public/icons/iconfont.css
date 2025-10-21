@@ -1,8 +1,8 @@
 @font-face {
   font-family: "iconfont"; /* Project id 5036710 */
-  src: url('iconfont.woff2?t=1760601448704') format('woff2'),
-       url('iconfont.woff?t=1760601448704') format('woff'),
-       url('iconfont.ttf?t=1760601448704') format('truetype');
+  src: url('iconfont.woff2?t=1761039323696') format('woff2'),
+       url('iconfont.woff?t=1761039323696') format('woff'),
+       url('iconfont.ttf?t=1761039323696') format('truetype');
 }
 
 .iconfont {
@@ -11,6 +11,50 @@
   font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-share:before {
+  content: "\e603";
+}
+
+.icon-copy:before {
+  content: "\e61b";
+}
+
+.icon-clean:before {
+  content: "\e681";
+}
+
+.icon-close:before {
+  content: "\e622";
+}
+
+.icon-xin:before {
+  content: "\e614";
+}
+
+.icon-relay:before {
+  content: "\e687";
+}
+
+.icon-radio:before {
+  content: "\e604";
+}
+
+.icon-fixed:before {
+  content: "\e634";
+}
+
+.icon-mute:before {
+  content: "\e7ba";
+}
+
+.icon-quote:before {
+  content: "\e6c8";
+}
+
+.icon-delete:before {
+  content: "\e618";
 }
 
 .icon-menu-dot:before {

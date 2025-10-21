@@ -4,7 +4,7 @@
       <Avatar v-if="isAvatar" :channel="fromChannel" shape="circle" />
     </div>
     <div class="flex-1">
-      <div class="chat-bubble-content relative bubble-base">
+      <div class="chat-bubble-content relative bubble-base" @contextmenu="onContextmenu">
         <div v-if="isAvatar" :class="['chat-bubble-content_tail', align]">
           <i class="iconfont" :class="`icon-bubble-tail-${align}`"></i>
         </div>
@@ -22,10 +22,9 @@
           <MessageTrail :message="message" />
         </div>
         <!-- eslint-enable vue/no-v-html -->
-        <div class="chat-bubble-content_time">{{ message.created_at }}</div>
       </div>
     </div>
-    <div v-if="align === 'right'" class="ml-4">
+    <div v-if="align === 'right'" class="ml-4 min-w-[50px]">
       <Avatar v-if="isAvatar" :channel="userInfo.channel" shape="circle" />
     </div>
   </div>
@@ -39,6 +38,7 @@ import { useUserStore } from '@/stores'
 import MessageHead from './MessageHead.vue'
 import MessageTrail from './MessageTrail.vue'
 import { BubblePosition } from '@/wksdk/const'
+import { avatarChannel } from '@/wksdk/channelManager'
 
 const userStore = useUserStore()
 const props = defineProps({
@@ -47,10 +47,16 @@ const props = defineProps({
     required: true,
   },
 })
+const emit = defineEmits(['contextmenu'])
 const userInfo = computed(() => userStore.userInfo)
 const message = computed(() => props.item.message)
 
-const fromChannel = newChannel(props.item.message.fromUID)
+const fromChannel = computed(() => {
+  return newChannel(props.item.message.fromUID)
+})
+// const avatarUrl = computed(() => {
+//   return avatarChannel(newChannel(props.item.message.fromUID))
+// })
 
 const align = computed(() => {
   return message.value.send ? 'right' : 'left'
@@ -76,6 +82,14 @@ defineOptions({
 const renderContent = (message) => {
   if (!(message && message.content && message.content.text)) return ''
   return message.content.text.replace(/\n/g, '<br>')
+}
+
+const onContextmenu = (event) => {
+  event.preventDefault()
+  emit('contextmenu', {
+    event,
+    message: props.item.message,
+  })
 }
 </script>
 

@@ -22,10 +22,19 @@
           :data-active="active"
           :class="['chat-message', item.position]"
         >
-          <MessageCell :item="item" :align="item.position" />
+          <MessageCell
+            :item="item"
+            :align="item.position"
+            @bubbleContextmenu="onBubbleContextmenu"
+          />
         </DynamicScrollerItem>
       </template>
     </DynamicScroller>
+    <Contextmenu
+      ref="contextmenuDropdownRef"
+      :menu-items="contextmenuItems"
+      @select="onContextmenuSelect"
+    />
   </div>
 </template>
 
@@ -35,9 +44,19 @@ import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 import MessageCell from './messageCell/Index.vue'
 import { useChatStore } from '../../stores/index'
+import Contextmenu from '@/components/base/Contextmenu.vue'
 
 const chatStore = useChatStore()
 const scrollerRef = ref(null)
+
+const contextmenuDropdownRef = ref(null)
+const contextmenuItems = ref([
+  { key: 'reply', label: '回复', icon: 'icon-reply' },
+  { key: 'copy', label: '复制', icon: 'icon-copy' },
+  { key: 'fave', label: '收藏', icon: 'icon-xin' },
+  { key: 'forward', label: '转发', icon: 'icon-share' },
+  { key: 'select', label: '多选', icon: 'icon-radio' },
+])
 
 const chatMessages = computed(() => {
   if (chatStore.chatMessages) {
@@ -89,6 +108,25 @@ watch(
   },
   { deep: true },
 )
+
+const onContextmenuSelect = (e) => {
+  console.log(111, e)
+  const { key, item, data } = e
+  switch (key) {
+    case 'reply':
+      chatStore.setReplyMessage(data)
+      break
+    case 'copy':
+      break
+    case 'fave':
+      break
+  }
+}
+
+const onBubbleContextmenu = ({ event, message }) => {
+  console.log(222, event, message)
+  contextmenuDropdownRef.value?.open(event, message)
+}
 
 // 暴露方法给父组件
 defineExpose({

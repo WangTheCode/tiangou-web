@@ -23,6 +23,7 @@ class Convert {
     )
     conversation.unread = conversationMap['unread'] || 0
     conversation.timestamp = conversationMap['timestamp'] || 0
+    conversation.channelID = conversationMap['channel_id']
 
     let recents = conversationMap['recents']
     if (recents && recents.length > 0) {

@@ -2,7 +2,7 @@
   <div class="w-full">
     <ConversationItem
       v-for="item in conversationList"
-      :key="item.id"
+      :key="item.channelID"
       :item="item"
       :is-current="
         currentConversation && currentConversation.channel.channelID === item.channel.channelID

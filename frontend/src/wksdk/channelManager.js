@@ -7,7 +7,6 @@ export const newChannel = (channelID, channelType = ChannelTypePerson) => {
 }
 
 export const getChannelInfo = (channel) => {
-  console.log('channel', channel)
   if (!channel.getChannelKey) {
     channel = newChannel(channel.channelID, channel.channelType)
   }
@@ -45,7 +44,8 @@ export const avatarChannel = (channel) => {
   if (!channel) {
     return ''
   }
-  let avatarTag = getChannelAvatarTag(channel)
+  // let avatarTag = getChannelAvatarTag(channel)
+  let avatarTag = ''
   const channelInfo = getChannelInfo(channel)
   if (channelInfo && channelInfo.logo && channelInfo.logo !== '') {
     let logo = channelInfo.logo

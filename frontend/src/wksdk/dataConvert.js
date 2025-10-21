@@ -26,6 +26,7 @@ class Convert {
       conversationMap['channel_id'],
       conversationMap['channel_type'],
     )
+    conversation.channelID = conversationMap['channel_id']
     conversation.unread = conversationMap['unread'] || 0
     conversation.timestamp = conversationMap['timestamp'] || 0
 
