@@ -1,5 +1,5 @@
 <template>
-  <div class="w-[{{ size }}px] h-[{{ size }}px] overflow-hidden" :class="shapeClass">
+  <div :class="`w-[${size}px] h-[${size}px] overflow-hidden ${shapeClass}`">
     <img :src="avatar" alt="" class="w-full h-full object-cover" />
   </div>
 </template>
