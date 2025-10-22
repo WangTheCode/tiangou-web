@@ -81,7 +81,7 @@ export const messageStatusListener = (ackPacket) => {
 
 export const sendMessage = (channel, data) => {
   return new Promise((resolve, reject) => {
-    const { text, mention } = data
+    const { text, mention, reply } = data
     const content = new MessageText(text)
     if (mention) {
       const mn = new Mention()
@@ -94,10 +94,12 @@ export const sendMessage = (channel, data) => {
     if (channelInfo?.orgData.receipt === 1) {
       setting.receiptEnabled = true
     }
+    if (reply) {
+      content.reply = reply
+    }
     WKSDK.shared()
       .chatManager.send(content, channel, setting)
       .then((message) => {
-        console.log('tcp sendMessage----->', message)
         resolve(message)
       })
       .catch((err) => {

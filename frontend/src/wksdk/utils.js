@@ -238,3 +238,30 @@ export const getDeviceInfo = () => {
     device_model: getBrandsFromUserAgent(),
   }
 }
+
+export const imageScale = (orgWidth, orgHeight, maxWidth = 250, maxHeight = 250) => {
+  let actSize = { width: orgWidth, height: orgHeight }
+  if (orgWidth > orgHeight) {
+    //横图
+    if (orgWidth > maxWidth) {
+      // 横图超过最大宽度
+      let rate = maxWidth / orgWidth // 缩放比例
+      actSize.width = maxWidth
+      actSize.height = orgHeight * rate
+    }
+  } else if (orgWidth < orgHeight) {
+    //竖图
+    if (orgHeight > maxHeight) {
+      let rate = maxHeight / orgHeight // 缩放比例
+      actSize.width = orgWidth * rate
+      actSize.height = maxHeight
+    }
+  } else if (orgWidth === orgHeight) {
+    if (orgWidth > maxWidth) {
+      let rate = maxWidth / orgWidth // 缩放比例
+      actSize.width = maxWidth
+      actSize.height = orgHeight * rate
+    }
+  }
+  return actSize
+}

@@ -11,3 +11,9 @@
   line-height: 20px;
   margin-bottom: 4px;
 }
+.color-primary {
+  color: var(--primary-color);
+}
+.bg-primary {
+  background-color: var(--primary-color);
+}

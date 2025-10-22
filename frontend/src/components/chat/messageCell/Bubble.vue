@@ -1,15 +1,19 @@
 <template>
-  <div :class="['chat-bubble', align, { 'is-avatar': isAvatar }]">
-    <div v-if="align == 'left'" class="mr-4 min-w-[50px]">
+  <div :class="['flex text-xs box-border', { 'text-right': align === 'right' }]">
+    <div v-if="showSelectMessage" class="flex items-end pb-1 pr-2">
+      <Checkbox v-model="currentSelected" />
+    </div>
+    <div v-if="align == 'left'" class="mr-4 min-w-[50px] flex items-end">
       <Avatar v-if="isAvatar" :channel="fromChannel" shape="circle" />
     </div>
     <div class="flex-1">
-      <div class="chat-bubble-content relative bubble-base" @contextmenu="onContextmenu">
+      <div :class="['relative bubble-base', bubbleContentClasses]" @contextmenu="onContextmenu">
         <div v-if="isAvatar" :class="['chat-bubble-content_tail', align]">
           <i class="iconfont" :class="`icon-bubble-tail-${align}`"></i>
         </div>
         <MessageHead
           v-if="
+            showMessageHead &&
             align === 'left' &&
             (item.bubblePosition === BubblePosition.first ||
               item.bubblePosition === BubblePosition.single)
@@ -17,14 +21,13 @@
           :message="message"
         />
         <!-- eslint-disable vue/no-v-html -->
-        <div class="chat-bubble-content_text">
-          <span v-html="content"></span>
-          <MessageTrail :message="message" />
+        <div>
+          <slot></slot>
+          <MessageTrail v-if="showMessageTrail" :message="message" />
         </div>
-        <!-- eslint-enable vue/no-v-html -->
       </div>
     </div>
-    <div v-if="align === 'right'" class="ml-4 min-w-[50px]">
+    <div v-if="align === 'right'" class="ml-4 min-w-[50px] flex items-end">
       <Avatar v-if="isAvatar" :channel="userInfo.channel" shape="circle" />
     </div>
   </div>
@@ -33,30 +36,58 @@
 <script setup>
 import { computed } from 'vue'
 import Avatar from '@/components/base/Avatar.vue'
+import Checkbox from '@/components/base/Checkbox.vue'
 import { newChannel } from '@/wksdk/channelManager'
-import { useUserStore } from '@/stores'
 import MessageHead from './MessageHead.vue'
 import MessageTrail from './MessageTrail.vue'
 import { BubblePosition } from '@/wksdk/const'
-import { avatarChannel } from '@/wksdk/channelManager'
 
-const userStore = useUserStore()
 const props = defineProps({
   item: {
     type: Object,
     required: true,
   },
+  userInfo: {
+    type: Object,
+    required: true,
+  },
+  showMessageHead: {
+    type: Boolean,
+    default: true,
+  },
+  showMessageTrail: {
+    type: Boolean,
+    default: true,
+  },
+  isSelected: {
+    type: Boolean,
+    default: false,
+  },
+  showSelectMessage: {
+    type: Boolean,
+    default: false,
+  },
 })
-const emit = defineEmits(['contextmenu'])
-const userInfo = computed(() => userStore.userInfo)
+
+const emit = defineEmits(['contextmenu', 'selected'])
+
 const message = computed(() => props.item.message)
 
+// 使用计算属性的 getter/setter 来管理选中状态
+const currentSelected = computed({
+  get() {
+    // 确保返回布尔值，防止传入对象或 undefined
+    return !!props.isSelected
+  },
+  set(value) {
+    emit('selected', {
+      checked: value,
+    })
+  },
+})
 const fromChannel = computed(() => {
   return newChannel(props.item.message.fromUID)
 })
-// const avatarUrl = computed(() => {
-//   return avatarChannel(newChannel(props.item.message.fromUID))
-// })
 
 const align = computed(() => {
   return message.value.send ? 'right' : 'left'
@@ -68,21 +99,37 @@ const isAvatar = computed(() => {
     props.item.bubblePosition === BubblePosition.single
   )
 })
-const content = computed(() => {
-  if (message.value && message.value.content && message.value.content.text) {
-    return message.value.content.text.replace(/\n/g, '<br>')
+
+// 气泡内容的样式类
+const bubbleContentClasses = computed(() => {
+  const classes = [
+    'text-sm',
+    'inline-block',
+    'rounded-[10px]',
+    'break-words',
+    'break-all',
+    'whitespace-pre-wrap',
+    'max-w-[calc(100%-42px)]',
+  ]
+
+  if (align.value === 'left') {
+    classes.push('bg-[#515151]', 'text-white')
+    if (isAvatar.value) {
+      classes.push('rounded-bl-none')
+    }
+  } else {
+    classes.push('bg-primary', 'text-white', 'text-left')
+    if (isAvatar.value) {
+      classes.push('rounded-br-none')
+    }
   }
-  return ''
+
+  return classes
 })
 
 defineOptions({
   name: 'MessageBubble',
 })
-
-const renderContent = (message) => {
-  if (!(message && message.content && message.content.text)) return ''
-  return message.content.text.replace(/\n/g, '<br>')
-}
 
 const onContextmenu = (event) => {
   event.preventDefault()
@@ -94,69 +141,31 @@ const onContextmenu = (event) => {
 </script>
 
 <style lang="less" scoped>
-.chat-bubble {
-  display: flex;
-  font-size: 12px;
-  box-sizing: border-box;
+// 气泡尾巴样式（无法用 Tailwind 实现的伪元素和特殊选择器）
+.chat-bubble-content_tail {
+  position: absolute;
+  bottom: -6px;
+  left: -18px;
+  padding: 0;
+  line-height: 1;
 
-  .chat-bubble-content {
-    font-size: 14px;
-    display: inline-block;
-    border-radius: 10px;
-    word-wrap: break-word;
-    word-break: break-all;
-    white-space: pre-wrap;
-    max-width: calc(100% - 42px);
+  .iconfont {
+    font-size: 30px;
+    color: #515151;
+  }
 
-    .chat-bubble-content_tail {
-      position: absolute;
-      bottom: -6px;
-      left: -18px;
-      padding: 0;
-      line-height: 1;
-      .iconfont {
-        font-size: 30px;
-        color: #515151;
-      }
-      &.right {
-        left: auto;
-        right: -18px;
-        .iconfont {
-          color: var(--primary-color);
-        }
-      }
-    }
-    .chat-bubble-content_time {
-      color: #999;
-    }
-  }
-  &.left {
-    .chat-bubble-content {
-      background-color: #515151;
-      color: #fff;
-    }
-    &.is-avatar {
-      .chat-bubble-content {
-        border-bottom-left-radius: 0;
-      }
-    }
-  }
   &.right {
-    text-align: right;
+    left: auto;
+    right: -18px;
 
-    .chat-bubble-content {
-      background-color: var(--primary-color);
-      color: #fff;
-      text-align: left;
-      a {
-        color: #fff;
-      }
-    }
-    &.is-avatar {
-      .chat-bubble-content {
-        border-bottom-right-radius: 0;
-      }
+    .iconfont {
+      color: var(--primary-color);
     }
   }
+}
+
+// 链接颜色
+:deep(a) {
+  color: #fff;
 }
 </style>

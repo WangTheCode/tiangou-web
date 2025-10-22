@@ -25,7 +25,11 @@
           <MessageCell
             :item="item"
             :align="item.position"
+            :user-info="userInfo"
+            :show-select-message="showSelectMessage"
+            :is-selected="!!selectedMessagesByMessageID[item.messageID]"
             @bubbleContextmenu="onBubbleContextmenu"
+            @selected="onSelectMessage"
           />
         </DynamicScrollerItem>
       </template>
@@ -43,15 +47,21 @@ import { ref, computed, nextTick, watch } from 'vue'
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 import MessageCell from './messageCell/Index.vue'
-import { useChatStore } from '../../stores/index'
+import { useChatStore, useUserStore } from '../../stores/index'
 import Contextmenu from '@/components/base/Contextmenu.vue'
 
 const chatStore = useChatStore()
+const userStore = useUserStore()
 const scrollerRef = ref(null)
+
+// 从 store 中获取 userInfo，只需要获取一次
+const userInfo = computed(() => userStore.userInfo)
+const showSelectMessage = computed(() => chatStore.showSelectMessage)
+const selectedMessagesByMessageID = computed(() => chatStore.selectedMessagesByMessageID)
 
 const contextmenuDropdownRef = ref(null)
 const contextmenuItems = ref([
-  { key: 'reply', label: '回复', icon: 'icon-reply' },
+  { key: 'reply', label: '回复', icon: 'icon-relay' },
   { key: 'copy', label: '复制', icon: 'icon-copy' },
   { key: 'fave', label: '收藏', icon: 'icon-xin' },
   { key: 'forward', label: '转发', icon: 'icon-share' },
@@ -111,7 +121,7 @@ watch(
 
 const onContextmenuSelect = (e) => {
   console.log(111, e)
-  const { key, item, data } = e
+  const { key, data } = e
   switch (key) {
     case 'reply':
       chatStore.setReplyMessage(data)
@@ -120,6 +130,19 @@ const onContextmenuSelect = (e) => {
       break
     case 'fave':
       break
+    case 'select':
+      chatStore.addSelectedMessage(data)
+      break
+  }
+}
+
+const onSelectMessage = (e) => {
+  console.log(333, e)
+  const { checked, message } = e
+  if (checked) {
+    chatStore.addSelectedMessage(message)
+  } else {
+    chatStore.removeSelectedMessage(message)
   }
 }
 

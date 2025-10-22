@@ -97,7 +97,7 @@ class WkimService {
   }
 
   async sendMessage(data) {
-    const { text, mention, channel } = data
+    const { text, mention, channel, reply } = data
     const content = new MessageText(text)
     if (mention) {
       const mn = new Mention()
@@ -110,6 +110,9 @@ class WkimService {
     let setting = new Setting()
     if (channelInfo?.orgData.receipt === 1) {
       setting.receiptEnabled = true
+    }
+    if (reply) {
+      content.reply = reply
     }
     const message = await this.sdk.chatManager.send(content, channel, setting)
     return message

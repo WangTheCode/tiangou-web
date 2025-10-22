@@ -1,5 +1,8 @@
 <template>
-  <div :class="`w-[${size}px] h-[${size}px] overflow-hidden ${shapeClass}`">
+  <div
+    :class="['overflow-hidden', shapeClass]"
+    :style="{ width: size + 'px', height: size + 'px' }"
+  >
     <img :src="avatar" alt="" class="w-full h-full object-cover" />
   </div>
 </template>

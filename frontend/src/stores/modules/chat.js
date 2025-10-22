@@ -4,7 +4,7 @@ import Cache from '@/utils/cache'
 import chatApi from '@/api/chat'
 import ipcApiRoute from '@/utils/icp/ipcRoute'
 import { Convert } from '@/wksdk/dataConvert'
-import { WKSDK, MessageStatus } from 'wukongimjssdk'
+import { WKSDK, MessageStatus, Reply } from 'wukongimjssdk'
 import { useAppStore } from '@/stores'
 import { isEE } from '@/utils/icp/ipcRenderer'
 import { connectWebSocket } from '@/wksdk/web'
@@ -13,7 +13,7 @@ import {
   setOpenConversation,
   refreshMessages,
 } from '@/wksdk/conversationManager'
-import { fetchChannelInfoIfNeed, getChannelInfo } from '@/wksdk/channelManager'
+import { fetchChannelInfoIfNeed, getChannelInfo, newChannel } from '@/wksdk/channelManager'
 import { sendMessage } from '@/wksdk/chatManager'
 import { setChannelInfoCallback, setSyncConversationsCallback } from '@/wksdk/setCallback'
 
@@ -36,6 +36,10 @@ export const useChatStore = defineStore('chat', {
     currentConversationUnread: 0,
     // 当前聊天窗口回复的消息
     replyMessage: null,
+    // 是否显示选择消息
+    showSelectMessage: false,
+    // 当前聊天窗口选中的消息
+    selectedMessagesByMessageID: {},
   }),
   getters: {},
   actions: {
@@ -103,6 +107,7 @@ export const useChatStore = defineStore('chat', {
       }
       this.chatMessagesOfOrigin = []
       this.chatMessages = []
+      this.setReplyMessage(null)
       setOpenConversation(conversation)
       this.currentConversation = conversation
       fetchChannelInfoIfNeed(conversation.channel)
@@ -143,6 +148,7 @@ export const useChatStore = defineStore('chat', {
           this.chatMessagesOfOrigin = messages
           this.chatMessages = refreshMessages(messages)
           this.markConversationUnread(channel, 0)
+          console.log('chatMessages----->', this.chatMessages)
         })
     },
     // 标记会话已读
@@ -262,6 +268,18 @@ export const useChatStore = defineStore('chat', {
         // console.log('chatStore sendMessage----->', data)
         // const message = await sendMessage(data)
         // console.log('sendMessage----->', message)
+        if (this.replyMessage) {
+          const reply = new Reply()
+          reply.messageID = this.replyMessage.messageID
+          reply.messageSeq = this.replyMessage.messageSeq
+          reply.fromUID = this.replyMessage.fromUID
+          const channelInfo = getChannelInfo(newChannel(this.replyMessage.fromUID))
+          if (channelInfo) {
+            reply.fromName = channelInfo.title
+          }
+          reply.content = this.replyMessage.content
+          data.reply = reply
+        }
 
         if (!this.currentConversation) {
           reject(new Error('当前会话不存在'))
@@ -336,6 +354,17 @@ export const useChatStore = defineStore('chat', {
     getMessageMax() {},
     setReplyMessage(message) {
       this.replyMessage = message
+    },
+    addSelectedMessage(message) {
+      this.showSelectMessage = true
+      this.selectedMessagesByMessageID[message.messageID] = message
+    },
+    removeSelectedMessage(message) {
+      delete this.selectedMessagesByMessageID[message.messageID]
+    },
+    clearSelectedMessages() {
+      this.selectedMessagesByMessageID = {}
+      this.showSelectMessage = false
     },
   },
 })
