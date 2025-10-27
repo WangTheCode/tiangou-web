@@ -48,6 +48,8 @@ export const useChatStore = defineStore('chat', {
         this.connectStatus = 'loading'
         this.connectUserInfo = userInfo
         if (isEE) {
+          WKSDK.shared().config.uid = userInfo.uid
+          WKSDK.shared().config.token = userInfo.token
           ipcApiRoute
             .connectTcp(userInfo)
             .then((res) => {
@@ -124,32 +126,92 @@ export const useChatStore = defineStore('chat', {
       Cache.set('sendMessageMode', mode)
     },
     syncChannelMessageList(channel, opts) {
-      const limit = opts.limit || 15
-      chatApi
-        .syncChannelMessageList({
-          limit: limit,
-          channel_id: channel.channelID,
-          channel_type: channel.channelType,
-          start_message_seq: opts.startMessageSeq || 0,
-          end_message_seq: opts.endMessageSeq || 0,
-          pull_mode: opts.pullMode,
-        })
-        .then((resp) => {
-          let messages = []
-          const messageList = resp && resp['messages']
-          if (messageList) {
-            messageList.forEach((msg) => {
-              const message = Convert.toMessage(msg)
-              const messageWrap = Convert.toMessageWrap(message)
-              messages.push(messageWrap)
-            })
-          }
+      return new Promise((resolve, reject) => {
+        const limit = opts.limit || 30
+        chatApi
+          .syncChannelMessageList({
+            limit: limit,
+            channel_id: channel.channelID,
+            channel_type: channel.channelType,
+            start_message_seq: opts.startMessageSeq || 0,
+            end_message_seq: opts.endMessageSeq || 0,
+            pull_mode: opts.pullMode,
+          })
+          .then((resp) => {
+            let messages = []
+            const messageList = resp && resp['messages']
+            if (messageList) {
+              messageList.forEach((msg) => {
+                const message = Convert.toMessage(msg)
+                const messageWrap = Convert.toMessageWrap(message)
+                messages.push(messageWrap)
+              })
+            }
+            this.chatMessagesOfOrigin = messages
+            this.chatMessages = refreshMessages(messages)
+            this.markConversationUnread(channel, 0)
+            resolve(messages)
+          })
+          .catch((err) => {
+            reject(err)
+          })
+      })
+    },
+    // 加载更多历史消息
+    loadMoreMessages(channel, limit = 30) {
+      return new Promise((resolve, reject) => {
+        // 如果没有消息或正在加载，直接返回
+        if (!this.chatMessagesOfOrigin || this.chatMessagesOfOrigin.length === 0) {
+          resolve({ messages: [], hasMore: false })
+          return
+        }
 
-          this.chatMessagesOfOrigin = messages
-          this.chatMessages = refreshMessages(messages)
-          this.markConversationUnread(channel, 0)
-          console.log('chatMessages----->', this.chatMessages)
-        })
+        // 获取最早的消息序列号
+        const firstMessage = this.chatMessagesOfOrigin[0]
+        const startMessageSeq = firstMessage.messageSeq
+
+        if (startMessageSeq <= 0) {
+          // 序列号为0或负数，说明没有更多历史消息了
+          resolve({ messages: [], hasMore: false })
+          return
+        }
+
+        chatApi
+          .syncChannelMessageList({
+            limit: limit,
+            channel_id: channel.channelID,
+            channel_type: channel.channelType,
+            start_message_seq: 0,
+            end_message_seq: startMessageSeq,
+            pull_mode: 1, // 1表示向下拉取(获取更早的消息)
+          })
+          .then((resp) => {
+            let messages = []
+            const messageList = resp && resp['messages']
+            if (messageList) {
+              messageList.forEach((msg) => {
+                const message = Convert.toMessage(msg)
+                const messageWrap = Convert.toMessageWrap(message)
+                messages.push(messageWrap)
+              })
+            }
+
+            if (messages.length > 0) {
+              // 将新消息添加到数组开头
+              this.chatMessagesOfOrigin = [...messages, ...this.chatMessagesOfOrigin]
+              this.chatMessages = refreshMessages(this.chatMessagesOfOrigin)
+              console.log('loadMoreMessages----->', messages.length, 'new messages loaded')
+            }
+
+            // 判断是否还有更多消息
+            const hasMore = messages.length >= limit
+            resolve({ messages, hasMore })
+          })
+          .catch((err) => {
+            console.error('loadMoreMessages error:', err)
+            reject(err)
+          })
+      })
     },
     // 标记会话已读
     markConversationUnread(channel, unread) {

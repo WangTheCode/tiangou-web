@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "Read(//c/Code/tiangou-web-tsdd/packages/tsdaodaodatasource/src/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

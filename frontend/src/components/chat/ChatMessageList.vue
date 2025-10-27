@@ -6,6 +6,7 @@
       :min-item-size="44"
       class="chat-message-wraper"
       key-field="messageID"
+      :key="scrollerKey"
       @resize="scrollToBottom()"
       @scroll="onScroll"
     >
@@ -53,6 +54,9 @@ import Contextmenu from '@/components/base/Contextmenu.vue'
 const chatStore = useChatStore()
 const userStore = useUserStore()
 const scrollerRef = ref(null)
+const scrollerKey = ref(0) // 用于强制重新渲染 DynamicScroller
+const previousMessagesLength = ref(0) // 记录之前的消息数量
+const currentChannelKey = ref('') // 记录当前频道
 
 // 从 store 中获取 userInfo，只需要获取一次
 const userInfo = computed(() => userStore.userInfo)
@@ -76,15 +80,62 @@ const chatMessages = computed(() => {
 })
 const loading = ref(false)
 const noMore = ref(false)
+const isLoadingMore = ref(false) // 防止重复加载
 
 const onScroll = (e) => {
   const { scrollTop } = e.target
-  if (scrollTop === 0 && !noMore.value) {
-    // getChatMessages(true).then(() => {
-    //   // console.log(e.target, e.target.scrollHeight, e.target.scrollTop)
-    //   // e.target.scrollTo(0, scrollHeight.value - 30)
-    // })
+  // 滚动到顶部时加载更多
+  if (scrollTop === 0 && !noMore.value && !loading.value && !isLoadingMore.value) {
+    loadMoreMessages()
   }
+}
+
+// 加载更多历史消息
+const loadMoreMessages = () => {
+  if (!chatStore.currentConversation?.channel) {
+    return
+  }
+
+  isLoadingMore.value = true
+  loading.value = true
+
+  // 记录当前第一条消息的 ID,用于加载后恢复滚动位置
+  const firstMessageID = chatMessages.value[0]?.messageID
+  const scrollContainer = scrollerRef.value?.$el?.querySelector(
+    '.vue-recycle-scroller__item-wrapper',
+  )?.parentElement
+
+  chatStore
+    .loadMoreMessages(chatStore.currentConversation.channel, 30)
+    .then(({ messages, hasMore }) => {
+      if (!hasMore || messages.length === 0) {
+        noMore.value = true
+      }
+
+      // 加载完成后,恢复滚动位置
+      if (messages.length > 0 && scrollContainer && firstMessageID) {
+        nextTick(() => {
+          // 找到之前第一条消息的元素
+          const firstMessageElement = scrollContainer.querySelector(
+            `[data-index]`,
+          )
+          if (firstMessageElement) {
+            // 滚动到之前的第一条消息位置
+            setTimeout(() => {
+              const newScrollTop = messages.length * 44 // 粗略估算高度
+              scrollContainer.scrollTop = newScrollTop
+            }, 50)
+          }
+        })
+      }
+    })
+    .catch((err) => {
+      console.error('加载历史消息失败:', err)
+    })
+    .finally(() => {
+      loading.value = false
+      isLoadingMore.value = false
+    })
 }
 
 const scrollToBottom = () => {
@@ -108,16 +159,75 @@ const scrollToBottom = () => {
   })
 }
 
-// 监听消息列表变化，自动滚动到底部
+// 监听当前会话变化，重置滚动器
 watch(
-  chatMessages,
-  (newMessages) => {
-    if (newMessages && newMessages.length > 0) {
-      scrollToBottom()
+  () => chatStore.currentConversation?.channel?.getChannelKey?.(),
+  (newChannelKey) => {
+    if (newChannelKey && newChannelKey !== currentChannelKey.value) {
+      // 切换联系人时，强制重新渲染滚动器
+      currentChannelKey.value = newChannelKey
+      scrollerKey.value++
+      previousMessagesLength.value = 0
+
+      // 重置加载状态
+      noMore.value = false
+      loading.value = false
+      isLoadingMore.value = false
+
+      // 等待 DOM 更新后滚动到底部
+      nextTick(() => {
+        setTimeout(() => scrollToBottom(), 100)
+      })
     }
   },
-  { deep: true },
+  { immediate: true },
 )
+
+// 监听消息列表变化，智能滚动
+watch(
+  chatMessages,
+  (newMessages, oldMessages) => {
+    if (!newMessages || newMessages.length === 0) {
+      previousMessagesLength.value = 0
+      return
+    }
+
+    const newLength = newMessages.length
+    const oldLength = oldMessages?.length || 0
+
+    // 场景1: 新消息到达 (消息数量增加)
+    if (newLength > oldLength && oldLength > 0) {
+      const isAtBottom = checkIfAtBottom()
+      // 只有当用户已经在底部时才自动滚动
+      if (isAtBottom) {
+        nextTick(() => scrollToBottom())
+      }
+    }
+    // 场景2: 初次加载消息 (从0到有消息)
+    else if (oldLength === 0 && newLength > 0) {
+      nextTick(() => {
+        setTimeout(() => scrollToBottom(), 100)
+      })
+    }
+
+    previousMessagesLength.value = newLength
+  },
+)
+
+// 检查是否在底部
+const checkIfAtBottom = () => {
+  if (!scrollerRef.value?.$el) return true
+
+  const scrollContainer = scrollerRef.value.$el.querySelector(
+    '.vue-recycle-scroller__item-wrapper',
+  )?.parentElement
+
+  if (!scrollContainer) return true
+
+  const { scrollTop, scrollHeight, clientHeight } = scrollContainer
+  // 允许50px的误差范围
+  return scrollHeight - scrollTop - clientHeight < 50
+}
 
 const onContextmenuSelect = (e) => {
   console.log(111, e)

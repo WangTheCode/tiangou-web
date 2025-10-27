@@ -95,7 +95,7 @@ export const useUserStore = defineStore('user', {
           .then((res) => {
             this.imConfig = res
             if (isEE) {
-              ipcApiRoute.setImConfig({ ...res, api_addr: import.meta.env.VITE_API_ADDR })
+              ipcApiRoute.setImConfig({ ...res, api_addr: import.meta.env.VITE_API_URL })
             }
             resolve(res)
           })

@@ -101,6 +101,7 @@ class Convert {
     message.fromUID = msgMap['from_uid']
     message.timestamp = msgMap['timestamp']
     message.status = MessageStatus.Normal
+
     const contentObj = msgMap['payload']
     let contentType = 0
     if (contentObj) {
@@ -114,6 +115,7 @@ class Convert {
     message.content = messageContent
 
     message.isDeleted = msgMap['is_deleted'] === 1
+
     return message
   }
 
