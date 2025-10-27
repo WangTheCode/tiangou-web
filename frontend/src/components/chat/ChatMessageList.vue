@@ -99,34 +99,78 @@ const loadMoreMessages = () => {
   isLoadingMore.value = true
   loading.value = true
 
-  // 记录当前第一条消息的 ID,用于加载后恢复滚动位置
-  const firstMessageID = chatMessages.value[0]?.messageID
+  // 获取滚动容器
   const scrollContainer = scrollerRef.value?.$el?.querySelector(
     '.vue-recycle-scroller__item-wrapper',
   )?.parentElement
+
+  if (!scrollContainer) {
+    loading.value = false
+    isLoadingMore.value = false
+    return
+  }
+
+  // 记录加载前的滚动高度和当前滚动位置
+  const oldScrollHeight = scrollContainer.scrollHeight
+  const oldScrollTop = scrollContainer.scrollTop
+  let lastHeightDiff = 0 // 记录上次的高度差,避免重复调整
+  let restoredScrollTop = null // 记录已恢复的位置
 
   chatStore
     .loadMoreMessages(chatStore.currentConversation.channel, 30)
     .then(({ messages, hasMore }) => {
       if (!hasMore || messages.length === 0) {
         noMore.value = true
+        // 没有更多数据时,不改变滚动位置
+        return
       }
 
       // 加载完成后,恢复滚动位置
-      if (messages.length > 0 && scrollContainer && firstMessageID) {
+      if (messages.length > 0) {
+        // 使用智能恢复策略,只在高度真正变化时调整
         nextTick(() => {
-          // 找到之前第一条消息的元素
-          const firstMessageElement = scrollContainer.querySelector(
-            `[data-index]`,
-          )
-          if (firstMessageElement) {
-            // 滚动到之前的第一条消息位置
-            setTimeout(() => {
-              const newScrollTop = messages.length * 44 // 粗略估算高度
-              scrollContainer.scrollTop = newScrollTop
-            }, 50)
-          }
+          // 第一次尝试 - 立即恢复
+          restoreScrollPosition()
+
+          // 监听 DynamicScroller 的更新事件,确保虚拟滚动渲染完成
+          const checkInterval = setInterval(() => {
+            const currentHeightDiff = scrollContainer.scrollHeight - oldScrollHeight
+
+            // 如果高度已经稳定(连续两次检查高度差相同),则停止检查
+            if (currentHeightDiff === lastHeightDiff && currentHeightDiff > 0) {
+              clearInterval(checkInterval)
+              return
+            }
+
+            // 如果高度还在变化,调整位置
+            if (currentHeightDiff > lastHeightDiff) {
+              restoreScrollPosition()
+            }
+
+            lastHeightDiff = currentHeightDiff
+          }, 30)
+
+          // 最多检查300ms,之后强制停止
+          setTimeout(() => {
+            clearInterval(checkInterval)
+          }, 300)
         })
+      }
+
+      function restoreScrollPosition() {
+        const newScrollHeight = scrollContainer.scrollHeight
+        const heightDiff = newScrollHeight - oldScrollHeight
+
+        if (heightDiff > 0) {
+          const targetScrollTop = oldScrollTop + heightDiff
+
+          // 只有当目标位置与当前已恢复的位置不同时才调整
+          // 避免重复设置相同的值导致晃动
+          if (restoredScrollTop === null || Math.abs(targetScrollTop - restoredScrollTop) > 1) {
+            scrollContainer.scrollTop = targetScrollTop
+            restoredScrollTop = targetScrollTop
+          }
+        }
       }
     })
     .catch((err) => {
