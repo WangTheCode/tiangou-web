@@ -12,10 +12,10 @@ const huliInvoke = (url, params = null) => {
       }
       ipc
         .invoke(url, params)
-        .then(res => {
+        .then((res) => {
           resolve(res)
         })
-        .catch(err => {
+        .catch((err) => {
           reject(err)
         })
       // if (res && res.code != 0) {
@@ -44,7 +44,7 @@ export const URLS = {
 const apis = {}
 for (const key in URLS) {
   const url = URLS[key]
-  apis[key] = data => {
+  apis[key] = (data) => {
     return huliInvoke(url, data)
   }
 }

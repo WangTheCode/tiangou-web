@@ -11,7 +11,7 @@ const {
   Setting,
 } = require('wukongimjstcpsdk')
 const { post, setHttpOption } = require('../utils/http')
-const { dataSourceService } = require('./dataSource')
+const { setSyncConversationsCallback } = require('../wksdk/setCallback')
 const { webService } = require('./web')
 /**
  * WKIM服务
@@ -36,7 +36,7 @@ class WkimService {
     // 监听消息发送状态
     sdk.chatManager.addMessageStatusListener(webService.addMessageStatusListener)
 
-    dataSourceService.setSyncConversationsCallback(sdk)
+    setSyncConversationsCallback()
 
     this._inited = true
   }

@@ -1,6 +1,10 @@
+/**
+ * 数据转换
+ */
+
 const BigNumber = require('bignumber.js')
-const { Setting } = require('wukongimjstcpsdk')
 const {
+  Setting,
   WKSDK,
   ChannelInfo,
   Channel,
@@ -14,6 +18,8 @@ const {
   MessageExtra,
 } = require('wukongimjstcpsdk')
 
+const { MessageWrap } = require('./model')
+
 class Convert {
   static toConversation(conversationMap) {
     const conversation = new Conversation()
@@ -21,9 +27,9 @@ class Convert {
       conversationMap['channel_id'],
       conversationMap['channel_type']
     )
+    conversation.channelID = conversationMap['channel_id']
     conversation.unread = conversationMap['unread'] || 0
     conversation.timestamp = conversationMap['timestamp'] || 0
-    conversation.channelID = conversationMap['channel_id']
 
     let recents = conversationMap['recents']
     if (recents && recents.length > 0) {
@@ -105,10 +111,15 @@ class Convert {
     if (contentObj) {
       messageContent.decode(this.stringToUint8Array(JSON.stringify(contentObj)))
     }
+
     message.content = messageContent
 
     message.isDeleted = msgMap['is_deleted'] === 1
     return message
+  }
+
+  static toMessageWrap(message) {
+    return new MessageWrap(message)
   }
 
   static toMessageExtra(msgExtraMap) {
