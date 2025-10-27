@@ -2,6 +2,7 @@
   <button
     class="transition-all duration-200 border-none cursor-pointer relative"
     :class="[sizeClass, roundClass, { 'opacity-50 cursor-not-allowed': disabled }]"
+    :style="{ '--bg-color': bgColor, '--hover-bg-color': hoverBgColor }"
     :disabled="disabled"
     @click="handleClick"
   >
@@ -37,6 +38,14 @@ const props = defineProps({
     type: String,
     default: '16px',
   },
+  bgColor: {
+    type: String,
+    default: 'transparent',
+  },
+  hoverBgColor: {
+    type: String,
+    default: '#f1f1f1',
+  },
 })
 
 const emit = defineEmits(['click'])
@@ -64,7 +73,7 @@ const handleClick = () => {
 
 <style lang="less" scoped>
 button {
-  background-color: transparent;
+  background-color: var(--bg-color, transparent);
   color: currentColor;
 
   &:hover:not(:disabled) {

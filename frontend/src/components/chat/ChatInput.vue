@@ -4,6 +4,50 @@
     <div v-if="userInfo.ban_speech" class="ban-speech-wraper">
       <div class="ban-speech-text">您已被禁言/全员禁言</div>
     </div>
+    <div
+      v-else-if="showSelectMessage"
+      class="flex justify-center items-center relative"
+      style="height: 130px"
+    >
+      <a class="absolute top-5 right-5 cursor-pointer">
+        <i class="iconfont icon-close text-2xl"></i>
+      </a>
+      <div class="grid grid-cols-3 gap-2 w-[320px]">
+        <div class="flex flex-col items-center justify-center">
+          <IconButton
+            size="lg"
+            icon="icon-share"
+            icon-size="20px"
+            round
+            bg-color="#f1f1f1"
+            hover-bg-color="#e1e1e1"
+          />
+          <div class="text-xs text-gray-500 mt-2">转发</div>
+        </div>
+        <div class="flex flex-col items-center justify-center">
+          <IconButton
+            size="lg"
+            icon="icon-share-list"
+            icon-size="20px"
+            round
+            bg-color="#f1f1f1"
+            hover-bg-color="#e1e1e1"
+          />
+          <div class="text-xs text-gray-500 mt-2">合并转发</div>
+        </div>
+        <div class="flex flex-col items-center justify-center">
+          <IconButton
+            size="lg"
+            icon="icon-delete"
+            icon-size="20px"
+            round
+            bg-color="#f1f1f1"
+            hover-bg-color="#e1e1e1"
+          />
+          <div class="text-xs text-gray-500 mt-2">删除</div>
+        </div>
+      </div>
+    </div>
     <div v-else class="chat-window-footer-wraper">
       <div class="chat-input-wraper">
         <div class="tools flex py-1">
@@ -98,6 +142,7 @@ const appStore = useAppStore()
 const chatStore = useChatStore()
 const device = computed(() => appStore.device)
 const sendMessageMode = computed(() => chatStore.sendMessageMode)
+const showSelectMessage = computed(() => chatStore.showSelectMessage)
 
 const userInfo = ref({})
 const isShowEmojiPicker = ref(false)
