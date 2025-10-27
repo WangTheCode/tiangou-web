@@ -51,10 +51,12 @@
             ref="mentionsRef"
             placeholder="请输入消息"
             v-model="currentText"
-            :options="mentionOptions"
+            :options="computedMentionOptions"
             :rows="2"
             type="textarea"
+            popper-class="chat-input-mention-popper"
             @keydown.enter="onTextareaPressEnter"
+            @select="onMentionSelect"
           />
         </div>
         <div class="text-right" @click="setTextareaFocus">
@@ -101,20 +103,58 @@ const userInfo = ref({})
 const isShowEmojiPicker = ref(false)
 const currentText = ref('')
 const mentionsRef = ref(null)
-const mentionOptions = ref([])
-let isEmojiPickerBtnClick = false
 let textareaDom = null
 let mentionCache = {}
+let isMentionSelecting = false // 标记是否正在选择提及项
 
-const emit = defineEmits(['sendMessage'])
+// 计算提及选项
+const computedMentionOptions = computed(() => {
+  const subscribers = chatStore.subscribers || []
 
-const onToggleEmojiPickerShow = () => {
-  isShowEmojiPicker.value = !isShowEmojiPicker.value
-  isEmojiPickerBtnClick = true
+  // 只有超过1个成员时才启用提及功能
+  if (subscribers.length <= 1) {
+    return []
+  }
+
+  const options = subscribers
+    .filter((sub) => !sub.isDeleted && sub.uid !== chatStore.connectUserInfo?.uid)
+    .map((sub) => ({
+      value: `[${sub.name}]`,
+      label: sub.remark || sub.name || sub.uid,
+      uid: sub.uid,
+      avatar: sub.avatar,
+    }))
+
+  // 如果是群聊,添加"所有人"选项
+  if (subscribers.length > 2) {
+    options.unshift({
+      value: '所有人',
+      label: '所有人',
+      uid: -1,
+    })
+  }
+
+  return options
+})
+
+// 监听提及选择
+const onMentionSelect = (option) => {
+  // 将选中的用户添加到缓存
+  const name = option.value
+  mentionCache[name] = {
+    uid: option.uid,
+    name: name,
+  }
+
+  // 设置标志,表示正在选择提及项
+  isMentionSelecting = true
+  // 延迟重置标志,避免影响后续操作
   setTimeout(() => {
-    isEmojiPickerBtnClick = false
+    isMentionSelecting = false
   }, 100)
 }
+
+const emit = defineEmits(['sendMessage'])
 const setTextareaFocus = () => {
   // textareaDom && textareaDom.focus()
   console.log(mentionsRef.value)
@@ -122,7 +162,17 @@ const setTextareaFocus = () => {
 }
 
 const onTextareaPressEnter = (e) => {
+  // 检查 el-mention 的下拉菜单是否正在显示
+  const isDropdownVisible = !!document.querySelector('.chat-input-mention-popper')
+
+  if (isDropdownVisible || isMentionSelecting) {
+    // 下拉菜单显示中或正在选择,不处理发送消息
+    console.log('下拉菜单显示中,阻止发送')
+    return
+  }
+
   if (device.value == 'mobile') return
+
   if (sendMessageMode.value === 'enter') {
     if (e.ctrlKey) {
       // 让光标换行
@@ -141,14 +191,16 @@ const onTextareaPressEnter = (e) => {
 // 格式化@文本
 const formatMentionText = (text) => {
   let newText = text
-  let mentionMatchResult = newText.match(/@([^ ]+) /g)
-  if (mentionMatchResult && mentionMatchResult.length > 0) {
-    for (let i = 0; i < mentionMatchResult.length; i++) {
-      let mentionStr = mentionMatchResult[i]
-      let name = mentionStr.replace('@[', '@').replace(']', '')
-      newText = newText.replace(mentionStr, name)
-    }
-  }
+
+  // el-mention 组件可能输出格式: @{value} 或 @[name] 或 @name
+  // 支持多种格式的正则匹配: @{xxx} @[xxx] @xxx(后面跟空格或结束)
+
+  // 匹配 @{name} 格式 (el-mention 可能的输出)
+  newText = newText.replace(/@\{([^}]+)\}/g, '@$1 ')
+
+  // 匹配 @[name] 格式
+  newText = newText.replace(/@\[([^\]]+)\]/g, '@$1 ')
+
   return newText
 }
 
@@ -158,36 +210,53 @@ const parseMention = (text) => {
     all: false,
     uids: [],
   }
-  if (mentionCache) {
-    let mentions = Object.values(mentionCache)
-    let all = false
-    if (mentions.length > 0) {
-      let mentionUIDS = []
-      let mentionMatchResult = text.match(/@([^ ]+) /g)
-      if (mentionMatchResult && mentionMatchResult.length > 0) {
-        for (let i = 0; i < mentionMatchResult.length; i++) {
-          let mentionStr = mentionMatchResult[i]
-          let name = mentionStr.trim().replace('@', '')
-          let member = mentionCache[name]
-          if (member) {
-            if (member.uid === -1) {
-              // -1表示@所有人
-              all = true
-            } else {
-              mentionUIDS.push(member.uid)
-            }
-          }
-        }
-      }
-      if (all) {
-        mention.all = true
-      } else {
-        mention.uids = mentionUIDS
+
+  if (!mentionCache || Object.keys(mentionCache).length === 0) {
+    return undefined
+  }
+
+  let all = false
+  let mentionUIDS = []
+
+  // 遍历 mentionCache 中的所有成员,检查文本中是否包含他们
+  for (const name in mentionCache) {
+    const member = mentionCache[name]
+
+    // 检查文本中是否包含这个名字的提及
+    // 支持多种格式: @name @{name} @[name]
+    const patterns = [
+      new RegExp(`@\\{${name}\\}`, 'g'), // @{name}
+      new RegExp(`@\\[${name}\\]`, 'g'), // @[name]
+      new RegExp(`@${name}(?:\\s|$)`, 'g'), // @name (后面是空格或结束)
+    ]
+
+    let found = false
+    for (const pattern of patterns) {
+      if (pattern.test(text)) {
+        found = true
+        break
       }
     }
-    return mention
+
+    if (found) {
+      if (member.uid === -1) {
+        // -1表示@所有人
+        all = true
+      } else {
+        mentionUIDS.push(member.uid)
+      }
+    }
   }
-  return undefined
+
+  if (all) {
+    mention.all = true
+  } else if (mentionUIDS.length > 0) {
+    mention.uids = mentionUIDS
+  } else {
+    return undefined
+  }
+
+  return mention
 }
 
 const onSendMessage = (content) => {
@@ -203,21 +272,27 @@ const onSendMessage = (content) => {
 
   //  长度验证（最多1000字符）
   if (text && text.length > 1000) {
-    Notification.error({
-      content: '输入内容长度不能大于1000字符！',
-    })
+    console.error('输入内容长度不能大于1000字符！')
     return
   }
 
+  console.log('原始文本:', text)
+  console.log('mentionCache:', mentionCache)
+
   // 3. 格式化@提及文本
   let formatValue = formatMentionText(text)
+  console.log('格式化后:', formatValue)
+
   // 4. 解析@提及信息
   let mention = parseMention(formatValue)
+  console.log('解析的mention:', mention)
+
   // 5. 调用回调函数
-  // this.props.onSend(formatValue, mention);
-  // }
   emit('sendMessage', { text: formatValue, mention })
+
+  // 6. 清空输入框和缓存
   currentText.value = ''
+  mentionCache = {}
 }
 
 const insertAtCursor = (content) => {

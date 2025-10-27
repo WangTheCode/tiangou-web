@@ -20,6 +20,7 @@
           "
           :message="message"
         />
+        <MessageReply v-if="message.content && message.content.reply" :message="message" />
         <!-- eslint-disable vue/no-v-html -->
         <div>
           <slot></slot>
@@ -40,6 +41,7 @@ import Checkbox from '@/components/base/Checkbox.vue'
 import { newChannel } from '@/wksdk/channelManager'
 import MessageHead from './MessageHead.vue'
 import MessageTrail from './MessageTrail.vue'
+import MessageReply from './MessageReply.vue'
 import { BubblePosition } from '@/wksdk/const'
 
 const props = defineProps({

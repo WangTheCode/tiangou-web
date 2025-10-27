@@ -65,6 +65,10 @@ export const avatarChannel = (channel) => {
   return ''
 }
 
+export const avatarUser = (uid) => {
+  return avatarChannel(newChannel(uid, ChannelTypePerson))
+}
+
 export const fetchChannelInfoIfNeed = (channel) => {
   const channelInfo = getChannelInfo(channel)
   if (!channelInfo) {

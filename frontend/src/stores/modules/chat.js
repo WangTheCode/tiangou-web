@@ -4,7 +4,7 @@ import Cache from '@/utils/cache'
 import chatApi from '@/api/chat'
 import ipcApiRoute from '@/utils/icp/ipcRoute'
 import { Convert } from '@/wksdk/dataConvert'
-import { WKSDK, MessageStatus, Reply } from 'wukongimjssdk'
+import { WKSDK, MessageStatus, Reply, ChannelTypeGroup } from 'wukongimjssdk'
 import { useAppStore } from '@/stores'
 import { isEE } from '@/utils/icp/ipcRenderer'
 import { connectWebSocket } from '@/wksdk/web'
@@ -15,7 +15,11 @@ import {
 } from '@/wksdk/conversationManager'
 import { fetchChannelInfoIfNeed, getChannelInfo, newChannel } from '@/wksdk/channelManager'
 import { sendMessage } from '@/wksdk/chatManager'
-import { setChannelInfoCallback, setSyncConversationsCallback } from '@/wksdk/setCallback'
+import {
+  setChannelInfoCallback,
+  setSyncConversationsCallback,
+  setSyncSubscribersCallback,
+} from '@/wksdk/setCallback'
 
 export const useChatStore = defineStore('chat', {
   state: () => ({
@@ -40,6 +44,8 @@ export const useChatStore = defineStore('chat', {
     showSelectMessage: false,
     // 当前聊天窗口选中的消息
     selectedMessagesByMessageID: {},
+    // 当前会话的成员
+    subscribers: [],
   }),
   getters: {},
   actions: {
@@ -47,6 +53,7 @@ export const useChatStore = defineStore('chat', {
       return new Promise((resolve, reject) => {
         this.connectStatus = 'loading'
         this.connectUserInfo = userInfo
+
         if (isEE) {
           WKSDK.shared().config.uid = userInfo.uid
           WKSDK.shared().config.token = userInfo.token
@@ -62,6 +69,7 @@ export const useChatStore = defineStore('chat', {
           // 设置wksdk回调
           setSyncConversationsCallback()
           setChannelInfoCallback()
+          setSyncSubscribersCallback()
 
           connectWebSocket(userInfo)
             .then((res) => {
@@ -107,6 +115,7 @@ export const useChatStore = defineStore('chat', {
         this.markConversationUnread(this.currentConversation.channel, 0)
         this.currentConversationUnread = 0
       }
+      console.log('setCurrentConversation----->', conversation)
       this.chatMessagesOfOrigin = []
       this.chatMessages = []
       this.setReplyMessage(null)
@@ -119,8 +128,39 @@ export const useChatStore = defineStore('chat', {
         endMessageSeq: 0,
         pullMode: 0,
       })
-    },
 
+      // 群聊
+      if (conversation.channel.channelType === ChannelTypeGroup) {
+        this.syncSubscribers(conversation).then(() => {
+          this.reloadSubscribers(conversation.channel)
+        })
+      }
+    },
+    syncSubscribers(conversation) {
+      return new Promise((resolve, reject) => {
+        console.log(conversation)
+
+        if (conversation.channelInfo.orgData.group_type == 1) {
+          // 如果是超级群则只获取第一页成员
+          // this.subscribers = await this.getFirstPageMembers()
+          WKSDK.shared().channelManager.subscribeCacheMap.set(
+            conversation.channel.getChannelKey(),
+            this.subscribers,
+          )
+          WKSDK.shared().channelManager.notifySubscribeChangeListeners(conversation.channel)
+        } else {
+          WKSDK.shared()
+            .channelManager.syncSubscribes(conversation.channel)
+            .then(() => {
+              resolve(true)
+            })
+        }
+      })
+    },
+    // 重新加载订阅者
+    reloadSubscribers(channel) {
+      this.subscribers = WKSDK.shared().channelManager.getSubscribes(channel)
+    },
     setSendMessageMode(mode) {
       this.sendMessageMode = mode
       Cache.set('sendMessageMode', mode)

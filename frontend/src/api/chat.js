@@ -6,6 +6,7 @@ export const URLS = {
   syncChannelMessageList: '/message/channel/sync',
   getChannelInfo: '/channels/{channelID}/{channelType}',
   clearUnread: 'coversation/clearUnread',
+  syncSubscribers: '/groups/{channelID}/membersync',
 }
 
 export default class chatApi {
@@ -14,6 +15,8 @@ export default class chatApi {
   static syncChannelMessageList = async (data) => post({ url: URLS.syncChannelMessageList, data })
   static getChannelInfo = async (data) => get({ url: getUrl(URLS.getChannelInfo, data) })
   static clearUnread = async (data) => put({ url: URLS.clearUnread, data })
+  static syncSubscribers = async (data) =>
+    get({ url: getUrl(URLS.syncSubscribers, data), params: data })
 }
 
 // const apis = {}

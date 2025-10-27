@@ -100,7 +100,6 @@ const channelInfo = computed(() => props.item.channelInfo || {})
 const avatar = computed(() => avatarChannel(channelInfo.value.channel))
 
 const lastContent = computed(() => {
-  console.log('lastContent----->', props.item)
   const conversationWrap = props.item
   // 依赖更新时间戳，确保每次更新都能触发重新计算
   // eslint-disable-next-line no-unused-vars

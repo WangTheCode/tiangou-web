@@ -31,6 +31,7 @@ declare module 'vue' {
     IconButton: typeof import('./src/components/base/IconButton.vue')['default']
     Index: typeof import('./src/components/chat/Index.vue')['default']
     MessageHead: typeof import('./src/components/chat/messageCell/MessageHead.vue')['default']
+    MessageReply: typeof import('./src/components/chat/messageCell/MessageReply.vue')['default']
     MessageTrail: typeof import('./src/components/chat/messageCell/MessageTrail.vue')['default']
     ReplyMessage: typeof import('./src/components/chat/ReplyMessage.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
