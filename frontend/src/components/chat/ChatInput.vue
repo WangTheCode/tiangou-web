@@ -9,11 +9,11 @@
       class="flex justify-center items-center relative"
       style="height: 130px"
     >
-      <a class="absolute top-5 right-5 cursor-pointer">
+      <a class="absolute top-5 right-5 cursor-pointer" @click="onCancelSelect">
         <i class="iconfont icon-close text-2xl"></i>
       </a>
       <div class="grid grid-cols-3 gap-2 w-[320px]">
-        <div class="flex flex-col items-center justify-center">
+        <div class="flex flex-col items-center justify-center cursor-pointer" @click="onForward">
           <IconButton
             size="lg"
             icon="icon-share"
@@ -24,7 +24,10 @@
           />
           <div class="text-xs text-gray-500 mt-2">转发</div>
         </div>
-        <div class="flex flex-col items-center justify-center">
+        <div
+          class="flex flex-col items-center justify-center cursor-pointer"
+          @click="onMergeForward"
+        >
           <IconButton
             size="lg"
             icon="icon-share-list"
@@ -35,7 +38,7 @@
           />
           <div class="text-xs text-gray-500 mt-2">合并转发</div>
         </div>
-        <div class="flex flex-col items-center justify-center">
+        <div class="flex flex-col items-center justify-center cursor-pointer" @click="onDelete">
           <IconButton
             size="lg"
             icon="icon-delete"
@@ -130,11 +133,10 @@
 
 <script setup>
 import { computed, ref, nextTick, onMounted } from 'vue'
-// import Tooltip from '../tooltip.vue'
-// import Button from '../base/'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import IconButton from '../base/IconButton.vue'
-// import { Mentions } from 'ant-design-vue'
 import { useAppStore, useChatStore } from '@/stores/index'
+import ReplyMessage from './ReplyMessage.vue'
 
 import EmojiPicker from 'vue3-emoji-picker'
 import 'vue3-emoji-picker/css'
@@ -380,6 +382,69 @@ const onSelectEmoji = (emoji) => {
 
 const setSendMessageMode = (mode) => {
   chatStore.setSendMessageMode(mode)
+}
+
+// 取消选择消息
+const onCancelSelect = () => {
+  chatStore.clearSelectedMessages()
+}
+
+// 删除选中的消息
+const onDelete = async () => {
+  const selectedMessages = chatStore.getSelectedMessages()
+  if (selectedMessages.length === 0) {
+    console.warn('没有选中的消息')
+    return
+  }
+
+  // 确认删除
+  const confirmed = await ElMessageBox.confirm(
+    `确定要删除 ${selectedMessages.length} 条消息吗?`,
+    '删除消息',
+    {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+    },
+  ).catch(() => false)
+
+  if (!confirmed) {
+    return
+  }
+
+  try {
+    await chatStore.deleteMessages(selectedMessages)
+    ElMessage.success('删除成功')
+  } catch (error) {
+    console.error('删除失败:', error)
+    ElMessage.error('删除失败')
+  }
+}
+
+// 转发消息
+const onForward = () => {
+  const selectedMessages = chatStore.getSelectedMessages()
+  if (selectedMessages.length === 0) {
+    console.warn('没有选中的消息')
+    return
+  }
+
+  // TODO: 显示会话选择器
+  ElMessage.info('转发功能待完善会话选择器')
+  console.log('转发消息:', selectedMessages)
+}
+
+// 合并转发消息
+const onMergeForward = () => {
+  const selectedMessages = chatStore.getSelectedMessages()
+  if (selectedMessages.length === 0) {
+    console.warn('没有选中的消息')
+    return
+  }
+
+  // TODO: 显示会话选择器并实现合并转发
+  ElMessage.info('合并转发功能待完善')
+  console.log('合并转发消息:', selectedMessages)
 }
 
 // 在组件挂载后添加键盘事件监听

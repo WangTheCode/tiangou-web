@@ -99,5 +99,8 @@ export function post(config) {
 export function put(config) {
   return request({ ...config, method: 'PUT' })
 }
+export function del(config) {
+  return request({ ...config, method: 'DELETE' })
+}
 
 export default request

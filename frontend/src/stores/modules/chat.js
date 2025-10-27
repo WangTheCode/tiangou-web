@@ -182,9 +182,11 @@ export const useChatStore = defineStore('chat', {
             const messageList = resp && resp['messages']
             if (messageList) {
               messageList.forEach((msg) => {
-                const message = Convert.toMessage(msg)
-                const messageWrap = Convert.toMessageWrap(message)
-                messages.push(messageWrap)
+                if (!msg.is_deleted) {
+                  const message = Convert.toMessage(msg)
+                  const messageWrap = Convert.toMessageWrap(message)
+                  messages.push(messageWrap)
+                }
               })
             }
             this.chatMessagesOfOrigin = messages
@@ -230,9 +232,11 @@ export const useChatStore = defineStore('chat', {
             const messageList = resp && resp['messages']
             if (messageList) {
               messageList.forEach((msg) => {
-                const message = Convert.toMessage(msg)
-                const messageWrap = Convert.toMessageWrap(message)
-                messages.push(messageWrap)
+                if (!msg.is_deleted) {
+                  const message = Convert.toMessage(msg)
+                  const messageWrap = Convert.toMessageWrap(message)
+                  messages.push(messageWrap)
+                }
               })
             }
 
@@ -467,6 +471,83 @@ export const useChatStore = defineStore('chat', {
     clearSelectedMessages() {
       this.selectedMessagesByMessageID = {}
       this.showSelectMessage = false
+    },
+    // 获取选中的消息列表
+    getSelectedMessages() {
+      return Object.values(this.selectedMessagesByMessageID)
+    },
+    // 删除消息
+    async deleteMessages(messages) {
+      if (!messages || messages.length === 0) {
+        return
+      }
+
+      const params = messages.map((msg) => ({
+        message_id: msg.messageID,
+        channel_id: msg.channel.channelID,
+        channel_type: msg.channel.channelType,
+        message_seq: msg.messageSeq,
+      }))
+
+      try {
+        await chatApi.deleteMessages(params)
+
+        // 从本地消息列表中删除
+        this.chatMessagesOfOrigin = this.chatMessagesOfOrigin.filter((msg) => {
+          return !messages.some((delMsg) => delMsg.clientMsgNo === msg.clientMsgNo)
+        })
+        this.chatMessages = refreshMessages(this.chatMessagesOfOrigin)
+
+        // 清空选中状态
+        this.clearSelectedMessages()
+        console.log('删除消息成功')
+      } catch (err) {
+        console.error('删除消息失败:', err)
+        throw err
+      }
+    },
+    // 转发消息 - 显示会话选择器
+    forwardMessages(messages, callback) {
+      // 这里需要调用会话选择器组件
+      // 暂时通过 callback 返回选中的会话列表
+      if (callback) {
+        callback(messages)
+      }
+    },
+    // 逐条转发消息到指定会话
+    async forwardMessagesToChannels(messages, channels) {
+      if (!messages || messages.length === 0 || !channels || channels.length === 0) {
+        return
+      }
+
+      const promises = []
+      for (const channel of channels) {
+        for (const message of messages) {
+          // 复制消息内容并发送到新的会话
+          const content = message.content
+          promises.push(this.sendMessage({ text: content.text || '', channel }))
+        }
+      }
+
+      try {
+        await Promise.all(promises)
+        this.clearSelectedMessages()
+        console.log('转发消息成功')
+      } catch (err) {
+        console.error('转发消息失败:', err)
+        throw err
+      }
+    },
+    // 合并转发消息到指定会话
+    async mergeForwardMessages(messages, channels) {
+      if (!messages || messages.length === 0 || !channels || channels.length === 0) {
+        return
+      }
+
+      // TODO: 实现合并转发逻辑
+      // 需要创建合并转发的消息内容类型
+      console.log('合并转发功能待实现')
+      this.clearSelectedMessages()
     },
   },
 })

@@ -1,4 +1,4 @@
-import { post, get, put } from '../utils/http/axios'
+import { post, get, put, del } from '../utils/http/axios'
 import { getUrl } from './index'
 export const URLS = {
   reminderSync: '/message/reminder/sync',
@@ -7,6 +7,7 @@ export const URLS = {
   getChannelInfo: '/channels/{channelID}/{channelType}',
   clearUnread: 'coversation/clearUnread',
   syncSubscribers: '/groups/{channelID}/membersync',
+  deleteMessages: '/message',
 }
 
 export default class chatApi {
@@ -17,6 +18,7 @@ export default class chatApi {
   static clearUnread = async (data) => put({ url: URLS.clearUnread, data })
   static syncSubscribers = async (data) =>
     get({ url: getUrl(URLS.syncSubscribers, data), params: data })
+  static deleteMessages = async (data) => del({ url: URLS.deleteMessages, data })
 }
 
 // const apis = {}
