@@ -1,6 +1,5 @@
 <template>
   <div class="border-t border-gray-200 px-2 pb-2">
-    <ReplyMessage />
     <div v-if="userInfo.ban_speech" class="ban-speech-wraper">
       <div class="ban-speech-text">您已被禁言/全员禁言</div>
     </div>
@@ -136,7 +135,6 @@ import { computed, ref, nextTick, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import IconButton from '../base/IconButton.vue'
 import { useAppStore, useChatStore } from '@/stores/index'
-import ReplyMessage from './ReplyMessage.vue'
 
 import EmojiPicker from 'vue3-emoji-picker'
 import 'vue3-emoji-picker/css'

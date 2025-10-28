@@ -1,5 +1,7 @@
 import { fetchChannelInfo, newChannel, getChannelInfo } from './channelManager'
 import Cache from '@/utils/cache'
+import { ElMessage } from 'element-plus'
+import { MessageContentType } from 'wukongimjssdk'
 
 /**
  * 对Date的扩展，将 Date 转化为指定格式的String。
@@ -264,4 +266,253 @@ export const imageScale = (orgWidth, orgHeight, maxWidth = 250, maxHeight = 250)
     }
   }
   return actSize
+}
+
+/**
+ *  获取图片完整地址
+ * @param path  图片路径
+ * @param opts 参数
+ */
+export const getImageURL = (path, opts) => {
+  if (path && path.length > 4) {
+    const prefix = path.substring(0, 4)
+    if (prefix === 'http') {
+      return path
+    }
+  }
+  const baseURl = import.meta.env.VITE_API_URL
+  return `${baseURl}${path}`
+}
+
+export const copyMessageContent = async (message) => {
+  try {
+    if (message.contentType === MessageContentType.text) {
+      // 文本复制：沿用现有实现
+      ;(function (s) {
+        document.oncopy = function (e) {
+          e.clipboardData?.setData('text', s)
+          e.preventDefault()
+          document.oncopy = null
+        }
+      })(message.content.text || '')
+      document.execCommand('Copy')
+      ElMessage({
+        message: '已复制',
+        type: 'success',
+      })
+      return
+    }
+
+    // 图片复制：使用 CORS 配置后的标准方案
+    if (message.contentType === MessageContentType.image) {
+      const content = message.content
+      // 复用与 ImageCell 相同的取图逻辑
+      let src = ''
+      if (content.url && content.url !== '') {
+        let downloadURL = getImageURL(content.url, { width: content.width, height: content.height })
+        if (downloadURL.indexOf('?') !== -1) {
+          downloadURL += '&filename=image.png'
+        } else {
+          downloadURL += '?filename=image.png'
+        }
+        src = downloadURL
+      } else {
+        src = content.imgData || ''
+      }
+
+      if (!src) {
+        ElMessage({
+          message: '图片数据不可用',
+          type: 'error',
+        })
+        return
+      }
+
+      try {
+        // 检查是否支持现代 Clipboard API
+        const canWriteImage =
+          !!navigator.clipboard?.write && typeof window.ClipboardItem !== 'undefined'
+
+        if (canWriteImage) {
+          let blob = null
+
+          if (src.startsWith('data:')) {
+            // 处理 base64 数据
+            const arr = src.split(',')
+            const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png'
+            const bstr = atob(arr[1] || '')
+            let n = bstr.length
+            const u8arr = new Uint8Array(n)
+            while (n--) {
+              u8arr[n] = bstr.charCodeAt(n)
+            }
+            blob = new Blob([u8arr], { type: mime })
+          } else {
+            // 处理网络图片，现在 CORS 已配置
+            try {
+              const resp = await fetch(src, {
+                mode: 'cors',
+                credentials: 'omit',
+              })
+              if (resp.ok) {
+                blob = await resp.blob()
+              }
+            } catch (fetchError) {
+              console.warn('直接获取失败，尝试 Canvas 方案', fetchError)
+
+              // 降级方案：通过 Canvas 转换
+              try {
+                const img = new Image()
+                img.crossOrigin = 'anonymous'
+                await new Promise((resolve, reject) => {
+                  img.onload = resolve
+                  img.onerror = reject
+                  img.src = src
+                })
+
+                const canvas = document.createElement('canvas')
+                const ctx = canvas.getContext('2d')
+                canvas.width = img.width
+                canvas.height = img.height
+                ctx?.drawImage(img, 0, 0)
+
+                const dataURL = canvas.toDataURL('image/png')
+
+                // 直接从 dataURL 创建 blob，确保类型正确
+                const response = await fetch(dataURL)
+                const originalBlob = await response.blob()
+
+                // 重新创建 blob 确保类型匹配
+                blob = new Blob([originalBlob], { type: 'image/png' })
+              } catch (canvasError) {
+                console.warn('Canvas 方案失败', canvasError)
+              }
+            }
+          }
+
+          if (blob) {
+            // 检查是否为WebP格式，如果是则转换为PNG
+            let finalBlob = blob
+            let mimeType = blob.type
+
+            if (mimeType === 'image/webp' || mimeType === 'image/avif') {
+              try {
+                // 将WebP/AVIF转换为PNG
+                const img = new Image()
+                const canvas = document.createElement('canvas')
+                const ctx = canvas.getContext('2d')
+
+                await new Promise((resolve, reject) => {
+                  img.onload = () => {
+                    canvas.width = img.width
+                    canvas.height = img.height
+                    ctx?.drawImage(img, 0, 0)
+                    resolve(null)
+                  }
+                  img.onerror = reject
+                  img.src = URL.createObjectURL(blob)
+                })
+
+                // 转换为PNG格式 - 使用同步方式
+                const dataURL = canvas.toDataURL('image/png', 0.9)
+                const response = await fetch(dataURL)
+                finalBlob = await response.blob()
+                mimeType = 'image/png'
+
+                // 清理URL
+                URL.revokeObjectURL(img.src)
+              } catch (conversionError) {
+                console.warn('WebP转换失败，使用原始格式', conversionError)
+              }
+            }
+
+            // 处理其他格式
+            if (!mimeType || mimeType === 'application/octet-stream') {
+              mimeType = 'image/png'
+            }
+
+            // 如果类型不是图片，重新创建 blob
+            if (!mimeType.startsWith('image/')) {
+              mimeType = 'image/png'
+            }
+
+            // add jpg or jpeg to png
+            if (mimeType === 'image/jpeg' || mimeType === 'image/jpg') {
+              try {
+                // 将JPG/JPEG转换为PNG
+                const img = new Image()
+                const canvas = document.createElement('canvas')
+                const ctx = canvas.getContext('2d')
+
+                await new Promise((resolve, reject) => {
+                  img.onload = () => {
+                    canvas.width = img.width
+                    canvas.height = img.height
+                    ctx?.drawImage(img, 0, 0)
+                    resolve(null)
+                  }
+                  img.onerror = reject
+                  img.src = URL.createObjectURL(finalBlob)
+                })
+
+                // 转换为PNG格式 - 使用同步方式
+                const dataURL = canvas.toDataURL('image/png', 0.9)
+                const response = await fetch(dataURL)
+                finalBlob = await response.blob()
+                mimeType = 'image/png'
+
+                // 清理URL
+                URL.revokeObjectURL(img.src)
+              } catch (conversionError) {
+                console.warn('JPG/JPEG转换失败，使用原始格式', conversionError)
+              }
+            }
+
+            // 重新创建 blob 确保类型匹配
+            const newBlob = new Blob([finalBlob], { type: mimeType })
+
+            const item = new window.ClipboardItem({
+              [mimeType]: newBlob,
+            })
+            await navigator.clipboard.write([item])
+            ElMessage({
+              message: '图片已复制到剪贴板',
+              type: 'success',
+            })
+            return
+          }
+        }
+
+        // 降级方案：复制图片地址
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(src)
+          ElMessage({
+            message: '图片地址已复制到剪贴板',
+            type: 'success',
+          })
+        } else {
+          const textArea = document.createElement('textarea')
+          textArea.value = src
+          document.body.appendChild(textArea)
+          textArea.select()
+          document.execCommand('copy')
+          document.body.removeChild(textArea)
+          ElMessage({
+            message: '图片地址已复制到剪贴板',
+            type: 'success',
+          })
+        }
+      } catch (err) {
+        ElMessage({
+          message: err?.message || '复制失败',
+          type: 'error',
+        })
+      }
+    }
+  } catch (err) {
+    ElMessage({
+      message: err?.message || '复制失败',
+      type: 'error',
+    })
+  }
 }

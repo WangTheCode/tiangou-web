@@ -7,7 +7,7 @@
       class="chat-message-wraper"
       key-field="messageID"
       :key="scrollerKey"
-      @resize="scrollToBottom()"
+      @resize="onResize"
       @scroll="onScroll"
     >
       <template #before>
@@ -44,12 +44,15 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, watch } from 'vue'
+import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue'
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 import MessageCell from './messageCell/Index.vue'
 import { useChatStore, useUserStore } from '../../stores/index'
 import Contextmenu from '@/components/base/Contextmenu.vue'
+import { scrollControl } from '@/hooks/useScrollControl'
+import { copyMessageContent } from '@/wksdk/utils'
+import { conversationPicker } from './conversationPicker/index'
 
 const chatStore = useChatStore()
 const userStore = useUserStore()
@@ -57,6 +60,8 @@ const scrollerRef = ref(null)
 const scrollerKey = ref(0) // 用于强制重新渲染 DynamicScroller
 const previousMessagesLength = ref(0) // 记录之前的消息数量
 const currentChannelKey = ref('') // 记录当前频道
+let isAtBottom = false // 是否位于底部
+let lastScrollTop = 0 // 记录上次滚动位置
 
 // 从 store 中获取 userInfo，只需要获取一次
 const userInfo = computed(() => userStore.userInfo)
@@ -84,10 +89,23 @@ const isLoadingMore = ref(false) // 防止重复加载
 
 const onScroll = (e) => {
   const { scrollTop } = e.target
+
+  if (Math.abs(scrollTop - lastScrollTop) > 20) {
+    isAtBottom = false
+  } else {
+    isAtBottom = true
+  }
+
+  lastScrollTop = scrollTop
+
   // 滚动到顶部时加载更多
   if (scrollTop === 0 && !noMore.value && !loading.value && !isLoadingMore.value) {
     loadMoreMessages()
   }
+}
+
+const onResize = () => {
+  scrollToBottom(true)
 }
 
 // 加载更多历史消息
@@ -182,25 +200,11 @@ const loadMoreMessages = () => {
     })
 }
 
-const scrollToBottom = () => {
-  nextTick(() => {
-    console.log('scrollToBottom')
-
-    if (scrollerRef.value) {
-      // 方法1: 使用 DynamicScroller 的 scrollToBottom 方法
-      if (typeof scrollerRef.value.scrollToBottom === 'function') {
-        scrollerRef.value.scrollToBottom()
-      } else if (scrollerRef.value.$el) {
-        // 方法2: 直接操作 DOM 元素
-        const scrollContainer = scrollerRef.value.$el.querySelector(
-          '.vue-recycle-scroller__item-wrapper',
-        )?.parentElement
-        if (scrollContainer) {
-          scrollContainer.scrollTop = scrollContainer.scrollHeight
-        }
-      }
-    }
-  })
+const scrollToBottom = (force = false) => {
+  if (!isAtBottom && !force) {
+    return
+  }
+  scrollerRef.value.scrollToBottom()
 }
 
 // 监听当前会话变化，重置滚动器
@@ -218,71 +222,34 @@ watch(
       loading.value = false
       isLoadingMore.value = false
 
-      // 等待 DOM 更新后滚动到底部
-      nextTick(() => {
-        setTimeout(() => scrollToBottom(), 100)
-      })
+      // 重置用户滚动状态
+      isAtBottom = true
+      lastScrollTop = 0
     }
   },
   { immediate: true },
 )
 
-// 监听消息列表变化，智能滚动
-watch(
-  chatMessages,
-  (newMessages, oldMessages) => {
-    if (!newMessages || newMessages.length === 0) {
-      previousMessagesLength.value = 0
-      return
-    }
-
-    const newLength = newMessages.length
-    const oldLength = oldMessages?.length || 0
-
-    // 场景1: 新消息到达 (消息数量增加)
-    if (newLength > oldLength && oldLength > 0) {
-      const isAtBottom = checkIfAtBottom()
-      // 只有当用户已经在底部时才自动滚动
-      if (isAtBottom) {
-        nextTick(() => scrollToBottom())
-      }
-    }
-    // 场景2: 初次加载消息 (从0到有消息)
-    else if (oldLength === 0 && newLength > 0) {
-      nextTick(() => {
-        setTimeout(() => scrollToBottom(), 100)
-      })
-    }
-
-    previousMessagesLength.value = newLength
-  },
-)
-
-// 检查是否在底部
-const checkIfAtBottom = () => {
-  if (!scrollerRef.value?.$el) return true
-
-  const scrollContainer = scrollerRef.value.$el.querySelector(
-    '.vue-recycle-scroller__item-wrapper',
-  )?.parentElement
-
-  if (!scrollContainer) return true
-
-  const { scrollTop, scrollHeight, clientHeight } = scrollContainer
-  // 允许50px的误差范围
-  return scrollHeight - scrollTop - clientHeight < 50
-}
-
 const onContextmenuSelect = (e) => {
-  console.log(111, e)
   const { key, data } = e
   switch (key) {
     case 'reply':
       chatStore.setReplyMessage(data)
       break
     case 'copy':
+      copyMessageContent(data)
       break
     case 'fave':
+      break
+    case 'forward':
+      conversationPicker({
+        title: '转发',
+        conversationList: chatStore.conversationList,
+        multiple: true,
+        confirm: (value) => {
+          console.log(value)
+        },
+      })
       break
     case 'select':
       chatStore.addSelectedMessage(data)
@@ -291,7 +258,6 @@ const onContextmenuSelect = (e) => {
 }
 
 const onSelectMessage = (e) => {
-  console.log(333, e)
   const { checked, message } = e
   if (checked) {
     chatStore.addSelectedMessage(message)
@@ -304,6 +270,15 @@ const onBubbleContextmenu = ({ event, message }) => {
   console.log(222, event, message)
   contextmenuDropdownRef.value?.open(event, message)
 }
+
+onMounted(() => {
+  console.log('onMounted----->')
+  scrollControl.registerScrollHandler('chat-message-list', scrollToBottom)
+})
+
+onUnmounted(() => {
+  scrollControl.unregisterScrollHandler('chat-message-list')
+})
 
 // 暴露方法给父组件
 defineExpose({

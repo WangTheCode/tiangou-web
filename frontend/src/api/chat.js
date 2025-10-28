@@ -8,6 +8,7 @@ export const URLS = {
   clearUnread: 'coversation/clearUnread',
   syncSubscribers: '/groups/{channelID}/membersync',
   deleteMessages: '/message',
+  syncFriendList: '/friend/sync',
 }
 
 export default class chatApi {
@@ -19,6 +20,7 @@ export default class chatApi {
   static syncSubscribers = async (data) =>
     get({ url: getUrl(URLS.syncSubscribers, data), params: data })
   static deleteMessages = async (data) => del({ url: URLS.deleteMessages, data })
+  static syncFriendList = async (params) => get({ url: URLS.syncFriendList, params })
 }
 
 // const apis = {}

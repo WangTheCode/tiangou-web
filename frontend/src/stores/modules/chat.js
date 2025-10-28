@@ -8,6 +8,7 @@ import { WKSDK, MessageStatus, Reply, ChannelTypeGroup } from 'wukongimjssdk'
 import { useAppStore } from '@/stores'
 import { isEE } from '@/utils/icp/ipcRenderer'
 import { connectWebSocket } from '@/wksdk/web'
+import { scrollControl } from '@/hooks/useScrollControl'
 import {
   syncConversationList,
   setOpenConversation,
@@ -46,6 +47,8 @@ export const useChatStore = defineStore('chat', {
     selectedMessagesByMessageID: {},
     // 当前会话的成员
     subscribers: [],
+    // 是否正在加载历史消息
+    isLoadingHistory: false,
   }),
   getters: {},
   actions: {
@@ -208,6 +211,12 @@ export const useChatStore = defineStore('chat', {
           return
         }
 
+        // 如果已经在加载，不要重复加载
+        if (this.isLoadingHistory) {
+          resolve({ messages: [], hasMore: false })
+          return
+        }
+
         // 获取最早的消息序列号
         const firstMessage = this.chatMessagesOfOrigin[0]
         const startMessageSeq = firstMessage.messageSeq
@@ -217,6 +226,9 @@ export const useChatStore = defineStore('chat', {
           resolve({ messages: [], hasMore: false })
           return
         }
+
+        // 设置加载标志
+        this.isLoadingHistory = true
 
         chatApi
           .syncChannelMessageList({
@@ -249,10 +261,16 @@ export const useChatStore = defineStore('chat', {
 
             // 判断是否还有更多消息
             const hasMore = messages.length >= limit
+
+            // 清除加载标志
+            this.isLoadingHistory = false
+
             resolve({ messages, hasMore })
           })
           .catch((err) => {
             console.error('loadMoreMessages error:', err)
+            // 出错时也要清除加载标志
+            this.isLoadingHistory = false
             reject(err)
           })
       })
@@ -367,6 +385,12 @@ export const useChatStore = defineStore('chat', {
       this.chatMessagesOfOrigin.push(messageWrap)
       this.chatMessages = refreshMessages(this.chatMessagesOfOrigin)
       this.currentConversationUnread++
+      if (messageWrap.message.send) {
+        // 如果是发送的消息，则强制滚动到消息底部
+        scrollControl.scrollTo('chat-message-list', true)
+      } else {
+        scrollControl.scrollTo('chat-message-list', false)
+      }
     },
     sendMessage(data) {
       return new Promise((resolve, reject) => {

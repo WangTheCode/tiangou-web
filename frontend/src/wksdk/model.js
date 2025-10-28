@@ -144,12 +144,12 @@ export class MessageWrap {
 
   // 是否是发送的消息
   get send() {
-    debugger
-    // const userStore = useUserStore()
-    // console.log(6666, WKApp.loginInfo)
+    const userStore = useUserStore()
+    const userInfo = userStore.userInfo
+    if (userInfo && userInfo.uid) {
+      return this.message.fromUID === userInfo.uid
+    }
     return false
-
-    // return this.message.fromUID === WKApp.loginInfo.uid
   }
 
   get contentType() {
