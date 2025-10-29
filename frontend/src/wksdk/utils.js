@@ -284,6 +284,13 @@ export const getImageURL = (path, opts) => {
   return `${baseURl}${path}`
 }
 
+export const getImageSrc = (content) => {
+  if (content.url && content.url !== '') {
+    return getImageURL(content.url, { width: content.width, height: content.height })
+  }
+  return content.imgData
+}
+
 export const copyMessageContent = async (message) => {
   try {
     if (message.contentType === MessageContentType.text) {

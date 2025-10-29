@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="isShow" :title="props.title" width="400" align-center>
+  <el-dialog v-model="isShow" :title="props.title" width="400" align-center @close="onCancelModal">
     <div class="flex flex-col" style="height: 500px">
       <div class="pb-2">
         <el-input v-model="keyword" size="large" placeholder="搜索" clearable>
@@ -89,6 +89,10 @@ const props = defineProps({
   multiple: {
     type: Boolean,
     default: false,
+  },
+  onCancel: {
+    type: Function,
+    default: () => {},
   },
 })
 
@@ -192,8 +196,9 @@ const handleItemClick = (item) => {
 }
 
 // 取消按钮点击
-const onCancel = () => {
+const onCancelModal = () => {
   isShow.value = false
+  props.onCancel && props.onCancel()
 }
 
 // 确认按钮点击

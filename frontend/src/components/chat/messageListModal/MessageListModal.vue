@@ -1,25 +1,47 @@
 <template>
-  <el-dialog v-model="isShow" width="400" align-center :show-close="false" class="dialog-p0">
+  <el-dialog
+    v-model="isShow"
+    width="500"
+    align-center
+    :show-close="false"
+    class="dialog-p0"
+    @close="onCancelModal"
+  >
     <template #header>
       <div class="p-4 bg-gray-200">
         <div class="font-bold text-center">{{ title }}</div>
         <div class="text-center text-xs text-gray-500">{{ getTimeline }}</div>
       </div>
     </template>
-    <div class="flex flex-col">
+    <div class="flex flex-col p-4">
       <div class="flex-1 overflow-y-auto" style="max-height: 500px">
         <div v-if="messageList.length > 0">
           <div
-            v-for="item in showMessageList"
+            v-for="(item, index) in showMessageList"
             :key="item.messageID"
             class="mb-2 flex cursor-pointer hover:bg-gray-50"
             @click="handleItemClick(item)"
           >
             <div class="flex-1 flex items-center">
-              <Avatar :size="50" :channel="item.fromChannel" shape="circle" />
+              <div class="min-w-[50px] flex">
+                <Avatar
+                  v-if="
+                    index === 0 ||
+                    (index > 0 && showMessageList[index - 1].fromUID !== item.fromUID)
+                  "
+                  :size="50"
+                  :channel="item.fromChannel"
+                  shape="circle"
+                />
+              </div>
               <div class="flex-1 pl-3">
-                <div class="font-bold">{{ item.fromChannelInfo.title }}</div>
-                <div class="text-xs text-gray-500">{{ item.content.conversationDigest }}</div>
+                <div class="text-gray-400">{{ item.fromChannelInfo.title }}</div>
+                <div v-if="item.contentType === MessageContentType.image">
+                  <img :src="getImageSrc(item.content)" :style="getImageStyle(item.content)" />
+                </div>
+                <div v-else class="text-black">
+                  {{ item.content.conversationDigest }}
+                </div>
               </div>
               <div class="text-xs text-right flex-shrink-0 ml-2">
                 {{ getTimeStringAutoShort2(item.timestamp * 1000, true) }}
@@ -36,7 +58,8 @@
 import { ref, computed, onMounted } from 'vue'
 import Avatar from '@/components/base/Avatar.vue'
 import { getChannelInfo, newChannel } from '@/wksdk/channelManager'
-import { getTimeStringAutoShort2, dateFormat } from '@/wksdk/utils'
+import { getTimeStringAutoShort2, dateFormat, imageScale, getImageSrc } from '@/wksdk/utils'
+import { MessageContentType } from 'wukongimjssdk'
 
 const props = defineProps({
   title: {
@@ -46,6 +69,10 @@ const props = defineProps({
   messageList: {
     type: Array,
     default: () => [],
+  },
+  onCancel: {
+    type: Function,
+    default: () => {},
   },
 })
 
@@ -60,8 +87,9 @@ const showMessageList = computed(() => {
 })
 
 // 取消按钮点击
-const onCancel = () => {
+const onCancelModal = () => {
   isShow.value = false
+  props.onCancel && props.onCancel()
 }
 
 const handleItemClick = (item) => {
@@ -81,6 +109,15 @@ const getTimeline = computed(() => {
 
   return `${dateFormat(new Date(firstMsg.timestamp * 1000), 'yyyy-MM-dd')} ~ ${dateFormat(new Date(lastMsg.timestamp * 1000), 'yyyy-MM-dd')}`
 })
+
+const getImageStyle = (content) => {
+  const size = imageScale(content.width, content.height)
+  return {
+    width: `${size.width}px`,
+    height: `${size.height}px`,
+    borderRadius: '4px',
+  }
+}
 
 onMounted(() => {
   isShow.value = true

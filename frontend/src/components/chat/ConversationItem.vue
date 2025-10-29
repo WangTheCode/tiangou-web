@@ -49,7 +49,6 @@
         <div
           class="text-xs text-right flex-shrink-0 ml-2"
           :class="isCurrent ? 'text-white/80' : 'text-gray-500'"
-          style="width: 95px"
         >
           {{ getTimeStringAutoShort2(item.timestamp * 1000, true) }}
         </div>
