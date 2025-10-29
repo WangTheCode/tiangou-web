@@ -135,9 +135,13 @@ import { computed, ref, nextTick, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import IconButton from '../base/IconButton.vue'
 import { useAppStore, useChatStore } from '@/stores/index'
-
+import { conversationPicker } from './conversationPicker/index'
+import { MessageText } from 'wukongimjssdk'
 import EmojiPicker from 'vue3-emoji-picker'
 import 'vue3-emoji-picker/css'
+import { getChannelInfo, newChannel } from '@/wksdk/channelManager'
+import { MergeforwardContent } from '@/wksdk/model'
+
 const appStore = useAppStore()
 const chatStore = useChatStore()
 const device = computed(() => appStore.device)
@@ -321,19 +325,15 @@ const onSendMessage = (content) => {
     return
   }
 
-  console.log('原始文本:', text)
-  console.log('mentionCache:', mentionCache)
-
   // 3. 格式化@提及文本
   let formatValue = formatMentionText(text)
-  console.log('格式化后:', formatValue)
 
   // 4. 解析@提及信息
   let mention = parseMention(formatValue)
-  console.log('解析的mention:', mention)
 
-  // 5. 调用回调函数
-  emit('sendMessage', { text: formatValue, mention })
+  // 5. 发送消息
+  const messageContent = new MessageText(formatValue)
+  chatStore.sendMessage({ content: messageContent, mention })
 
   // 6. 清空输入框和缓存
   currentText.value = ''
@@ -427,9 +427,26 @@ const onForward = () => {
     return
   }
 
-  // TODO: 显示会话选择器
-  ElMessage.info('转发功能待完善会话选择器')
-  console.log('转发消息:', selectedMessages)
+  conversationPicker({
+    title: '转发',
+    conversationList: chatStore.conversationList,
+    confirm: (selectedItems) => {
+      if (selectedItems && selectedItems.length > 0) {
+        for (let i = 0; i < selectedItems.length; i++) {
+          const channel = selectedItems[i].channel
+          for (let j = 0; j < selectedMessages.length; j++) {
+            const messageItem = selectedMessages[j]
+            const message = {
+              content: messageItem.content,
+              channel: channel,
+            }
+            chatStore.sendMessage(message)
+          }
+        }
+      }
+      onCancelSelect()
+    },
+  })
 }
 
 // 合并转发消息
@@ -440,8 +457,47 @@ const onMergeForward = () => {
     return
   }
 
-  // TODO: 显示会话选择器并实现合并转发
-  ElMessage.info('合并转发功能待完善')
+  conversationPicker({
+    title: '合并转发',
+    conversationList: chatStore.conversationList,
+    multiple: true,
+    confirm: (selectedItems) => {
+      console.log(selectedItems)
+
+      if (selectedItems && selectedItems.length > 0) {
+        let users = []
+        for (const message of selectedMessages) {
+          let channelInfo = getChannelInfo(newChannel(message.fromUID))
+          users.push({ uid: message.fromUID, name: channelInfo?.title })
+        }
+        for (let i = 0; i < selectedItems.length; i++) {
+          const userItem = selectedItems[i]
+          const channel = userItem.channel
+          const messageContent = new MergeforwardContent(
+            channel.channelType,
+            users,
+            selectedMessages,
+          )
+          const messageData = {
+            content: messageContent,
+            channel: channel,
+          }
+          chatStore.sendMessage(messageData)
+          // for (let j = 0; j < selectedMessages.length; j++) {
+          //   const messageItem = selectedMessages[j]
+          //   const message = {
+          //     content: messageItem.content,
+          //     channel: channel,
+          //   }
+          //   chatStore.sendMessage(message)
+          // }
+        }
+        console.log(users)
+      }
+
+      onCancelSelect()
+    },
+  })
   console.log('合并转发消息:', selectedMessages)
 }
 

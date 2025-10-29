@@ -187,6 +187,7 @@ export const useChatStore = defineStore('chat', {
               messageList.forEach((msg) => {
                 if (!msg.is_deleted) {
                   const message = Convert.toMessage(msg)
+
                   const messageWrap = Convert.toMessageWrap(message)
                   messages.push(messageWrap)
                 }
@@ -416,13 +417,18 @@ export const useChatStore = defineStore('chat', {
           return
         }
         if (isEE) {
-          data.channel = this.currentConversation.channel
+          if (!data.channel) {
+            data.channel = this.currentConversation.channel
+          }
           ipcApiRoute.sendMessage(data).then((res) => {
             console.log('tcp sendMessage----->', res)
             resolve(res)
           })
         } else {
-          const channel = this.currentConversation.channel
+          let channel = this.currentConversation.channel
+          if (data.channel) {
+            channel = data.channel
+          }
           sendMessage(channel, data).then((message) => {
             console.log('ws sendMessage----->', message)
             this.setReplyMessage(null)

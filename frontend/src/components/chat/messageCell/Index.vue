@@ -27,6 +27,18 @@
         decoding="sync"
       />
     </Bubble>
+    <Bubble
+      v-else-if="message.contentType === MessageContentTypeConst.mergeForward"
+      :item="item"
+      :user-info="userInfo"
+      :show-select-message="showSelectMessage"
+      :is-selected="isSelected"
+      :show-message-trail="false"
+      @contextmenu="onBubbleContextmenu"
+      @selected="onSelectMessage"
+    >
+      <MergeForward :message="message" />
+    </Bubble>
     <TimeLine v-else-if="message.contentType === MessageContentTypeConst.time" :message="message" />
     <System
       v-else-if="message.contentType <= 2000 && message.contentType >= 1000"
@@ -41,6 +53,7 @@ import { MessageContentTypeConst } from '@/wksdk/const'
 import Bubble from './Bubble.vue'
 import System from './System.vue'
 import TimeLine from './TimeLine.vue'
+import MergeForward from './MergeForward.vue'
 import { imageScale } from '@/wksdk/utils'
 const props = defineProps({
   item: {

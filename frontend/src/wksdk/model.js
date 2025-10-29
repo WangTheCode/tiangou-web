@@ -1,5 +1,12 @@
 import { useUserStore } from '../stores'
-import { WKSDK, Channel, ChannelTypePerson, MessageStatus } from 'wukongimjssdk'
+import {
+  WKSDK,
+  Channel,
+  ChannelTypePerson,
+  MessageStatus,
+  MessageContent,
+  Message,
+} from 'wukongimjssdk'
 import { getUUID } from '../utils/helper'
 import { BubblePosition, MessageReasonCode, OrderFactor, MessageContentTypeConst } from './const'
 
@@ -335,5 +342,75 @@ export class MessageWrap {
 
   get remoteExtra() {
     return this.message.remoteExtra
+  }
+}
+
+export class MergeforwardContent extends MessageContent {
+  constructor(channelType, users, msgs) {
+    super()
+    this.channelType = channelType
+    this.users = users
+    this.msgs = msgs
+  }
+
+  decodeJSON(content) {
+    this.channelType = content['channel_type'] || 0
+    this.users = content['users'] || []
+    let msgMaps = content['msgs']
+
+    let messages = new Array()
+    if (msgMaps && msgMaps.length > 0) {
+      for (const msgMap of msgMaps) {
+        messages.push(this.mapToMessage(msgMap))
+      }
+    }
+    this.msgs = messages
+  }
+
+  encodeJSON() {
+    let messageMaps = new Array()
+    if (this.msgs && this.msgs.length > 0) {
+      for (const msg of this.msgs) {
+        messageMaps.push(this.messageToMap(msg))
+      }
+    }
+    return { channel_type: this.channelType || 0, users: this.users, msgs: messageMaps }
+  }
+
+  get contentType() {
+    return MessageContentTypeConst.mergeForward
+  }
+
+  get conversationDigest() {
+    return '[合并转发]'
+  }
+
+  mapToMessage(messageMap) {
+    let message = new Message()
+    message.messageID = `${messageMap['message_id']}`
+    message.timestamp = messageMap['timestamp']
+    message.fromUID = messageMap['from_uid']
+
+    let payloadObj = messageMap['payload']
+    if (!payloadObj) {
+      payloadObj = {}
+    }
+    let contentType = 0
+    if (payloadObj) {
+      contentType = payloadObj.type
+    }
+    let messageContent = WKSDK.shared().getMessageContent(contentType)
+    messageContent.decodeJSON(payloadObj)
+    message.content = messageContent
+    return message
+  }
+
+  messageToMap(message) {
+    return {
+      message_id: message.messageID,
+      from_uid: message.fromUID ?? '',
+      timestamp: message.timestamp,
+      payload: message.content.contentObj,
+    }
   }
 }

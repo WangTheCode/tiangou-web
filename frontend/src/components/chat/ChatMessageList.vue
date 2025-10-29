@@ -79,6 +79,7 @@ const contextmenuItems = ref([
 
 const chatMessages = computed(() => {
   if (chatStore.chatMessages) {
+    console.log(111, chatStore.chatMessages)
     return chatStore.chatMessages
   }
   return []
@@ -246,8 +247,17 @@ const onContextmenuSelect = (e) => {
         title: '转发',
         conversationList: chatStore.conversationList,
         multiple: true,
-        confirm: (value) => {
-          console.log(value)
+        confirm: (selectedItems) => {
+          if (selectedItems && selectedItems.length > 0) {
+            for (let i = 0; i < selectedItems.length; i++) {
+              const channel = selectedItems[i].channel
+              const message = {
+                content: data.content,
+                channel: channel,
+              }
+              chatStore.sendMessage(message)
+            }
+          }
         },
       })
       break
@@ -260,9 +270,9 @@ const onContextmenuSelect = (e) => {
 const onSelectMessage = (e) => {
   const { checked, message } = e
   if (checked) {
-    chatStore.addSelectedMessage(message)
+    chatStore.addSelectedMessage(message.message)
   } else {
-    chatStore.removeSelectedMessage(message)
+    chatStore.removeSelectedMessage(message.message)
   }
 }
 

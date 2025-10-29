@@ -17,3 +17,6 @@
 .bg-primary {
   background-color: var(--primary-color);
 }
+.dialog-p0 {
+  padding: 0;
+}

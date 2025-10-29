@@ -1,6 +1,6 @@
 <template>
-  <el-dialog v-model="isShow" :title="props.title" width="500" align-center>
-    <div class="flex flex-col" style="height: 400px">
+  <el-dialog v-model="isShow" :title="props.title" width="400" align-center>
+    <div class="flex flex-col" style="height: 500px">
       <div class="pb-2">
         <el-input v-model="keyword" size="large" placeholder="搜索" clearable>
           <template #suffix>
@@ -53,8 +53,8 @@
           已选择 <span class="text-primary font-bold">{{ selectedCount }}</span> 个联系人
         </div>
         <div class="space-x-2">
-          <el-button @click="onCancel">取消</el-button>
-          <el-button type="primary" :disabled="selectedCount === 0" @click="onConfirm">
+          <!-- <el-button @click="onCancel">取消</el-button> -->
+          <el-button class="w-32" type="primary" :disabled="selectedCount === 0" @click="onConfirm">
             确定
           </el-button>
         </div>
@@ -209,7 +209,6 @@ const onConfirm = () => {
 onMounted(() => {
   isShow.value = true
   fetchFriendList()
-  console.log(props.conversationList)
 })
 </script>
 
