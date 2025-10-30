@@ -62,11 +62,12 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { avatarChannel, newChannel, getChannelInfo, fetchChannelInfo } from '@/wksdk/channelManager'
 import { getTimeStringAutoShort2, getRevokeTip, getFlameTip } from '@/wksdk/utils'
 import { ChannelTypePerson } from 'wukongimjssdk'
 import Badge from '@/components/base/Badge.vue'
+import { useChatStore } from '@/stores/index'
 
 const props = defineProps({
   item: {
@@ -83,8 +84,27 @@ const props = defineProps({
   },
 })
 
-const channelInfo = computed(() => props.item.channelInfo || {})
-const avatar = computed(() => avatarChannel(channelInfo.value.channel))
+const chatStore = useChatStore()
+
+onMounted(() => {
+  // 如果 channelInfo 不存在，主动触发获取（全局监听器会处理更新通知）
+  if (!props.item.channelInfo) {
+    fetchChannelInfo(props.item.channel)
+  }
+})
+
+// 依赖 Store 的全局触发器来触发重新计算
+const channelInfo = computed(() => {
+  // eslint-disable-next-line no-unused-vars
+  const _ = chatStore.channelInfoUpdateTrigger // 依赖全局触发器
+  return props.item.channelInfo || {}
+})
+
+const avatar = computed(() => {
+  // eslint-disable-next-line no-unused-vars
+  const _ = chatStore.channelInfoUpdateTrigger // 依赖全局触发器
+  return avatarChannel(props.item.channel)
+})
 
 const lastContent = computed(() => {
   const conversationWrap = props.item

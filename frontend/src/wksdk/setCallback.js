@@ -3,11 +3,31 @@ import chatApi from '@/api/chat'
 import { newChannel, avatarUser } from '@/wksdk/channelManager'
 import { Convert } from '@/wksdk/dataConvert'
 import { GroupRole } from '@/wksdk/const'
+import { useChatStore } from '@/stores/index'
+
+// 全局 channelInfo 监听器（仅注册一次）
+let channelInfoListenerRegistered = false
+
+export const registerGlobalChannelInfoListener = () => {
+  if (channelInfoListenerRegistered) {
+    return
+  }
+
+  const listener = (channelInfo) => {
+    // 当任何 channelInfo 更新时，通知 Store 触发组件更新
+    const chatStore = useChatStore()
+    chatStore.triggerChannelInfoUpdate()
+    console.log('Global channelInfo updated:', channelInfo.channel.channelID)
+  }
+
+  WKSDK.shared().channelManager.addListener(listener)
+  channelInfoListenerRegistered = true
+  console.log('Global channelInfo listener registered')
+}
 
 export const setChannelInfoCallback = () => {
   WKSDK.shared().config.provider.channelInfoCallback = async function (channel) {
-    let channelInfo = new ChannelInfo(),
-      isUsers = channel.channelType === ChannelTypePerson
+    let channelInfo = new ChannelInfo()
     const resp = await chatApi.getChannelInfo(channel)
     const data = resp
 
@@ -105,7 +125,7 @@ export const handleSyncConversations = (data) => {
 }
 
 export const setSyncConversationsCallback = () => {
-  WKSDK.shared().config.provider.syncConversationsCallback = async (filter) => {
+  WKSDK.shared().config.provider.syncConversationsCallback = async () => {
     const resp = await chatApi.syncConversationList({ msg_count: 1 })
 
     return handleSyncConversations(resp)

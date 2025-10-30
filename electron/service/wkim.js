@@ -13,6 +13,7 @@ const {
 const { post, setHttpOption } = require('../utils/http')
 const { setSyncConversationsCallback } = require('../wksdk/setCallback')
 const { webService } = require('./web')
+const { MessageContentTypeConst } = require('../wksdk/const')
 /**
  * WKIM服务
  */
@@ -97,13 +98,17 @@ class WkimService {
   }
 
   async sendMessage(data) {
-    const { text, mention, channel, reply } = data
-    const content = new MessageText(text)
+    const { content, mention, channel, reply } = data
+    logger.info('sendMessage----->', JSON.stringify(content))
+    let messageContent = content
+    if (content && content.text && content.contentType === MessageContentTypeConst.text) {
+      messageContent = new MessageText(content.text)
+    }
     if (mention) {
       const mn = new Mention()
       mn.all = mention.all
       mn.uids = mention.uids
-      content.mention = mn
+      messageContent.mention = mn
     }
     const channelObject = new Channel(channel.channelID, channel.channelType)
     const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channelObject)
@@ -112,15 +117,10 @@ class WkimService {
       setting.receiptEnabled = true
     }
     if (reply) {
-      content.reply = reply
+      messageContent.reply = reply
     }
-    const message = await this.sdk.chatManager.send(content, channel, setting)
+    const message = await this.sdk.chatManager.send(messageContent, channel, setting)
     return message
-    // const channel = WKChannel.personWithChannelID(toUid)
-    // logger.info('sendText', channel)
-    // const content = new WKTextContent(text)
-    // logger.info('sendText content', content)
-    // return this.sdk.chatManager.sendMessage(content, channel)
   }
 
   stop() {

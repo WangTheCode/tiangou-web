@@ -4,7 +4,7 @@ import Cache from '@/utils/cache'
 import chatApi from '@/api/chat'
 import ipcApiRoute from '@/utils/icp/ipcRoute'
 import { Convert } from '@/wksdk/dataConvert'
-import { WKSDK, MessageStatus, Reply, ChannelTypeGroup, MessageContentType } from 'wukongimjssdk'
+import { WKSDK, MessageStatus, Reply, ChannelTypeGroup } from 'wukongimjssdk'
 import { useAppStore } from '@/stores'
 import { isEE } from '@/utils/icp/ipcRenderer'
 import { connectWebSocket } from '@/wksdk/web'
@@ -20,8 +20,9 @@ import {
   setChannelInfoCallback,
   setSyncConversationsCallback,
   setSyncSubscribersCallback,
+  registerGlobalChannelInfoListener,
 } from '@/wksdk/setCallback'
-import { ElMessage } from 'element-plus'
+// import { ElMessage } from 'element-plus'
 
 export const useChatStore = defineStore('chat', {
   state: () => ({
@@ -50,6 +51,8 @@ export const useChatStore = defineStore('chat', {
     subscribers: [],
     // 是否正在加载历史消息
     isLoadingHistory: false,
+    // channelInfo 更新触发器，用于通知组件重新渲染
+    channelInfoUpdateTrigger: 0,
   }),
   getters: {},
   actions: {
@@ -74,6 +77,8 @@ export const useChatStore = defineStore('chat', {
           setSyncConversationsCallback()
           setChannelInfoCallback()
           setSyncSubscribersCallback()
+          // 注册全局 channelInfo 监听器（仅注册一次）
+          registerGlobalChannelInfoListener()
 
           connectWebSocket(userInfo)
             .then((res) => {
@@ -100,8 +105,11 @@ export const useChatStore = defineStore('chat', {
         })
       }
     },
+    // 触发 channelInfo 更新（当 SDK 加载完 channelInfo 后调用）
+    triggerChannelInfoUpdate() {
+      this.channelInfoUpdateTrigger++
+    },
     setConversationList(conversations) {
-      console.log('setConversationList----->', conversations)
       this.conversationList = this.sortConversations(conversations)
     },
     setCurrentConversation(conversation) {
@@ -142,7 +150,7 @@ export const useChatStore = defineStore('chat', {
       }
     },
     syncSubscribers(conversation) {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         console.log(conversation)
 
         if (conversation.channelInfo.orgData.group_type == 1) {
@@ -153,6 +161,7 @@ export const useChatStore = defineStore('chat', {
             this.subscribers,
           )
           WKSDK.shared().channelManager.notifySubscribeChangeListeners(conversation.channel)
+          resolve(true)
         } else {
           WKSDK.shared()
             .channelManager.syncSubscribes(conversation.channel)
@@ -307,7 +316,7 @@ export const useChatStore = defineStore('chat', {
     },
     addConversation(conversation) {
       this.conversationList.push(conversation)
-      console.log('addConversation----->', this.conversationList)
+      console.log('addConversation----->', conversation.channelInfo)
     },
     updateConversation(conversation) {
       const index = this.conversationList.findIndex((item) =>
@@ -433,6 +442,7 @@ export const useChatStore = defineStore('chat', {
           if (!data.channel) {
             data.channel = this.currentConversation.channel
           }
+          data.content = { ...data.content, contentType: data.content.contentType }
           ipcApiRoute.sendMessage(data).then((res) => {
             console.log('tcp sendMessage----->', res)
             resolve(res)
@@ -443,7 +453,6 @@ export const useChatStore = defineStore('chat', {
             channel = data.channel
           }
           sendMessage(channel, data).then((message) => {
-            console.log('ws sendMessage----->', message)
             this.setReplyMessage(null)
             resolve(message)
           })

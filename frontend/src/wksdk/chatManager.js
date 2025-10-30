@@ -82,6 +82,7 @@ export const messageStatusListener = (ackPacket) => {
 export const sendMessage = (channel, data) => {
   return new Promise((resolve, reject) => {
     const { content, mention, reply } = data
+    console.log('sendMessage----->', content, mention, reply)
     // const content = new MessageText(text)
     if (mention) {
       const mn = new Mention()
