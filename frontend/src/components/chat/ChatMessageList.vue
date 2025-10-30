@@ -53,6 +53,7 @@ import Contextmenu from '@/components/base/Contextmenu.vue'
 import { scrollControl } from '@/hooks/useScrollControl'
 import { copyMessageContent } from '@/wksdk/utils'
 import { conversationPicker } from './conversationPicker/index'
+import { addFaveMessage } from '@/wksdk/faveManage'
 
 const chatStore = useChatStore()
 const userStore = useUserStore()
@@ -241,6 +242,7 @@ const onContextmenuSelect = (e) => {
       copyMessageContent(data)
       break
     case 'fave':
+      addFaveMessage(data)
       break
     case 'forward':
       conversationPicker({
@@ -277,7 +279,6 @@ const onSelectMessage = (e) => {
 }
 
 const onBubbleContextmenu = ({ event, message }) => {
-  console.log(222, event, message)
   contextmenuDropdownRef.value?.open(event, message)
 }
 

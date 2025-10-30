@@ -6,6 +6,34 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "1570811",
+      "name": "关闭免打扰",
+      "font_class": "ring",
+      "unicode": "e60b",
+      "unicode_decimal": 58891
+    },
+    {
+      "icon_id": "11192917",
+      "name": "免打扰",
+      "font_class": "mute-b",
+      "unicode": "e66b",
+      "unicode_decimal": 58987
+    },
+    {
+      "icon_id": "27260811",
+      "name": "消息免打扰",
+      "font_class": "mute",
+      "unicode": "e922",
+      "unicode_decimal": 59682
+    },
+    {
+      "icon_id": "41683410",
+      "name": "取消置顶",
+      "font_class": "unpin",
+      "unicode": "e62a",
+      "unicode_decimal": 58922
+    },
+    {
       "icon_id": "2646076",
       "name": "删除",
       "font_class": "delete",
@@ -71,16 +99,9 @@
     {
       "icon_id": "20226463",
       "name": "置顶",
-      "font_class": "fixed",
+      "font_class": "pin",
       "unicode": "e634",
       "unicode_decimal": 58932
-    },
-    {
-      "icon_id": "20484294",
-      "name": "免打扰",
-      "font_class": "mute",
-      "unicode": "e7ba",
-      "unicode_decimal": 59322
     },
     {
       "icon_id": "26086691",

@@ -3,7 +3,8 @@
     class="flex p-3 cursor-pointer rounded-md"
     :class="{
       'bg-[var(--primary-color)] text-white': isCurrent,
-      'hover:bg-[#f1f1f1]': !isCurrent,
+      'hover:bg-[#f0f0f0]': !isCurrent,
+      'bg-[#f1f1f1] rounded-none': channelInfo && channelInfo.top,
     }"
     @click="handleClick"
   >
@@ -29,22 +30,9 @@
               :src="channelInfo.orgData.identityIcon"
             />
           </span>
-          <svg
-            v-if="channelInfo.mute"
-            class="flex-shrink-0 ml-1"
-            viewBox="0 0 1131 1024"
-            version="1.1"
-            xmlns="http://www.w3.org/2000/svg"
-            p-id="2755"
-            width="14"
-            height="14"
-          >
-            <path
-              d="M914.688 892.736L64 236.224l38.784-50.88L271.36 315.648a300.288 300.288 0 0 1 246.976-157.952v-33.28c0-16.64 13.504-30.08 30.08-30.08h2.304c16.576 0 30.08 13.44 30.08 30.08v32.96a299.776 299.776 0 0 1 284.928 299.136v294.272l45.504 58.624 48.768 37.696-45.312 45.632zM234.624 480.384l506.88 391.232H140.416l94.272-121.536-0.064-269.696z"
-              fill="#bfbfbf"
-              p-id="2756"
-            ></path>
-          </svg>
+          <span v-if="channelInfo.mute" class="flex-shrink-0 ml-1 text-gray-500">
+            <i class="iconfont icon-mute-b" style="font-size: 14px"></i>
+          </span>
         </div>
         <div
           class="text-xs text-right flex-shrink-0 ml-2"

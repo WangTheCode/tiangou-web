@@ -4,7 +4,7 @@ import Cache from '@/utils/cache'
 import chatApi from '@/api/chat'
 import ipcApiRoute from '@/utils/icp/ipcRoute'
 import { Convert } from '@/wksdk/dataConvert'
-import { WKSDK, MessageStatus, Reply, ChannelTypeGroup } from 'wukongimjssdk'
+import { WKSDK, MessageStatus, Reply, ChannelTypeGroup, MessageContentType } from 'wukongimjssdk'
 import { useAppStore } from '@/stores'
 import { isEE } from '@/utils/icp/ipcRenderer'
 import { connectWebSocket } from '@/wksdk/web'
@@ -21,6 +21,7 @@ import {
   setSyncConversationsCallback,
   setSyncSubscribersCallback,
 } from '@/wksdk/setCallback'
+import { ElMessage } from 'element-plus'
 
 export const useChatStore = defineStore('chat', {
   state: () => ({
@@ -100,7 +101,8 @@ export const useChatStore = defineStore('chat', {
       }
     },
     setConversationList(conversations) {
-      this.conversationList = conversations
+      console.log('setConversationList----->', conversations)
+      this.conversationList = this.sortConversations(conversations)
     },
     setCurrentConversation(conversation) {
       if (
@@ -303,7 +305,10 @@ export const useChatStore = defineStore('chat', {
         }
       }
     },
-
+    addConversation(conversation) {
+      this.conversationList.push(conversation)
+      console.log('addConversation----->', this.conversationList)
+    },
     updateConversation(conversation) {
       const index = this.conversationList.findIndex((item) =>
         item.channel.isEqual(conversation.channel),
@@ -316,6 +321,8 @@ export const useChatStore = defineStore('chat', {
         item.timestamp = conversation.timestamp || item.timestamp
         // 添加更新时间戳，强制触发 Vue 的响应式更新
         item._updateTime = Date.now()
+        item.channelInfo.top = conversation.extra.top === 1
+        item.channelInfo.mute = conversation.extra.mute === 1
 
         // 创建新的数组引用以确保触发响应式更新
         // 这样既保留了 Conversation 类实例，又能触发组件的 props 更新
@@ -342,7 +349,13 @@ export const useChatStore = defineStore('chat', {
         }
         return bScore - aScore
       })
+      console.log('sortConversations----->', sortAfter)
       return sortAfter
+    },
+    removeConversation(conversation) {
+      this.conversationList = this.conversationList.filter(
+        (item) => !item.channel.isEqual(conversation.channel),
+      )
     },
     tipsAudio() {
       const appStore = useAppStore()

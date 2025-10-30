@@ -1,10 +1,17 @@
 import ipcApiRoute from '@/utils/icp/ipcRoute'
 import { isEE } from '@/utils/icp/ipcRenderer'
 import { useChatStore } from '@/stores/index'
-import WKSDK, { Message, ConversationAction } from 'wukongimjssdk'
+import WKSDK, {
+  Message,
+  ConversationAction,
+  ChannelTypeGroup,
+  ChannelTypePerson,
+} from 'wukongimjssdk'
 import { MessageContentTypeConst } from '@/wksdk/const'
 import { Convert } from './dataConvert'
 import dayjs from 'dayjs'
+import chatApi from '@/api/chat'
+import * as channelSettingManager from '@/wksdk/channelSettingManager'
 
 export const conversationListener = (conversation, action) => {
   console.log('收到会话处理----->', conversation, action)
@@ -21,6 +28,7 @@ export const conversationListener = (conversation, action) => {
     // }
     // this.conversations = [new ConversationWrap(conversation), ...this.conversations]
     // this.notifyListener()
+    chatStore.addConversation(conversation)
   } else if (action === ConversationAction.update) {
     console.log('ConversationAction-----update')
 
@@ -190,4 +198,45 @@ export const refreshMessages = (messages) => {
   //     }
   // }
   return genMessageLinkedData(newMessages)
+}
+
+export const updateSetting = async (conversation, funcName, setting) => {
+  try {
+    const chatStore = useChatStore()
+    await channelSettingManager[funcName](setting, conversation.channel)
+    conversation.extra = {
+      ...conversation.extra,
+      [funcName]: setting ? 1 : 0,
+    }
+    chatStore.updateConversation(conversation)
+    if (funcName === 'top') {
+      chatStore.sortConversations()
+    }
+  } catch (error) {
+    console.error(error)
+    return false
+  }
+}
+
+/**
+ * 关闭聊天窗口
+ * @param {*} conversation
+ */
+export const closeConversation = (conversation) => {
+  return new Promise((resolve, reject) => {
+    chatApi
+      .closeConversation({
+        channelID: conversation.channel.channelID,
+        channelType: conversation.channel.channelType,
+      })
+      .then((res) => {
+        const chatStore = useChatStore()
+        chatStore.removeConversation(conversation)
+        resolve(res)
+      })
+      .catch((err) => {
+        console.error(err)
+        reject(err)
+      })
+  })
 }

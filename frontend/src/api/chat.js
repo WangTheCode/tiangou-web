@@ -9,6 +9,10 @@ export const URLS = {
   syncSubscribers: '/groups/{channelID}/membersync',
   deleteMessages: '/message',
   syncFriendList: '/friend/sync',
+  addFaveMessage: '/favorites',
+  updateGroupSetting: '/groups/{channelID}/setting',
+  updateUserSetting: '/users/{channelID}/setting',
+  closeConversation: '/conversations/{channelID}/{channelType}',
 }
 
 export default class chatApi {
@@ -21,6 +25,12 @@ export default class chatApi {
     get({ url: getUrl(URLS.syncSubscribers, data), params: data })
   static deleteMessages = async (data) => del({ url: URLS.deleteMessages, data })
   static syncFriendList = async (params) => get({ url: URLS.syncFriendList, params })
+  static addFaveMessage = async (data) => post({ url: URLS.addFaveMessage, data })
+  static updateGroupSetting = async (data) =>
+    put({ url: getUrl(URLS.updateGroupSetting, data), data: data.setting })
+  static updateUserSetting = async (data) =>
+    put({ url: getUrl(URLS.updateUserSetting, data), data: data.setting })
+  static closeConversation = async (data) => del({ url: getUrl(URLS.closeConversation, data) })
 }
 
 // const apis = {}
