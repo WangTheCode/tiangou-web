@@ -1,6 +1,6 @@
 const { post } = require('../utils/http')
 const { Convert } = require('./dataConvert')
-const { WKSDK, MessageContentType } = require('wukongimjstcpsdk')
+const { WKSDK, Subscriber } = require('wukongimjstcpsdk')
 const { webService } = require('../service/web')
 
 function setSyncConversationsCallback() {

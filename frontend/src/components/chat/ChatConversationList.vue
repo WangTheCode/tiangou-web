@@ -43,7 +43,7 @@ const onContextmenu = (event, item) => {
     { key: 'top', label: '置顶', icon: 'icon-pin' },
     { key: 'mute', label: '开启免打扰', icon: 'icon-mute' },
     { key: 'close', label: '关闭聊天窗口', icon: 'icon-close' },
-    { key: 'forward', label: '清空聊天记录', icon: 'icon-clean' },
+    { key: 'clearMessages', label: '清空聊天记录', icon: 'icon-clean' },
     { key: 'select', label: '关闭窗口并清空聊天记录', icon: 'icon-error' },
   ]
   if (item.extra && item.extra.top) {
@@ -70,7 +70,9 @@ const onContextmenuSelect = (e) => {
       break
     case 'close':
       closeConversation(data)
-      // chatStore.addSelectedMessage(data)
+      break
+    case 'clearMessages':
+      clearChannelMessages(data)
       break
   }
 }

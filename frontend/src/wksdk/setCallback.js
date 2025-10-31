@@ -17,12 +17,10 @@ export const registerGlobalChannelInfoListener = () => {
     // 当任何 channelInfo 更新时，通知 Store 触发组件更新
     const chatStore = useChatStore()
     chatStore.triggerChannelInfoUpdate()
-    console.log('Global channelInfo updated:', channelInfo.channel.channelID)
   }
 
   WKSDK.shared().channelManager.addListener(listener)
   channelInfoListenerRegistered = true
-  console.log('Global channelInfo listener registered')
 }
 
 export const setChannelInfoCallback = () => {

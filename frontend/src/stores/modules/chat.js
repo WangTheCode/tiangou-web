@@ -34,6 +34,8 @@ export const useChatStore = defineStore('chat', {
     sendMessageMode: 'enter',
     chatMessages: [],
     chatMessagesOfOrigin: [],
+    // 缓存已打开的频道首屏消息
+    cacheChatMessagesByChannelID: {},
     // 当前对话是否需要设置未读
     // needSetUnread: false,
     // 用户设置是否显示消息通知,1=通知,0=不通知
@@ -61,6 +63,9 @@ export const useChatStore = defineStore('chat', {
         this.connectStatus = 'loading'
         this.connectUserInfo = userInfo
 
+        setSyncSubscribersCallback()
+        setChannelInfoCallback()
+
         if (isEE) {
           WKSDK.shared().config.uid = userInfo.uid
           WKSDK.shared().config.token = userInfo.token
@@ -75,8 +80,7 @@ export const useChatStore = defineStore('chat', {
         } else {
           // 设置wksdk回调
           setSyncConversationsCallback()
-          setChannelInfoCallback()
-          setSyncSubscribersCallback()
+
           // 注册全局 channelInfo 监听器（仅注册一次）
           registerGlobalChannelInfoListener()
 
@@ -89,20 +93,11 @@ export const useChatStore = defineStore('chat', {
             })
         }
       })
-
-      // const { connect } = useTSDD()
-      // connect(userInfo).then(() => {
-      //   const { fetchChannelInfoIfNeed } = useWKSDK()
-      //   fetchChannelInfoIfNeed(new Channel(userInfo.uid, ChannelTypePerson))
-      // })
     },
     setConnectStatus(status) {
       this.connectStatus = status
       if (status === 'success' && this.conversationList.length === 0) {
-        syncConversationList().then(() => {
-          // console.log('666', res)
-          // this.conversationList = res
-        })
+        syncConversationList()
       }
     },
     // 触发 channelInfo 更新（当 SDK 加载完 channelInfo 后调用）
@@ -135,7 +130,7 @@ export const useChatStore = defineStore('chat', {
       setOpenConversation(conversation)
       this.currentConversation = conversation
       fetchChannelInfoIfNeed(conversation.channel)
-      this.syncChannelMessageList(conversation.channel, {
+      this.getChannelFirstMessageList(conversation.channel, {
         limit: 30,
         startMessageSeq: 0,
         endMessageSeq: 0,
@@ -179,18 +174,71 @@ export const useChatStore = defineStore('chat', {
       this.sendMessageMode = mode
       Cache.set('sendMessageMode', mode)
     },
-    syncChannelMessageList(channel, opts) {
+    // 获取缓存的首屏消息
+    getCacheChatMessages(channel) {
+      const key = `${channel.channelID}_${channel.channelType}`
+      const lastMessageID =
+        this.currentConversation &&
+        this.currentConversation.lastMessage &&
+        this.currentConversation.lastMessage.messageID
+          ? this.currentConversation.lastMessage.messageID
+          : ''
+      const cacheMessages = this.cacheChatMessagesByChannelID[key]
+      if (cacheMessages && cacheMessages.length > 0) {
+        const lastMessage = cacheMessages[0]
+        const isCacheValid = lastMessage.messageID === lastMessageID
+        if (isCacheValid) {
+          return cacheMessages
+        }
+      }
+      return []
+    },
+    // setChatMessages(channel, messages) {
+    //   this.chatMessagesOfOrigin = messages
+    //   this.chatMessages = refreshMessages(messages)
+    // },
+    getChannelFirstMessageList(channel, opts) {
       return new Promise((resolve, reject) => {
         const limit = opts.limit || 30
-        chatApi
-          .syncChannelMessageList({
-            limit: limit,
-            channel_id: channel.channelID,
-            channel_type: channel.channelType,
-            start_message_seq: opts.startMessageSeq || 0,
-            end_message_seq: opts.endMessageSeq || 0,
-            pull_mode: opts.pullMode,
+        const params = {
+          limit: limit,
+          channel_id: channel.channelID,
+          channel_type: channel.channelType,
+          start_message_seq: opts.startMessageSeq || 0,
+          end_message_seq: opts.endMessageSeq || 0,
+          pull_mode: opts.pullMode,
+        }
+        const isInitialLoad = params.start_message_seq === 0 && params.end_message_seq === 0
+        if (isInitialLoad) {
+          const cacheMessages = this.getCacheChatMessages(channel)
+          if (cacheMessages && cacheMessages.length > 0) {
+            this.chatMessagesOfOrigin = cacheMessages
+            this.chatMessages = refreshMessages(cacheMessages)
+            resolve(cacheMessages)
+            return
+          }
+        }
+        this.fetchChannelMessageList(params)
+          .then((messages) => {
+            const isInitialLoad = params.start_message_seq === 0 && params.end_message_seq === 0
+            if (messages && messages.length > 0 && isInitialLoad) {
+              const key = `${channel.channelID}_${channel.channelType}`
+              this.cacheChatMessagesByChannelID[key] = messages
+            }
+            this.chatMessagesOfOrigin = messages
+            this.chatMessages = refreshMessages(messages)
+            this.markConversationUnread(channel, 0)
+            resolve(messages)
           })
+          .catch((err) => {
+            reject(err)
+          })
+      })
+    },
+    fetchChannelMessageList(params) {
+      return new Promise((resolve, reject) => {
+        chatApi
+          .syncChannelMessageList(params)
           .then((resp) => {
             let messages = []
             const messageList = resp && resp['messages']
@@ -198,15 +246,12 @@ export const useChatStore = defineStore('chat', {
               messageList.forEach((msg) => {
                 if (!msg.is_deleted) {
                   const message = Convert.toMessage(msg)
-
                   const messageWrap = Convert.toMessageWrap(message)
                   messages.push(messageWrap)
                 }
               })
             }
-            this.chatMessagesOfOrigin = messages
-            this.chatMessages = refreshMessages(messages)
-            this.markConversationUnread(channel, 0)
+
             resolve(messages)
           })
           .catch((err) => {
@@ -241,46 +286,49 @@ export const useChatStore = defineStore('chat', {
 
         // 设置加载标志
         this.isLoadingHistory = true
-
-        chatApi
-          .syncChannelMessageList({
-            limit: limit,
-            channel_id: channel.channelID,
-            channel_type: channel.channelType,
-            start_message_seq: 0,
-            end_message_seq: startMessageSeq,
-            pull_mode: 1, // 1表示向下拉取(获取更早的消息)
-          })
-          .then((resp) => {
-            let messages = []
-            const messageList = resp && resp['messages']
-            if (messageList) {
-              messageList.forEach((msg) => {
-                if (!msg.is_deleted) {
-                  const message = Convert.toMessage(msg)
-                  const messageWrap = Convert.toMessageWrap(message)
-                  messages.push(messageWrap)
-                }
-              })
-            }
-
+        const params = {
+          limit: limit,
+          channel_id: channel.channelID,
+          channel_type: channel.channelType,
+          start_message_seq: 0,
+          end_message_seq: startMessageSeq,
+          pull_mode: 1, // 1表示向下拉取(获取更早的消息)
+        }
+        // chatApi
+        //   .syncChannelMessageList({
+        //     limit: limit,
+        //     channel_id: channel.channelID,
+        //     channel_type: channel.channelType,
+        //     start_message_seq: 0,
+        //     end_message_seq: startMessageSeq,
+        //     pull_mode: 1, // 1表示向下拉取(获取更早的消息)
+        //   })
+        //   .then((resp) => {
+        //     let messages = []
+        //     const messageList = resp && resp['messages']
+        //     if (messageList) {
+        //       messageList.forEach((msg) => {
+        //         if (!msg.is_deleted) {
+        //           const message = Convert.toMessage(msg)
+        //           const messageWrap = Convert.toMessageWrap(message)
+        //           messages.push(messageWrap)
+        //         }
+        //       })
+        //     }
+        this.fetchChannelMessageList(params)
+          .then((messages) => {
             if (messages.length > 0) {
               // 将新消息添加到数组开头
               this.chatMessagesOfOrigin = [...messages, ...this.chatMessagesOfOrigin]
               this.chatMessages = refreshMessages(this.chatMessagesOfOrigin)
-              console.log('loadMoreMessages----->', messages.length, 'new messages loaded')
             }
-
             // 判断是否还有更多消息
             const hasMore = messages.length >= limit
-
             // 清除加载标志
             this.isLoadingHistory = false
-
             resolve({ messages, hasMore })
           })
           .catch((err) => {
-            console.error('loadMoreMessages error:', err)
             // 出错时也要清除加载标志
             this.isLoadingHistory = false
             reject(err)
