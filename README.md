@@ -204,3 +204,309 @@ SQLite 数据库（`sqlite-tiangou.db`）在本地存储聊天消息，用于离
 - Electron 窗口配置在 `electron/config/config.default.js`
 - 上下文隔离已禁用（`contextIsolation: false`）以允许在渲染进程中直接使用 Electron API
 - Node 集成已启用（`nodeIntegration: true`）
+
+## Electron模式下的聊天记录同步逻辑
+
+在当前用户在线时，将从后端Api获取的聊天记录及收到的聊天消息，使用sqlite数据库存储每个会话的聊天记录，在web页面获取某个会话的聊天记录时，优先通过本地sqlite数据库返回
+
+### 数据来源
+
+1. 从后端Api接口获取聊天记录（最完整的）
+   接口入参：`{limit: limit,channel_id: channel.channelID, channel_type: channel.channelType, start_message_seq: 0, end_message_seq: startMessageSeq, pull_mode: 1,}`
+   接口响应参数：`{end_message_seq:0,messages:[],more:0,pull_mode:0,start_message_seq:0}`
+
+2. 从本地sqlite数据库获取聊天记录（通过后端Api接口查询过的及当前用户在线时记录的）
+
+### 场景
+
+1. 本地sqlite数据库存储的聊天记录是完整的（可通过总记录数及最后message的message_id判断），直接从本地sqlite数据库返回给web。
+
+2. 本地sqlite数据库没有该会话的聊天记录，直接从后端Api获取。
+
+3. 本地sqlite数据库只有一部分记录；假设完整的有200条记录，每页请求30条记录，有些页可能是完整的如1-30（就直接从本地sqlite数据库返回）；第二页31-60，其中可能部分记录缺失；第三页61-90可能全部都缺失。
+
+### 实现方案
+
+#### **方案选择：按页完整性判断策略**
+
+采用简单高效的策略：每次请求按页判断该页本地数据是否完整，完整则返回本地，否则请求远程API并存储。
+
+**设计原则**：遵循 KISS（保持简单）原则，无需额外元数据表，实现快速，维护成本低。
+
+---
+
+#### **完整性判断算法**
+
+##### **1. 初次加载（获取最新消息）**
+
+**请求参数**：
+
+```javascript
+{
+  start_message_seq: 0,
+  end_message_seq: 0,
+  limit: 30
+}
+```
+
+**判断逻辑**：
+
+1. 查询本地最新的 `limit` 条消息（按 `message_seq` 降序）
+2. 检查返回结果：
+   - 如果 `count === limit` 且 `message_seq` 连续 → 本地数据完整，直接返回 ✅
+   - 如果 `count < limit` 或 `seq` 不连续 → 请求后端API 📡
+
+##### **2. 向上加载历史消息（往前翻页）**
+
+**请求参数**：
+
+```javascript
+{
+  start_message_seq: 0,
+  end_message_seq: 100,  // 获取 seq < 100 的消息
+  limit: 30
+}
+```
+
+**判断逻辑**：
+
+1. 查询本地数据库：
+
+```sql
+SELECT * FROM chat_messages
+WHERE channel_id = ?
+  AND channel_type = ?
+  AND message_seq < ?        -- end_message_seq
+ORDER BY message_seq DESC
+LIMIT ?;                      -- limit
+```
+
+2. 完整性检查：
+   - **条件A**：返回的消息数量 === `limit`
+   - **条件B**：`message_seq` 连续性（`max_seq - min_seq + 1 === count`）
+   - 如果 A && B 都满足 → 本地完整 ✅
+   - 否则 → 请求API并存储 📡
+
+**连续性检查示例**：
+
+```javascript
+// 本地返回30条消息，seq为：[99, 98, 97, ..., 70]
+// 检查：99 - 70 + 1 = 30 === count ✅ 连续
+```
+
+##### **3. message_seq 连续性检查算法**
+
+```javascript
+function isSeqContinuous(messages) {
+  if (!messages || messages.length === 0) return false
+
+  // 提取所有 message_seq 并排序
+  const seqs = messages.map(m => m.message_seq).sort((a, b) => a - b)
+
+  // 检查连续性：相邻seq差值应为1
+  for (let i = 1; i < seqs.length; i++) {
+    if (seqs[i] - seqs[i - 1] !== 1) {
+      return false // 发现缺口
+    }
+  }
+
+  return true
+}
+```
+
+---
+
+#### **实现流程**
+
+```
+前端请求某页消息
+    ↓
+[Electron主进程 - MessageSyncService]
+    ↓
+1. 解析请求参数（channel_id, channel_type, start_seq, end_seq, limit）
+    ↓
+2. 查询本地SQLite数据库
+    ↓
+3. 完整性判断：
+   ├─ 数量足够 && seq连续？
+   │    ├─ 是 → 直接返回本地数据 ✅
+   │    └─ 否 → ↓
+   │
+4. 请求后端API获取完整数据
+    ↓
+5. 数据处理：
+   ├─ 转换数据格式（header/payload JSON序列化）
+   ├─ 提取 message_content（payload.content）
+   ├─ 提取 payload_type（payload.type）
+    ↓
+6. 存入本地SQLite
+   ├─ 使用 message_id 去重（INSERT OR IGNORE）
+   ├─ 批量插入优化性能
+    ↓
+7. 返回给前端
+```
+
+---
+
+#### **核心模块设计**
+
+##### **1. Electron 服务层（新增）**
+
+**文件**：`electron/service/messageSyncService.js`
+
+**职责**：
+
+- 统一处理消息查询请求
+- 判断本地数据完整性
+- 协调本地DB和远程API
+- 数据格式转换和存储
+
+**关键方法**：
+
+```javascript
+class MessageSyncService {
+  // 查询消息（智能路由到本地或远程）
+  async getMessages(channel_id, channel_type, start_seq, end_seq, limit)
+
+  // 检查本地数据完整性
+  async checkLocalDataComplete(channel_id, channel_type, start_seq, end_seq, limit)
+
+  // 从API获取并存储
+  async fetchAndStoreFromAPI(params)
+
+  // 批量存储消息
+  async batchSaveMessages(messages)
+}
+```
+
+##### **2. 数据库扩展（基于现有 sqlitedb.js）**
+
+新增查询方法：
+
+```javascript
+// 按 message_seq 范围查询
+async getMessagesBySeqRange(channelId, channelType, startSeq, endSeq, limit)
+
+// 批量插入（去重）
+async batchInsertMessages(messages)
+
+// 获取会话的 message_seq 统计信息
+async getChannelSeqStats(channelId, channelType)
+```
+
+##### **3. IPC Controller（新增）**
+
+**文件**：`electron/controller/messageSync.js`
+
+**职责**：接收前端请求，调用 MessageSyncService
+
+```javascript
+async getChannelMessages(params) {
+  const { channel_id, channel_type, start_message_seq, end_message_seq, limit } = params
+  return await messageSyncService.getMessages(...)
+}
+```
+
+##### **4. 前端适配（修改现有 chat store）**
+
+**文件**：`frontend/src/stores/modules/chat.js`
+
+修改 `fetchChannelMessageList` 方法：
+
+- 在 Electron 环境下，调用 IPC 接口而非直接请求 HTTP API
+- 保持现有接口签名不变
+
+```javascript
+async fetchChannelMessageList(params) {
+  if (window.electron) {
+    // Electron 模式：使用本地同步服务
+    return await window.ipcApiRoute.getChannelMessages(params)
+  } else {
+    // Web 模式：直接请求API
+    return await chatApi.syncChannelMessageList(params)
+  }
+}
+```
+
+---
+
+#### **数据去重策略**
+
+使用 `message_id` 作为唯一标识：
+
+```sql
+-- 方式1：使用 UNIQUE 约束（建表时添加）
+CREATE UNIQUE INDEX idx_unique_message_id ON chat_messages(message_id);
+
+-- 方式2：插入时使用 INSERT OR IGNORE
+INSERT OR IGNORE INTO chat_messages (...) VALUES (...);
+
+-- 方式3：插入时使用 INSERT OR REPLACE（更新已存在的记录）
+INSERT OR REPLACE INTO chat_messages (...) VALUES (...);
+```
+
+**推荐**：使用方式1 + 方式2，在建表时添加唯一索引，插入时使用 `INSERT OR IGNORE`。
+
+---
+
+#### **性能优化**
+
+1. **批量插入**：使用事务批量插入消息，提升性能
+
+```javascript
+const insertStmt = db.prepare('INSERT OR IGNORE INTO chat_messages (...) VALUES (...)')
+const insertMany = db.transaction(messages => {
+  for (const msg of messages) insertStmt.run(msg)
+})
+insertMany(messages) // 事务化批量插入
+```
+
+2. **索引优化**：已创建的索引支持高效查询
+
+```sql
+idx_message_seq: (channel_id, channel_type, message_seq)  -- 范围查询
+idx_message_id: (message_id)                               -- 去重查询
+```
+
+3. **缓存策略**：首屏消息缓存在内存（`cacheChatMessagesByChannelID`），避免重复查询
+
+---
+
+#### **边界情况处理**
+
+1. **会话无消息**：本地返回空 + API返回空 → 标记为"无更多消息"
+2. **网络异常**：API请求失败时，返回本地数据（即使不完整），并提示用户
+3. **seq不连续但数量够**：可能是删除导致，需要检查连续性，不能仅判断数量
+4. **首次使用**：本地库为空，所有请求走API并存储
+
+---
+
+#### **测试场景**
+
+1. ✅ 全新会话首次加载（本地无数据）
+2. ✅ 已缓存会话的首屏加载（本地完整）
+3. ✅ 向上翻页（本地部分完整）
+4. ✅ 收到新消息后的实时存储
+5. ✅ 跨页缺失（第1页完整，第2页缺失）
+6. ✅ 删除消息后的seq不连续场景
+7. ✅ 离线模式下的本地数据展示
+
+---
+
+#### **后续扩展建议**
+
+如未来需要更精细的同步控制，可升级为**方案B（元数据表管理）**：
+
+- 新增 `channel_sync_meta` 表记录每个会话的同步状态
+- 字段：`channel_id`, `channel_type`, `max_message_seq`, `is_fully_synced`, `last_sync_time`
+- 可实现更智能的增量同步和全局状态查询
+
+---
+
+#### **关键代码位置**
+
+- **数据库层**：`electron/service/database/sqlitedb.js`（已完成表结构设计）
+- **同步服务**：`electron/service/messageSyncService.js`（待实现）
+- **IPC控制器**：`electron/controller/messageSync.js`（待实现）
+- **前端Store**：`frontend/src/stores/modules/chat.js`（需适配）
+- **索引优化**：已在 `sqlitedb.js` 的 `init()` 方法中创建
