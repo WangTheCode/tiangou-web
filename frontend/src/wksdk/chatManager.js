@@ -54,6 +54,7 @@ export const messageListener = (message) => {
 // 监听消息发送状态
 export const messageStatusListener = (ackPacket) => {
   const chatStore = useChatStore()
+  console.log('📨 收到消息发送状态:', ackPacket)
   chatStore.updateMessageStatus(ackPacket)
   // 更新消息状态
   // const message = chatStore.findMessageWithClientSeq(ackPacket.clientSeq)

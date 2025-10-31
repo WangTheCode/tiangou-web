@@ -6,7 +6,7 @@ import { ipc } from './ipcRenderer'
 import { useChatStore } from '@/stores/index'
 import { ConnectStatus, Channel } from 'wukongimjssdk'
 import { handleSyncConversations } from '@/wksdk/setCallback'
-import { messageListener } from '@/wksdk/chatManager'
+import { messageListener, messageStatusListener } from '@/wksdk/chatManager'
 import { newChannel } from '@/wksdk/channelManager'
 import { conversationListener } from '@/wksdk/conversationManager'
 
@@ -16,6 +16,7 @@ export const URLS = {
   onAddMessageListener: 'controller.web.addMessageListener',
   onAddConversationListener: 'controller.web.addConversationListener',
   onSyncConversationList: 'controller.web.syncConversationList',
+  onAddMessageStatusListener: 'controller.web.addMessageStatusListener',
 }
 
 export default class ipcListener {
@@ -69,6 +70,13 @@ export default class ipcListener {
       const chatStore = useChatStore()
       chatStore.setConversationList(conversations)
       console.log('📨 tcp收到会话列表:', conversations)
+    })
+  }
+  static onAddMessageStatusListener = () => {
+    ipc.removeAllListeners(URLS.onAddMessageStatusListener)
+    ipc.on(URLS.onAddMessageStatusListener, (_e, result) => {
+      console.log('📨 tcp收到消息状态:', result)
+      messageStatusListener(result)
     })
   }
 }
