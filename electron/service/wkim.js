@@ -15,6 +15,7 @@ const { setSyncConversationsCallback } = require('../wksdk/setCallback')
 const { webService } = require('./web')
 const { MessageContentTypeConst } = require('../wksdk/const')
 const { sqlitedbService } = require('./database/sqlitedb')
+const { reverseArray } = require('../utils')
 /**
  * WKIM服务
  */
@@ -160,31 +161,34 @@ class WkimService {
         end_message_seq,
         limit
       )
+
       let isLocalComplete = false
 
       // 第一页判断会话最后一条消息Seq是否存在本地数据库中
-      if (start_message_seq === 0 && end_message_seq === 0) {
+      if (
+        localMessages &&
+        localMessages.length > 0 &&
+        start_message_seq === 0 &&
+        end_message_seq === 0
+      ) {
         const hasLastMessage = localMessages.find(m => m.message_seq == lastMessageSeq)
         if (hasLastMessage) {
-          logger.info('hasLastMessage true')
           isLocalComplete = this._checkLocalDataComplete(localMessages, limit)
         }
       } else {
         isLocalComplete = this._checkLocalDataComplete(localMessages, limit)
       }
-      logger.info('isLocalComplete----->', isLocalComplete)
-
-      // 2. 检查本地数据完整性
-      // const isLocalComplete = this._checkLocalDataComplete(localMessages, limit)
-
       if (isLocalComplete) {
         // 本地数据完整，直接返回
-        logger.info('local return')
+        const reversedLocalMessages = reverseArray(localMessages)
         return {
-          start_message_seq: localMessages.length > 0 ? localMessages[0].message_seq : 0,
+          start_message_seq:
+            reversedLocalMessages.length > 0 ? reversedLocalMessages[0].message_seq : 0,
           end_message_seq:
-            localMessages.length > 0 ? localMessages[localMessages.length - 1].message_seq : 0,
-          messages: localMessages.map(m => {
+            reversedLocalMessages.length > 0
+              ? reversedLocalMessages[reversedLocalMessages.length - 1].message_seq
+              : 0,
+          messages: reversedLocalMessages.map(m => {
             m.header = m.header ? JSON.parse(m.header) : null
             m.payload = m.payload ? JSON.parse(m.payload) : null
             m.message_idstr = m.message_id
@@ -212,10 +216,7 @@ class WkimService {
       // 4. 将API返回的消息存储到本地数据库
       if (apiMessages.length > 0) {
         const conversation_id = `${channel_id}_${channel_type}`
-        const insertedCount = await sqlitedbService.batchInsertMessages(
-          conversation_id,
-          apiMessages
-        )
+        await sqlitedbService.batchInsertMessages(conversation_id, apiMessages)
       }
 
       // 5. 返回API数据
@@ -257,11 +258,9 @@ class WkimService {
 
     // 条件A：检查数量是否满足
     const hasEnoughMessages = messages.length === limit
-    logger.info('hasEnoughMessages----->', hasEnoughMessages)
 
     // 条件B：检查 message_seq 连续性
     const isContinuous = this._isSeqContinuous(messages)
-    logger.info('isContinuous----->', isContinuous)
 
     // 必须同时满足数量和连续性
     return hasEnoughMessages && isContinuous
@@ -282,9 +281,6 @@ class WkimService {
     // 检查连续性：相邻seq差值应为1
     for (let i = 1; i < seqs.length; i++) {
       if (seqs[i] - seqs[i - 1] !== 1) {
-        logger.warn(
-          `[_isSeqContinuous] 发现seq缺口: ${seqs[i - 1]} -> ${seqs[i]}, 缺失: ${seqs[i] - seqs[i - 1] - 1} 条`
-        )
         return false // 发现缺口
       }
     }
@@ -292,8 +288,18 @@ class WkimService {
     return true
   }
 
+  /**
+   * 停止服务，断开连接
+   */
   stop() {
-    // this.sdk.stop();
+    try {
+      if (this.sdk) {
+        logger.info('[wkim] 断开 SDK 连接')
+        this.sdk.disconnect()
+      }
+    } catch (error) {
+      logger.error('[wkim] 停止服务失败:', error)
+    }
   }
 }
 

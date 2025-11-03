@@ -46,6 +46,7 @@ export const messageListener = (message) => {
   // if (!message.send && message.header.reddot) {
   //     chatStore.setNeedSetUnread(true)
   // }
+  // chatStore.
   const messageWrap = Convert.toMessageWrap(message)
   fillOrder(messageWrap)
   chatStore.appendMessage(messageWrap)

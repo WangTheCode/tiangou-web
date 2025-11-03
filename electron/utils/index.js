@@ -29,8 +29,21 @@ function getUUID() {
   return S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4()
 }
 
+/**
+ * 将数组元素倒序排列
+ * @param {Array} arr 原数组
+ * @returns {Array} 倒序后的新数组（不修改原数组）
+ */
+function reverseArray(arr) {
+  if (!Array.isArray(arr)) {
+    return []
+  }
+  return [...arr].reverse()
+}
+
 module.exports = {
   show,
   getJson,
   getUUID,
+  reverseArray,
 }

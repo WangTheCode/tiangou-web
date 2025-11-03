@@ -242,10 +242,10 @@ class SqlitedbService extends BasedbService {
     // 根据 start_seq 和 end_seq 的值构建查询条件
     if (startSeq === 0 && endSeq === 0) {
       // 获取最新的 limit 条消息
-      sql += ' ORDER BY message_seq ASC LIMIT @limit'
+      sql += ' ORDER BY message_seq DESC LIMIT @limit'
     } else if (startSeq === 0 && endSeq > 0) {
       // 获取 seq < end_seq 的消息
-      sql += ' AND message_seq < @end_seq ORDER BY message_seq ASC LIMIT @limit'
+      sql += ' AND message_seq < @end_seq ORDER BY message_seq DESC LIMIT @limit'
       params.end_seq = endSeq
     } else if (startSeq > 0 && endSeq === 0) {
       // 获取 seq > start_seq 的消息

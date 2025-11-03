@@ -123,7 +123,6 @@ export const useChatStore = defineStore('chat', {
         this.markConversationUnread(this.currentConversation.channel, 0)
         this.currentConversationUnread = 0
       }
-      console.log('setCurrentConversation----->', conversation)
       this.chatMessagesOfOrigin = []
       this.chatMessages = []
       this.setReplyMessage(null)
@@ -193,10 +192,12 @@ export const useChatStore = defineStore('chat', {
       }
       return []
     },
-    // setChatMessages(channel, messages) {
-    //   this.chatMessagesOfOrigin = messages
-    //   this.chatMessages = refreshMessages(messages)
-    // },
+    // 添加消息到首屏消息缓存
+    addCacheChatMessages(message) {
+      // const key = `${message.channel_id}_${message.channel_type}`
+      // this.cacheChatMessagesByChannelID[key] = messages
+    },
+    // 获取频道首屏消息
     getChannelFirstMessageList(channel, opts) {
       return new Promise((resolve, reject) => {
         const limit = opts.limit || 30
@@ -243,7 +244,6 @@ export const useChatStore = defineStore('chat', {
           ipcApiRoute
             .syncChannelMessageList(params)
             .then((resp) => {
-              console.log('ipcApiRoute.syncChannelMessageList----->', resp)
               let messages = []
               const messageList = resp.data && resp.data['messages']
               if (messageList) {
