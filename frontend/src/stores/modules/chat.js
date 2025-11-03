@@ -237,26 +237,51 @@ export const useChatStore = defineStore('chat', {
     },
     fetchChannelMessageList(params) {
       return new Promise((resolve, reject) => {
-        chatApi
-          .syncChannelMessageList(params)
-          .then((resp) => {
-            let messages = []
-            const messageList = resp && resp['messages']
-            if (messageList) {
-              messageList.forEach((msg) => {
-                if (!msg.is_deleted) {
-                  const message = Convert.toMessage(msg)
-                  const messageWrap = Convert.toMessageWrap(message)
-                  messages.push(messageWrap)
-                }
-              })
-            }
+        if (isEE) {
+          params.lastMessageSeq = this.currentConversation?.lastMessage?.messageSeq || 0
+          params.lastMessageID = this.currentConversation?.lastMessage?.messageID || ''
+          ipcApiRoute
+            .syncChannelMessageList(params)
+            .then((resp) => {
+              console.log('ipcApiRoute.syncChannelMessageList----->', resp)
+              let messages = []
+              const messageList = resp.data && resp.data['messages']
+              if (messageList) {
+                messageList.forEach((msg) => {
+                  if (!msg.is_deleted) {
+                    const message = Convert.toMessage(msg)
+                    const messageWrap = Convert.toMessageWrap(message)
+                    messages.push(messageWrap)
+                  }
+                })
+              }
+              resolve(messages)
+            })
+            .catch((err) => {
+              reject(err)
+            })
+        } else {
+          chatApi
+            .syncChannelMessageList(params)
+            .then((resp) => {
+              let messages = []
+              const messageList = resp && resp['messages']
+              if (messageList) {
+                messageList.forEach((msg) => {
+                  if (!msg.is_deleted) {
+                    const message = Convert.toMessage(msg)
+                    const messageWrap = Convert.toMessageWrap(message)
+                    messages.push(messageWrap)
+                  }
+                })
+              }
 
-            resolve(messages)
-          })
-          .catch((err) => {
-            reject(err)
-          })
+              resolve(messages)
+            })
+            .catch((err) => {
+              reject(err)
+            })
+        }
       })
     },
     // 加载更多历史消息

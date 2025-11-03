@@ -14,6 +14,7 @@ const { post, setHttpOption } = require('../utils/http')
 const { setSyncConversationsCallback } = require('../wksdk/setCallback')
 const { webService } = require('./web')
 const { MessageContentTypeConst } = require('../wksdk/const')
+const { sqlitedbService } = require('./database/sqlitedb')
 /**
  * WKIM服务
  */
@@ -121,6 +122,174 @@ class WkimService {
     }
     const message = await this.sdk.chatManager.send(messageContent, channel, setting)
     return message
+  }
+
+  async setOpenConversation(conversation) {
+    const c = WKSDK.shared().conversationManager.conversations.find(
+      c =>
+        c.channel.channelID === conversation.channel.channelID &&
+        c.channel.channelType === conversation.channel.channelType
+    )
+    if (c) {
+      WKSDK.shared().conversationManager.openConversation = c
+    }
+    return true
+  }
+
+  /**
+   * 同步频道消息列表（智能路由到本地或远程）
+   * 根据本地数据完整性判断是否需要请求远程API
+   */
+  async syncChannelMessageList(data) {
+    const {
+      limit,
+      channel_id,
+      channel_type,
+      start_message_seq,
+      end_message_seq,
+      pull_mode,
+      lastMessageSeq,
+    } = data
+    try {
+      logger.info('syncChannelMessageList data----->', JSON.stringify(data))
+      // 1. 查询本地数据库
+      const localMessages = await sqlitedbService.getMessagesBySeqRange(
+        channel_id,
+        channel_type,
+        start_message_seq,
+        end_message_seq,
+        limit
+      )
+      let isLocalComplete = false
+
+      // 第一页判断会话最后一条消息Seq是否存在本地数据库中
+      if (start_message_seq === 0 && end_message_seq === 0) {
+        const hasLastMessage = localMessages.find(m => m.message_seq == lastMessageSeq)
+        if (hasLastMessage) {
+          logger.info('hasLastMessage true')
+          isLocalComplete = this._checkLocalDataComplete(localMessages, limit)
+        }
+      } else {
+        isLocalComplete = this._checkLocalDataComplete(localMessages, limit)
+      }
+      logger.info('isLocalComplete----->', isLocalComplete)
+
+      // 2. 检查本地数据完整性
+      // const isLocalComplete = this._checkLocalDataComplete(localMessages, limit)
+
+      if (isLocalComplete) {
+        // 本地数据完整，直接返回
+        logger.info('local return')
+        return {
+          start_message_seq: localMessages.length > 0 ? localMessages[0].message_seq : 0,
+          end_message_seq:
+            localMessages.length > 0 ? localMessages[localMessages.length - 1].message_seq : 0,
+          messages: localMessages.map(m => {
+            m.header = m.header ? JSON.parse(m.header) : null
+            m.payload = m.payload ? JSON.parse(m.payload) : null
+            m.message_idstr = m.message_id
+            return m
+          }),
+          more: 0, // 本地完整，假设没有更多
+        }
+      }
+
+      // 3. 本地数据不完整，请求后端API
+      logger.info('api return')
+
+      const response = await post('message/channel/sync', {
+        limit,
+        channel_id,
+        channel_type,
+        start_message_seq,
+        end_message_seq,
+        pull_mode,
+      })
+
+      const apiData = response.data || {}
+      const apiMessages = apiData.messages || []
+
+      // 4. 将API返回的消息存储到本地数据库
+      if (apiMessages.length > 0) {
+        const conversation_id = `${channel_id}_${channel_type}`
+        const insertedCount = await sqlitedbService.batchInsertMessages(
+          conversation_id,
+          apiMessages
+        )
+      }
+
+      // 5. 返回API数据
+      return {
+        start_message_seq: apiData.start_message_seq || 0,
+        end_message_seq: apiData.end_message_seq || 0,
+        messages: apiMessages,
+        more: apiData.more || 0,
+      }
+    } catch (error) {
+      // 发生错误时，尝试返回本地数据（即使不完整）
+      const fallbackMessages = await sqlitedbService
+        .getMessagesBySeqRange(channel_id, channel_type, start_message_seq, end_message_seq, limit)
+        .catch(() => [])
+
+      return {
+        start_message_seq: fallbackMessages.length > 0 ? fallbackMessages[0].message_seq : 0,
+        end_message_seq:
+          fallbackMessages.length > 0
+            ? fallbackMessages[fallbackMessages.length - 1].message_seq
+            : 0,
+        messages: fallbackMessages,
+        more: 0,
+      }
+    }
+  }
+
+  /**
+   * 检查本地数据完整性
+   * @param {Array} messages - 本地查询到的消息列表
+   * @param {number} limit - 期望的消息数量
+   * @returns {boolean} - 是否完整
+   */
+  _checkLocalDataComplete(messages, limit) {
+    // 如果本地没有消息，认为不完整
+    if (!messages || messages.length === 0) {
+      return false
+    }
+
+    // 条件A：检查数量是否满足
+    const hasEnoughMessages = messages.length === limit
+    logger.info('hasEnoughMessages----->', hasEnoughMessages)
+
+    // 条件B：检查 message_seq 连续性
+    const isContinuous = this._isSeqContinuous(messages)
+    logger.info('isContinuous----->', isContinuous)
+
+    // 必须同时满足数量和连续性
+    return hasEnoughMessages && isContinuous
+  }
+
+  /**
+   * 检查 message_seq 连续性
+   * @param {Array} messages - 消息列表
+   * @returns {boolean} - 是否连续
+   */
+  _isSeqContinuous(messages) {
+    if (!messages || messages.length === 0) return false
+    if (messages.length === 1) return true // 单条消息认为是连续的
+
+    // 提取所有 message_seq 并排序
+    const seqs = messages.map(m => m.message_seq).sort((a, b) => a - b)
+
+    // 检查连续性：相邻seq差值应为1
+    for (let i = 1; i < seqs.length; i++) {
+      if (seqs[i] - seqs[i - 1] !== 1) {
+        logger.warn(
+          `[_isSeqContinuous] 发现seq缺口: ${seqs[i - 1]} -> ${seqs[i]}, 缺失: ${seqs[i] - seqs[i - 1] - 1} 条`
+        )
+        return false // 发现缺口
+      }
+    }
+
+    return true
   }
 
   stop() {

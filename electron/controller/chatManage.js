@@ -32,6 +32,16 @@ class ChatManageController {
     const result = await wkimService.sendMessage(json)
     return show(result)
   }
+  async syncChannelMessageList(args) {
+    const json = getJson(args)
+    const result = await wkimService.syncChannelMessageList(json)
+    return show(result)
+  }
+  async setOpenConversation(args) {
+    const json = getJson(args)
+    wkimService.setOpenConversation(json)
+    return show(true)
+  }
 }
 ChatManageController.toString = () => '[class ChatManageController]'
 

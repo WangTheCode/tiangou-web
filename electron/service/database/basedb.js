@@ -23,7 +23,7 @@ class BasedbService {
     const dbFile = path.join(getDataDir(), 'db', this.dbname)
     const sqliteOptions = {
       timeout: 6000,
-      verbose: console.log,
+      // verbose: console.log,
     }
     this.storage = new SqliteStorage(dbFile, sqliteOptions)
     this.db = this.storage.db

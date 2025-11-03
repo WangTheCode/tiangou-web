@@ -39,6 +39,8 @@ export const URLS = {
   syncConversationList: 'controller/chatManage/syncConversationList',
   setImConfig: 'controller/chatManage/setImConfig',
   sendMessage: 'controller/chatManage/sendMessage',
+  syncChannelMessageList: 'controller/chatManage/syncChannelMessageList',
+  setOpenConversation: 'controller/chatManage/setOpenConversation',
 }
 
 const apis = {}

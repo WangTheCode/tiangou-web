@@ -161,6 +161,7 @@ function del(url, options = {}) {
  * @param {Object} [options.headers] - 默认请求头，会与每次请求的headers合并
  */
 function setHttpOption(options = {}) {
+  logger.info('setHttpOption----->', options)
   if (options.baseUrl !== undefined) {
     globalOptions.baseUrl = String(options.baseUrl || '')
   }

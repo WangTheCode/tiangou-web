@@ -1,7 +1,7 @@
 'use strict'
 
 const { BrowserWindow } = require('electron')
-
+const { sqlitedbService } = require('./database/sqlitedb')
 /**
  * 序列化 Conversation 对象，将 getter 属性转换为普通属性
  */
@@ -63,6 +63,23 @@ class WebService {
     if (message.content) {
       message.content = serializeMessageContent(message.content)
     }
+    const messageData = {
+      channel_id: message.channel.channelID,
+      channel_type: message.channel.channelType,
+      client_msg_no: message.clientMsgNo,
+      extra_version: 0,
+      from_uid: message.fromUID,
+      header: message.header,
+      is_deleted: message.isDeleted ? 1 : 0,
+      message_id: message.messageID,
+      message_seq: message.messageSeq,
+      payload: message.content.contentObj,
+      readed: 0,
+      setting: 0,
+      signal_payload: '',
+      timestamp: message.timestamp,
+    }
+    sqlitedbService.addChatMessage(messageData)
     const channel = 'controller.web.addMessageListener'
     const mainWindow = BrowserWindow.getAllWindows().find(win => win.id == 1)
     if (mainWindow) {
