@@ -4,7 +4,7 @@
 
 import { ipc } from './ipcRenderer'
 import { useChatStore } from '@/stores/index'
-import { ConnectStatus, Channel } from 'wukongimjssdk'
+import { ConnectStatus, Channel, Message } from 'wukongimjssdk'
 import { handleSyncConversations } from '@/wksdk/setCallback'
 import { messageListener, messageStatusListener } from '@/wksdk/chatManager'
 import { newChannel } from '@/wksdk/channelManager'
@@ -46,7 +46,26 @@ export default class ipcListener {
     ipc.on(URLS.onAddMessageListener, (_e, result) => {
       console.log('📨 tcp收到消息:', result)
       result.channel = newChannel(result.channel.channelID, result.channel.channelType)
-      // result.message = new Message(result.message)
+      const message = new Message()
+      message.channel = newChannel(result.channel.channelID, result.channel.channelType)
+      message.messageID = result.message.messageID
+      message.messageSeq = result.message.messageSeq
+      message.clientSeq = result.message.clientSeq
+      message.clientMsgNo = result.message.clientMsgNo
+
+      // 还需处理类型
+      message.content = result.message.content
+      message.header = result.message.header
+      message.remoteExtra = result.message.remoteExtra
+      message.setting = result.message.setting
+
+      message.fromUID = result.message.fromUID
+      message.isDeleted = result.message.isDeleted
+
+      message.timestamp = result.message.timestamp
+      message.status = result.message.status
+      message.voicePlaying = result.message.voicePlaying
+      message.voiceReaded = result.message.voiceReaded
       // result.message.contentType = result.message.contentType
       messageListener(result)
     })

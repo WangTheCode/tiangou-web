@@ -1,6 +1,10 @@
 'use strict'
 
 const { BrowserWindow } = require('electron')
+const { sqlitedbService } = require('./database/sqlitedb')
+const { logger } = require('ee-core/log')
+const { MessageContentTypeConst } = require('../wksdk/const')
+const { MessageStatus } = require('wukongimjstcpsdk')
 
 /**
  * 序列化 Conversation 对象，将 getter 属性转换为普通属性
@@ -45,10 +49,29 @@ function serializeMessageContent(content) {
 }
 
 /**
+ * 序列化消息状态回执对象
+ * 主要解决 messageID 大整数在 IPC 传输中的序列化问题
+ */
+function serializeMessageAck(ack) {
+  if (!ack) return ack
+
+  return {
+    ...ack,
+    // 确保 messageID 和 messageSeq 作为字符串传输，避免大整数精度丢失
+    messageID: String(ack.messageID || ''),
+    messageSeq: Number(ack.messageSeq || 0),
+  }
+}
+
+/**
  * 发送消息到web监听器
  * @class
  */
 class WebService {
+  constructor() {
+    this.sendMessageStatusMap = new Map()
+  }
+
   setConnectStatus(status, reasonCode) {
     const channel = 'controller.web.onConnectStatus'
     const mainWindow = BrowserWindow.getAllWindows().find(win => win.id == 1)
@@ -59,12 +82,36 @@ class WebService {
       })
     }
   }
-  /**
-   * 监听收到新消息（仅负责转发到前端，数据库存储由 wkimService 处理）
-   */
   addMessageListener(message) {
     if (message.content) {
       message.content = serializeMessageContent(message.content)
+    }
+    logger.info('addMessageListener', JSON.stringify(message))
+    let payload = {}
+    if (message.content.contentType === MessageContentTypeConst.text) {
+      payload.content = message.content.text
+      payload.type = MessageContentTypeConst.text
+    }
+    const messageData = {
+      channel_id: message.channel.channelID,
+      channel_type: message.channel.channelType,
+      client_msg_no: message.clientMsgNo,
+      extra_version: 0,
+      from_uid: message.fromUID,
+      header: message.header,
+      is_deleted: message.isDeleted ? 1 : 0,
+      message_id: String(message.messageID || ''),
+      message_seq: message.messageSeq || '',
+      payload,
+      readed: 0,
+      setting: 0,
+      signal_payload: '',
+      timestamp: message.timestamp,
+    }
+    if (message.messageID) {
+      sqlitedbService.addChatMessage(messageData)
+    } else {
+      this.sendMessageStatusMap.set(message.clientSeq, messageData)
     }
     const channel = 'controller.web.addMessageListener'
     const mainWindow = BrowserWindow.getAllWindows().find(win => win.id == 1)
@@ -89,14 +136,34 @@ class WebService {
       mainWindow.webContents.send(channel, data)
     }
   }
-  /**
-   * 监听消息发送状态（仅负责转发到前端，数据库更新由 wkimService 处理）
-   */
   addMessageStatusListener(ack) {
+    logger.info('addMessageStatusListener--', JSON.stringify(ack))
+    const messageData = this.sendMessageStatusMap.get(ack.clientSeq)
+    if (messageData) {
+      messageData.message_id = String(ack.messageID || '')
+      messageData.message_seq = ack.messageSeq
+      messageData.header = {
+        no_persist: ack.noPersist ? 1 : 0,
+        red_dot: ack.reddot ? 1 : 0,
+        sync_once: ack.syncOnce ? 1 : 0,
+      }
+      if (ack.reasonCode === 1) {
+        messageData.status = MessageStatus.Normal
+      } else {
+        messageData.status = MessageStatus.Fail
+      }
+      sqlitedbService.addChatMessage(messageData)
+      this.sendMessageStatusMap.delete(ack.clientSeq)
+    }
+
+    // 序列化 ack 对象，防止大整数传输问题
+    const serializedAck = serializeMessageAck(ack)
+
     const channel = 'controller.web.addMessageStatusListener'
     const mainWindow = BrowserWindow.getAllWindows().find(win => win.id == 1)
     if (mainWindow) {
-      mainWindow.webContents.send(channel, ack)
+      logger.info('addMessageStatusListener send--', JSON.stringify(serializedAck))
+      mainWindow.webContents.send(channel, serializedAck)
     }
   }
 }
