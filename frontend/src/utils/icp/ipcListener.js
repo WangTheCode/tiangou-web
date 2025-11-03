@@ -25,6 +25,7 @@ export default class ipcListener {
     this.onAddMessageListener()
     this.onAddConversationListener()
     this.onSyncConversationList()
+    this.onAddMessageStatusListener()
   }
   static onConnectStatus = () => {
     const chatStore = useChatStore()

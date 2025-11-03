@@ -194,8 +194,15 @@ export const useChatStore = defineStore('chat', {
     },
     // 添加消息到首屏消息缓存
     addCacheChatMessages(message) {
-      // const key = `${message.channel_id}_${message.channel_type}`
-      // this.cacheChatMessagesByChannelID[key] = messages
+      const key = `${message.channel.channelID}_${message.channel.channelType}`
+      const messages = this.cacheChatMessagesByChannelID[key]
+      if (messages && messages.length > 0) {
+        messages.push(message)
+        if (messages.length > 30) {
+          messages.shift()
+        }
+        this.cacheChatMessagesByChannelID[key] = messages
+      }
     },
     // 获取频道首屏消息
     getChannelFirstMessageList(channel, opts) {

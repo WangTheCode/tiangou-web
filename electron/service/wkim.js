@@ -1,26 +1,20 @@
 'use strict'
 
 const { logger } = require('ee-core/log')
-const {
-  WKSDK,
-  ConnectStatus,
-  MessageText,
-  Channel,
-  ChannelTypePerson,
-  Mention,
-  Setting,
-} = require('wukongimjstcpsdk')
+const { WKSDK, MessageText, Channel, Mention, Setting } = require('wukongimjstcpsdk')
 const { post, setHttpOption } = require('../utils/http')
 const { setSyncConversationsCallback } = require('../wksdk/setCallback')
 const { webService } = require('./web')
 const { MessageContentTypeConst } = require('../wksdk/const')
 const { sqlitedbService } = require('./database/sqlitedb')
 const { reverseArray } = require('../utils')
+const { MessageStatus } = require('wukongimjstcpsdk')
 /**
  * WKIM服务
  */
 class WkimService {
   constructor() {
+    this.sendMessageStatusMap = new Map()
     this.sdk = WKSDK.shared()
     this._inited = false
   }
@@ -29,19 +23,92 @@ class WkimService {
     if (this._inited) return
     const { sdk } = this
 
-    // 监听连接状态
-    sdk.connectManager.addConnectStatusListener(webService.setConnectStatus)
+    // 监听连接状态（直接使用 webService 的方法，无需 this）
+    sdk.connectManager.addConnectStatusListener(webService.setConnectStatus.bind(webService))
 
-    sdk.chatManager.addMessageListener(webService.addMessageListener)
+    sdk.conversationManager.addConversationListener(
+      webService.addConversationListener.bind(webService)
+    )
 
-    sdk.conversationManager.addConversationListener(webService.addConversationListener)
+    // 监听消息（绑定 wkimService 的 this 上下文）
+    sdk.chatManager.addMessageListener(this.addMessageListener.bind(this))
 
-    // 监听消息发送状态
-    sdk.chatManager.addMessageStatusListener(webService.addMessageStatusListener)
+    // 监听消息发送状态（绑定 wkimService 的 this 上下文）
+    sdk.chatManager.addMessageStatusListener(this.addMessageStatusListener.bind(this))
 
     setSyncConversationsCallback()
 
     this._inited = true
+  }
+
+  addMessageListener(message) {
+    logger.info('addMessageListener', JSON.stringify(message))
+
+    // 1. 准备消息数据用于存储到数据库
+    let payload = {}
+    if (message.content.contentType === MessageContentTypeConst.text) {
+      payload.content = message.content.text
+      payload.type = MessageContentTypeConst.text
+    }
+    const messageData = {
+      channel_id: message.channel.channelID,
+      channel_type: message.channel.channelType,
+      client_msg_no: message.clientMsgNo,
+      extra_version: 0,
+      from_uid: message.fromUID,
+      header: message.header,
+      is_deleted: message.isDeleted ? 1 : 0,
+      message_id: message.messageID || '',
+      message_seq: message.messageSeq || '',
+      payload,
+      readed: 0,
+      setting: 0,
+      signal_payload: '',
+      timestamp: message.timestamp,
+    }
+
+    // 2. 如果有 messageID，直接存储；否则暂存等待回执
+    if (message.messageID) {
+      sqlitedbService.addChatMessage(messageData)
+    } else {
+      this.sendMessageStatusMap.set(message.clientSeq, messageData)
+    }
+
+    // 3. 通知前端（通过 webService 发送 IPC 消息）
+    webService.addMessageListener(message)
+  }
+
+  addMessageStatusListener(ack) {
+    logger.info('addMessageStatusListener--', JSON.stringify(ack))
+
+    // 1. 从暂存 Map 中获取消息数据
+    const messageData = this.sendMessageStatusMap.get(ack.clientSeq)
+    if (messageData) {
+      // 2. 更新消息ID和序列号
+      messageData.message_id = ack.messageID
+      messageData.message_seq = ack.messageSeq
+      messageData.header = {
+        no_persist: ack.noPersist ? 1 : 0,
+        red_dot: ack.reddot ? 1 : 0,
+        sync_once: ack.syncOnce ? 1 : 0,
+      }
+
+      // 3. 设置消息状态
+      if (ack.reasonCode === 1) {
+        messageData.status = MessageStatus.Normal
+      } else {
+        messageData.status = MessageStatus.Fail
+      }
+
+      // 4. 存储到数据库
+      sqlitedbService.addChatMessage(messageData)
+
+      // 5. 从暂存 Map 中删除
+      this.sendMessageStatusMap.delete(ack.clientSeq)
+    }
+
+    // 6. 通知前端（通过 webService 发送 IPC 消息）
+    webService.addMessageStatusListener(ack)
   }
 
   setImConfig(imConfig) {
@@ -94,7 +161,8 @@ class WkimService {
       }))
 
       return serializedConversations
-    } catch (error) {
+    } catch {
+      // 发生错误时返回空数组
       return []
     }
   }
@@ -114,7 +182,7 @@ class WkimService {
     }
     const channelObject = new Channel(channel.channelID, channel.channelType)
     const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channelObject)
-    let setting = new Setting()
+    const setting = new Setting()
     if (channelInfo?.orgData.receipt === 1) {
       setting.receiptEnabled = true
     }
@@ -228,6 +296,7 @@ class WkimService {
       }
     } catch (error) {
       // 发生错误时，尝试返回本地数据（即使不完整）
+      logger.error('[syncChannelMessageList] API 请求失败:', error)
       const fallbackMessages = await sqlitedbService
         .getMessagesBySeqRange(channel_id, channel_type, start_message_seq, end_message_seq, limit)
         .catch(() => [])
