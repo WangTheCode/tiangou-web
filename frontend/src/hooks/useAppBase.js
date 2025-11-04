@@ -14,6 +14,10 @@ export const useAppBase = () => {
   const chatStore = useChatStore()
   const router = useRouter()
   const cacheUserInfo = Cache.get('USER_INFO')
+  const sendMessageMode = Cache.get('sendMessageMode')
+  if (sendMessageMode) {
+    chatStore.setSendMessageMode(sendMessageMode)
+  }
   if (cacheUserInfo && cacheUserInfo.uid) {
     userStore.setUserInfo(cacheUserInfo).then(() => {
       chatStore.connectIm(cacheUserInfo)

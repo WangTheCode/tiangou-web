@@ -66,7 +66,14 @@
               </template>
               <IconButton size="sm" icon="icon-emoji" icon-size="20px" round class="mr-1" />
             </el-tooltip>
-            <IconButton size="sm" icon="icon-image" icon-size="20px" round class="mr-1" />
+            <IconButton
+              size="sm"
+              icon="icon-image"
+              icon-size="20px"
+              round
+              class="mr-1"
+              @click="onSelectImage"
+            />
             <IconButton size="sm" icon="icon-attachment" icon-size="20px" round class="mr-1" />
             <IconButton size="sm" icon="icon-box" icon-size="20px" round class="mr-1" />
             <IconButton size="sm" icon="icon-activity" icon-size="20px" round class="mr-1" />
@@ -93,29 +100,22 @@
           </div>
         </div>
         <div class="textarea mb-1">
-          <el-mention
-            ref="mentionsRef"
-            placeholder="请输入消息"
+          <ChatInputComponent
+            ref="chatInputRef"
             v-model="currentText"
-            :options="computedMentionOptions"
-            :rows="2"
-            type="textarea"
-            popper-class="chat-input-mention-popper"
-            @keydown.enter="onTextareaPressEnter"
-            @select="onMentionSelect"
+            placeholder="请输入消息"
+            :mentionList="computedMentionOptions"
+            minHeight="50px"
+            maxHeight="100px"
+            :enter-behavior="enterBehavior"
+            @mention="handleMentionSelect"
+            @send="onSendMessage"
+            @ctrlEnter="onChatInputCtrlEnter"
+            :allow-paste-image="true"
+            :border="false"
+            accept="image/*"
+            @pasteImage="handlePasteImage"
           />
-        </div>
-        <div class="text-right" @click="setTextareaFocus">
-          <el-button
-            type="primary"
-            @click.stop="
-              () => {
-                onSendMessage()
-              }
-            "
-          >
-            发送
-          </el-button>
         </div>
       </div>
     </div>
@@ -127,11 +127,18 @@
         @select="onSelectEmoji"
       />
     </div>
+    <input
+      type="file"
+      ref="imageInputRef"
+      accept="image/*"
+      @change="handleImageChange"
+      style="display: none"
+    />
   </div>
 </template>
 
 <script setup>
-import { computed, ref, nextTick, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import IconButton from '../base/IconButton.vue'
 import { useAppStore, useChatStore } from '@/stores/index'
@@ -140,7 +147,10 @@ import { MessageText } from 'wukongimjssdk'
 import EmojiPicker from 'vue3-emoji-picker'
 import 'vue3-emoji-picker/css'
 import { getChannelInfo, newChannel } from '@/wksdk/channelManager'
-import { MergeforwardContent } from '@/wksdk/model'
+import { MergeforwardContent, ImageContent } from '@/wksdk/model'
+import { ChatInput as ChatInputComponent } from 'chat-vue'
+import 'chat-vue/lib/style.css' // 修正：style.css 位于 lib 目录下
+import { sendFileDialog } from './sendFileDialog/index'
 
 const appStore = useAppStore()
 const chatStore = useChatStore()
@@ -151,11 +161,17 @@ const showSelectMessage = computed(() => chatStore.showSelectMessage)
 const userInfo = ref({})
 const isShowEmojiPicker = ref(false)
 const currentText = ref('')
-const mentionsRef = ref(null)
-let textareaDom = null
+const chatInputRef = ref(null)
+const imageInputRef = ref(null) // 图片文件输入框引用
 let mentionCache = {}
-let isMentionSelecting = false // 标记是否正在选择提及项
 
+const enterBehavior = computed(() => {
+  if (sendMessageMode.value === 'enter') {
+    return 'submit'
+  } else {
+    return 'newline'
+  }
+})
 // 计算提及选项
 const computedMentionOptions = computed(() => {
   const subscribers = chatStore.subscribers || []
@@ -168,6 +184,7 @@ const computedMentionOptions = computed(() => {
   const options = subscribers
     .filter((sub) => !sub.isDeleted && sub.uid !== chatStore.connectUserInfo?.uid)
     .map((sub) => ({
+      id: sub.uid,
       value: `[${sub.name}]`,
       label: sub.remark || sub.name || sub.uid,
       uid: sub.uid,
@@ -187,54 +204,18 @@ const computedMentionOptions = computed(() => {
 })
 
 // 监听提及选择
-const onMentionSelect = (option) => {
+const handleMentionSelect = (option) => {
+  console.log(option)
   // 将选中的用户添加到缓存
-  const name = option.value
-  mentionCache[name] = {
-    uid: option.uid,
-    name: name,
-  }
-
-  // 设置标志,表示正在选择提及项
-  isMentionSelecting = true
-  // 延迟重置标志,避免影响后续操作
-  setTimeout(() => {
-    isMentionSelecting = false
-  }, 100)
+  // const name = option.value
+  // mentionCache[name] = {
+  //   uid: option.uid,
+  //   name: name,
+  // }
 }
 
-const emit = defineEmits(['sendMessage'])
-const setTextareaFocus = () => {
-  // textareaDom && textareaDom.focus()
-  console.log(mentionsRef.value)
-  mentionsRef.value?.focus()
-}
-
-const onTextareaPressEnter = (e) => {
-  // 检查 el-mention 的下拉菜单是否正在显示
-  const isDropdownVisible = !!document.querySelector('.chat-input-mention-popper')
-
-  if (isDropdownVisible || isMentionSelecting) {
-    // 下拉菜单显示中或正在选择,不处理发送消息
-    console.log('下拉菜单显示中,阻止发送')
-    return
-  }
-
-  if (device.value == 'mobile') return
-
-  if (sendMessageMode.value === 'enter') {
-    if (e.ctrlKey) {
-      // 让光标换行
-      insertAtCursor('\n')
-      return
-    }
-    e.preventDefault()
-    onSendMessage()
-  } else {
-    if (e.ctrlKey) {
-      onSendMessage()
-    }
-  }
+const onChatInputCtrlEnter = () => {
+  console.log('按下 Ctrl+Enter 键')
 }
 
 // 格式化@文本
@@ -308,20 +289,17 @@ const parseMention = (text) => {
   return mention
 }
 
-const onSendMessage = (content) => {
-  let text = ''
-  if (content) {
-    text = content
+const onSendMessage = () => {
+  let text = chatInputRef.value.getText()
+  if (text.trim()) {
+    text = text.trim()
+    text = text.replace(/\n\n/g, '\n') // 将每两个连续换行符替换为一个
   } else {
-    text = currentText.value.trim()
-  }
-  if (!text) {
     return
   }
-
   //  长度验证（最多1000字符）
   if (text && text.length > 1000) {
-    console.error('输入内容长度不能大于1000字符！')
+    ElMessage.error('输入内容长度不能大于1000字符！')
     return
   }
 
@@ -340,41 +318,40 @@ const onSendMessage = (content) => {
   mentionCache = {}
 }
 
-const insertAtCursor = (content) => {
-  if (!textareaDom) return
-
-  // 获取光标位置
-  const start = textareaDom.selectionStart
-  const end = textareaDom.selectionEnd
-  if (device.value === 'mobile') {
-    textareaDom.readOnly = true
-  }
-  // 插入字符并更新绑定值
-  currentText.value =
-    currentText.value.substring(0, start) + content + currentText.value.substring(end)
-
-  // 更新光标位置
-  nextTick(() => {
-    textareaDom.setSelectionRange(start + content.length, start + content.length)
-    // 移动端时保持光标但不弹出输入法
-    if (device.value === 'mobile') {
-      // textarea.readOnly = true
-      textareaDom.focus()
-      setTimeout(() => {
-        textareaDom.readOnly = false
-      }, 100)
-    } else {
-      textareaDom.focus()
-    }
-  })
+const handlePasteImage = (file) => {
+  console.log('粘贴图片:', file)
+  // TODO: 处理粘贴的图片文件
 }
 
-const onUploadFile = () => {
-  document.getElementById('uploadButton')?.click()
+// 触发文件选择器
+const onSelectImage = () => {
+  imageInputRef.value?.click()
+}
+
+// 处理选择的图片文件
+const handleImageChange = (event) => {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  console.log('选择图片:', file)
+  // TODO: 处理选择的图片文件
+  sendFileDialog({
+    file: file,
+    onSubmit: (imgObj) => {
+      console.log('发送图片:', file, imgObj)
+      chatStore.sendMessage({
+        content: new ImageContent(file, imgObj.previewUrl, imgObj.width, imgObj.height),
+      })
+    },
+  })
+
+  // 清空 input 值，允许选择相同文件
+  event.target.value = ''
 }
 
 const onSelectEmoji = (emoji) => {
-  insertAtCursor(emoji.i)
+  console.log(emoji)
+  chatInputRef.value?.insertContent(emoji.i)
   // isShowEmojiPicker.value = false
 }
 

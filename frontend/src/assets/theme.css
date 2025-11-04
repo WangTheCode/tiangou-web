@@ -16,6 +16,15 @@
   --success-color: #52c41a;
   --warning-color: #faad14;
   --error-color: #ff4d4f;
+
+  --chat-input-primary-color: #785bf6 !important;
+  --chat-input-primary-color-hover: #9780fc !important;
+  --mention-text: #785bf6 !important;
+
+  --el-color-primary: #785bf6 !important;
+  --el-color-primary-dark-2: #6749e6 !important;
+  --el-color-primary-light-3: #9780fc !important;
+  /* --el-button-bg-color: #785bf6; */
 }
 .theme-light {
   --page-background: #fff;

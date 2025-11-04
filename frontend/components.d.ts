@@ -41,6 +41,7 @@ declare module 'vue' {
     ReplyMessage: typeof import('./src/components/chat/ReplyMessage.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SendFileDialog: typeof import('./src/components/chat/sendFileDialog/SendFileDialog.vue')['default']
     System: typeof import('./src/components/chat/messageCell/System.vue')['default']
     TimeLine: typeof import('./src/components/chat/messageCell/TimeLine.vue')['default']
   }

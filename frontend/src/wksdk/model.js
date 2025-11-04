@@ -6,6 +6,7 @@ import {
   MessageStatus,
   MessageContent,
   Message,
+  MediaMessageContent,
 } from 'wukongimjssdk'
 import { getUUID } from '../utils/helper'
 import { BubblePosition, MessageReasonCode, OrderFactor, MessageContentTypeConst } from './const'
@@ -412,5 +413,30 @@ export class MergeforwardContent extends MessageContent {
       timestamp: message.timestamp,
       payload: message.content.contentObj,
     }
+  }
+}
+
+export class ImageContent extends MediaMessageContent {
+  constructor(file, imgData, width, height) {
+    super()
+    this.file = file
+    this.imgData = imgData
+    this.width = width || 0
+    this.height = height || 0
+  }
+  decodeJSON(content) {
+    this.width = content['width'] || 0
+    this.height = content['height'] || 0
+    this.url = content['url'] || ''
+    this.remoteUrl = this.url
+  }
+  encodeJSON() {
+    return { width: this.width || 0, height: this.height || 0, url: this.remoteUrl || '' }
+  }
+  get contentType() {
+    return MessageContentTypeConst.image
+  }
+  get conversationDigest() {
+    return '[图片]'
   }
 }

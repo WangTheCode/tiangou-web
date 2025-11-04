@@ -489,6 +489,12 @@ export const useChatStore = defineStore('chat', {
         // console.log('chatStore sendMessage----->', data)
         // const message = await sendMessage(data)
         // console.log('sendMessage----->', message)
+
+        if (!this.currentConversation) {
+          reject(new Error('当前会话不存在'))
+          return
+        }
+        // 处理回复
         if (this.replyMessage) {
           const reply = new Reply()
           reply.messageID = this.replyMessage.messageID
@@ -500,11 +506,6 @@ export const useChatStore = defineStore('chat', {
           }
           reply.content = this.replyMessage.content
           data.reply = reply
-        }
-
-        if (!this.currentConversation) {
-          reject(new Error('当前会话不存在'))
-          return
         }
         if (isEE) {
           if (!data.channel) {
