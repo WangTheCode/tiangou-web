@@ -2,6 +2,37 @@
 @tailwind components;
 @tailwind utilities;
 
+.scroll-hidden::-webkit-scrollbar {
+  display: none;
+}
+.scroll-hidden {
+  scrollbar-width: none;
+}
+
+::-webkit-scrollbar-track {
+  box-shadow: none;
+  background: none;
+}
+
+::-webkit-scrollbar {
+  height: 10px !important;
+  width: 10px !important;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  border-style: dashed;
+  background-color: rgba(157, 165, 183, 0.5);
+  border-color: transparent;
+  border-width: 2px;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(157, 165, 183, 0.7);
+  box-shadow: none;
+}
+
 .v3-emoji-picker {
   box-shadow: none;
 }

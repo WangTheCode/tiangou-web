@@ -48,24 +48,24 @@ export default class ipcListener {
       result.channel = newChannel(result.channel.channelID, result.channel.channelType)
       const message = new Message()
       message.channel = newChannel(result.channel.channelID, result.channel.channelType)
-      message.messageID = result.message.messageID
-      message.messageSeq = result.message.messageSeq
-      message.clientSeq = result.message.clientSeq
-      message.clientMsgNo = result.message.clientMsgNo
+      message.messageID = result.messageID
+      message.messageSeq = result.messageSeq
+      message.clientSeq = result.clientSeq
+      message.clientMsgNo = result.clientMsgNo
 
       // 还需处理类型
-      message.content = result.message.content
-      message.header = result.message.header
-      message.remoteExtra = result.message.remoteExtra
-      message.setting = result.message.setting
+      message.content = result.content
+      message.header = result.header
+      message.remoteExtra = result.remoteExtra
+      message.setting = result.setting
 
-      message.fromUID = result.message.fromUID
-      message.isDeleted = result.message.isDeleted
+      message.fromUID = result.fromUID
+      message.isDeleted = result.isDeleted
 
-      message.timestamp = result.message.timestamp
-      message.status = result.message.status
-      message.voicePlaying = result.message.voicePlaying
-      message.voiceReaded = result.message.voiceReaded
+      message.timestamp = result.timestamp
+      message.status = result.status
+      message.voicePlaying = result.voicePlaying
+      message.voiceReaded = result.voiceReaded
       result.message = message
       // result.message.contentType = result.message.contentType
       messageListener(result)

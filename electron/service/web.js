@@ -88,9 +88,17 @@ class WebService {
     }
     logger.info('addMessageListener', JSON.stringify(message))
     let payload = {}
-    if (message.content.contentType === MessageContentTypeConst.text) {
-      payload.content = message.content.text
-      payload.type = MessageContentTypeConst.text
+    if (message.content && message.content.contentObj) {
+      payload = message.content.contentObj
+    } else {
+      payload.type = message.content.contentType
+      if (message.content.contentType === MessageContentTypeConst.text) {
+        payload.content = message.content.text
+      } else if (message.content.contentType === MessageContentTypeConst.image) {
+        payload.height = message.content.height
+        payload.width = message.content.width
+        payload.url = message.content.url
+      }
     }
     const messageData = {
       channel_id: message.channel.channelID,

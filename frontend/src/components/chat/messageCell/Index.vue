@@ -23,7 +23,7 @@
     >
       <img
         :src="imageData.url"
-        :style="{ width: imageData.width, height: imageData.height }"
+        :style="{ width: `${imageData.width}px`, height: `${imageData.height}px` }"
         decoding="sync"
       />
     </Bubble>
@@ -86,9 +86,11 @@ const imageData = computed(() => {
     let scaleSize = imageScale(message.value.content.width, message.value.content.height)
     return {
       url: message.value.content.url,
-      width: scaleSize.width + 'px',
-      height: scaleSize.height + 'px',
+      width: scaleSize.width,
+      height: scaleSize.height,
     }
+  } else if (message.value && message.value.content && message.value.content.contentObj) {
+    return message.value.content.contentObj
   }
   return {}
 })

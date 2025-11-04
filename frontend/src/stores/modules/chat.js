@@ -126,8 +126,8 @@ export const useChatStore = defineStore('chat', {
       this.chatMessagesOfOrigin = []
       this.chatMessages = []
       this.setReplyMessage(null)
-      setOpenConversation(conversation)
       this.currentConversation = conversation
+      setOpenConversation(conversation)
       fetchChannelInfoIfNeed(conversation.channel)
       this.getChannelFirstMessageList(conversation.channel, {
         limit: 30,
@@ -326,27 +326,7 @@ export const useChatStore = defineStore('chat', {
           end_message_seq: startMessageSeq,
           pull_mode: 1, // 1表示向下拉取(获取更早的消息)
         }
-        // chatApi
-        //   .syncChannelMessageList({
-        //     limit: limit,
-        //     channel_id: channel.channelID,
-        //     channel_type: channel.channelType,
-        //     start_message_seq: 0,
-        //     end_message_seq: startMessageSeq,
-        //     pull_mode: 1, // 1表示向下拉取(获取更早的消息)
-        //   })
-        //   .then((resp) => {
-        //     let messages = []
-        //     const messageList = resp && resp['messages']
-        //     if (messageList) {
-        //       messageList.forEach((msg) => {
-        //         if (!msg.is_deleted) {
-        //           const message = Convert.toMessage(msg)
-        //           const messageWrap = Convert.toMessageWrap(message)
-        //           messages.push(messageWrap)
-        //         }
-        //       })
-        //     }
+
         this.fetchChannelMessageList(params)
           .then((messages) => {
             if (messages.length > 0) {
@@ -405,7 +385,15 @@ export const useChatStore = defineStore('chat', {
       if (index !== -1) {
         // 修改原 Conversation 实例的属性，保留类的所有方法和 getter
         const item = this.conversationList[index]
-        item.unread = conversation.unread
+        if (
+          this.currentConversation &&
+          this.currentConversation.channel.isEqual(conversation.channel)
+        ) {
+          // 记录当前会话的未读数，用于在离开时请求清空未读
+          this.currentConversationUnread = conversation.unread
+        } else {
+          item.unread = conversation.unread
+        }
         item.lastMessage = conversation.lastMessage
         item.timestamp = conversation.timestamp || item.timestamp
         // 添加更新时间戳，强制触发 Vue 的响应式更新

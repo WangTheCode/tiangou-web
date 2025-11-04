@@ -35,6 +35,14 @@
         </DynamicScrollerItem>
       </template>
     </DynamicScroller>
+
+    <div
+      class="w-10 h-10 bg-white rounded-full flex items-center justify-center absolute bottom-4 right-4 shadow-md cursor-pointer"
+      v-if="!isAtBottom"
+      @click="scrollToBottom"
+    >
+      <i class="iconfont icon-direction-down"></i>
+    </div>
     <Contextmenu
       ref="contextmenuDropdownRef"
       :menu-items="contextmenuItems"
@@ -61,8 +69,7 @@ const scrollerRef = ref(null)
 const scrollerKey = ref(0) // 用于强制重新渲染 DynamicScroller
 const previousMessagesLength = ref(0) // 记录之前的消息数量
 const currentChannelKey = ref('') // 记录当前频道
-let isAtBottom = false // 是否位于底部
-let lastScrollTop = 0 // 记录上次滚动位置
+const isAtBottom = ref(true) // 是否位于底部
 
 // 从 store 中获取 userInfo，只需要获取一次
 const userInfo = computed(() => userStore.userInfo)
@@ -80,7 +87,6 @@ const contextmenuItems = ref([
 
 const chatMessages = computed(() => {
   if (chatStore.chatMessages) {
-    console.log(111, chatStore.chatMessages)
     return chatStore.chatMessages
   }
   return []
@@ -91,15 +97,13 @@ const isLoadingMore = ref(false) // 防止重复加载
 
 const onScroll = (e) => {
   const { scrollTop } = e.target
-
-  if (Math.abs(scrollTop - lastScrollTop) > 20) {
-    isAtBottom = false
+  // 判断滚动条是否在底部
+  const isBottom = Math.abs(scrollTop + e.target.clientHeight - e.target.scrollHeight) < 50
+  if (isBottom) {
+    isAtBottom.value = true
   } else {
-    isAtBottom = true
+    isAtBottom.value = false
   }
-
-  lastScrollTop = scrollTop
-
   // 滚动到顶部时加载更多
   if (scrollTop === 0 && !noMore.value && !loading.value && !isLoadingMore.value) {
     loadMoreMessages()
@@ -203,9 +207,11 @@ const loadMoreMessages = () => {
 }
 
 const scrollToBottom = (force = false) => {
-  if (!isAtBottom && !force) {
+  console.log('scrollToBottom----->', isAtBottom.value, force)
+  if (!isAtBottom.value && !force) {
     return
   }
+  isAtBottom.value = true
   scrollerRef.value.scrollToBottom()
 }
 
@@ -225,8 +231,7 @@ watch(
       isLoadingMore.value = false
 
       // 重置用户滚动状态
-      isAtBottom = true
-      lastScrollTop = 0
+      isAtBottom.value = true
     }
   },
   { immediate: true },

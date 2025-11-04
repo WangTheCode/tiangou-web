@@ -84,39 +84,7 @@ export const syncConversationList = () => {
 
 export const setOpenConversation = (conversation) => {
   WKSDK.shared().conversationManager.openConversation = conversation
-  console.log('setOpenConversation----->', conversation)
   if (isEE) {
-    // const data = {
-    //   channel_id: conversation.channel.channelID,
-    //   channel_type: conversation.channel.channelType,
-    //   extra: conversation.extra,
-    //   last_client_msg_no: 0,
-    //   last_message_seq: 0,
-    //   recents:[],
-    //   timestamp: conversation.timestamp,
-    // }
-    // const lastMessage = conversation.lastMessage
-    // if(lastMessage){
-    //   data.last_client_msg_no = lastMessage.clientMsgNo
-    //   data.last_message_seq = lastMessage.messageSeq
-    //   data.recents.push({
-    //     channel_id:lastMessage.channel.channelID,
-    //     channel_type:lastMessage.channel.channelType,
-    //     client_msg_no:lastMessage.clientMsgNo,
-    //     extra_version:0,
-    //     from_uid:lastMessage.fromUID,
-    //     header:{
-    //       notify_type:0,
-    //     }
-
-    //     message_seq:lastMessage.messageSeq,
-    //     timestamp:lastMessage.timestamp,
-    //     content:lastMessage.content,
-    //     from_uid:lastMessage.fromUID,
-    //     to_uid:lastMessage.toUID,
-    //     status:lastMessage.status,
-    //   })
-    // }
     ipcApiRoute.setOpenConversation(conversation)
   }
 }
