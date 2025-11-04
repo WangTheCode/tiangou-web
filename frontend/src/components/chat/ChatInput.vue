@@ -347,6 +347,7 @@ const handlePasteImage = async (file) => {
         try {
           const arrayBuffer = await readFileAsArrayBuffer(file)
           imageContent.fileBuffer = arrayBuffer
+          imageContent.imgData = ''
           console.log('粘贴图片已转换为 ArrayBuffer:', arrayBuffer.byteLength, 'bytes')
         } catch (error) {
           console.error('读取粘贴图片失败:', error)
@@ -386,6 +387,7 @@ const handleImageChange = async (event) => {
         try {
           const arrayBuffer = await readFileAsArrayBuffer(file)
           imageContent.fileBuffer = arrayBuffer
+          imageContent.imgData = ''
           console.log('File 已转换为 ArrayBuffer:', arrayBuffer.byteLength, 'bytes')
         } catch (error) {
           console.error('读取文件失败:', error)

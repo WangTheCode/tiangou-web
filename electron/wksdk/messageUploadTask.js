@@ -49,14 +49,14 @@ class MediaMessageUploadTask extends MessageTask {
       const objectKey = `${this.message.channel.channelType}/${this.message.channel.channelID}/${fileName}${mediaContent.extension || ''}`
 
       // 优先尝试 OSS 直传
-      const ossUploaded = await this.uploadViaOSS(filePath, objectKey)
-      if (ossUploaded) {
+      const isOssUploaded = await this.uploadViaOSS(filePath, objectKey)
+      if (isOssUploaded) {
         logger.info('OSS 直传成功')
         return
       }
 
       // 降级：使用后端 API 上传
-      logger.info('OSS 直传失败或不可用，降级使用后端 API 上传')
+      logger.info('OSS 直传失败或不可用，降级使用后端 API 上传', isOssUploaded)
       const uploadURL = await this.getUploadURL(`/${objectKey}`)
       if (uploadURL) {
         await this.uploadFile(filePath, uploadURL)
@@ -94,18 +94,22 @@ class MediaMessageUploadTask extends MessageTask {
         onProgress: (loaded, total) => {
           const completeProgress = (loaded / total) | 0
           this._progress = completeProgress
-          this.update()
+          logger.info('uploadViaOSS progress----->', completeProgress)
+          // 注意：不在进度回调中调用 update()，避免 content 被序列化后报错
         },
         cancelToken: new axios.CancelToken(c => {
           this.canceler = c
         }),
       })
 
+      logger.info('uploadViaOSS absoluteUrl----->', absoluteUrl)
       if (absoluteUrl) {
-        const mediaContent = this.message.content
-        mediaContent.remoteUrl = absoluteUrl
+        this.message.content.remoteUrl = absoluteUrl
         this.status = TaskStatus.success
-        this.update()
+
+        // 关键修复：不调用 this.update()，因为 SDK 已经将 content 序列化为普通对象
+        // this.update() 会导致 SDK 内部调用 content.encode()，但此时 content 已失去原型方法
+        logger.info('OSS 直传成功，remoteUrl 已设置:', absoluteUrl)
 
         // 上传成功后删除临时文件
         try {
@@ -118,7 +122,8 @@ class MediaMessageUploadTask extends MessageTask {
         return true
       }
     } catch (error) {
-      console.warn('OSS 直传失败:', error.message || error)
+      // 改用 logger.error 以便记录到日志文件
+      logger.error('OSS 直传失败:', error.message || error)
       return false
     }
   }
@@ -143,7 +148,7 @@ class MediaMessageUploadTask extends MessageTask {
         onUploadProgress: e => {
           const completeProgress = (e.loaded / e.total) | 0
           this._progress = completeProgress
-          this.update()
+          // 不在进度回调中调用 update()，避免 content 被序列化后报错
         },
         cancelToken: new axios.CancelToken(c => {
           this.canceler = c // 支持取消上传
@@ -151,10 +156,10 @@ class MediaMessageUploadTask extends MessageTask {
       })
 
       if (resp && resp.data && resp.data.path) {
-        const mediaContent = this.message.content
-        mediaContent.remoteUrl = resp.data.path
+        this.message.content.remoteUrl = resp.data.path
         this.status = TaskStatus.success
-        this.update()
+        // 不调用 this.update()，避免 encode is not a function 错误
+        logger.info('后端上传成功，remoteUrl 已设置:', resp.data.path)
 
         // 上传成功后删除临时文件
         try {
@@ -165,9 +170,9 @@ class MediaMessageUploadTask extends MessageTask {
         }
       }
     } catch (error) {
-      logger.info('文件上传失败！->', error)
+      logger.error('文件上传失败！->', error)
       this.status = TaskStatus.fail
-      this.update()
+      // 不调用 this.update()，避免 encode is not a function 错误
     }
   }
 

@@ -24,6 +24,7 @@ const fs = require('fs')
 const path = require('path')
 const os = require('os')
 const { reverseArray } = require('../utils')
+const { ImageContent } = require('../wksdk/model')
 /**
  * WKIM服务
  */
@@ -133,34 +134,34 @@ class WkimService {
 
     // 处理图片消息
     if (content && content.contentType === MessageContentTypeConst.image) {
-      const { MediaMessageContent } = require('wukongimjstcpsdk')
+      // const { MediaMessageContent } = require('wukongimjstcpsdk')
 
-      // 创建 MediaMessageContent 实例并手动添加方法
-      messageContent = new MediaMessageContent()
-      messageContent.width = content.width || 0
-      messageContent.height = content.height || 0
-      messageContent.remoteUrl = ''
+      // // 创建 MediaMessageContent 实例并手动添加方法
 
-      // 手动添加 encodeJSON 方法（SDK 的 encode() 会调用它）
-      messageContent.encodeJSON = function () {
-        return {
-          width: this.width,
-          height: this.height,
-          url: this.remoteUrl || '',
-        }
-      }
+      // messageContent.width = content.width || 0
+      // messageContent.height = content.height || 0
+      // messageContent.remoteUrl = ''
 
-      // 添加 contentType getter
-      Object.defineProperty(messageContent, 'contentType', {
-        get: function () {
-          return MessageContentTypeConst.image
-        },
-      })
+      // // 手动添加 encodeJSON 方法（SDK 的 encode() 会调用它）
+      // messageContent.encodeJSON = function () {
+      //   return {
+      //     width: this.width,
+      //     height: this.height,
+      //     url: this.remoteUrl || '',
+      //   }
+      // }
 
-      // 添加 conversationDigest 方法
-      messageContent.conversationDigest = function () {
-        return '[图片]'
-      }
+      // // 添加 contentType getter
+      // Object.defineProperty(messageContent, 'contentType', {
+      //   get: function () {
+      //     return MessageContentTypeConst.image
+      //   },
+      // })
+
+      // // 添加 conversationDigest 方法
+      // messageContent.conversationDigest = function () {
+      //   return '[图片]'
+      // }
 
       // 从 Buffer 重建临时文件
       try {
@@ -180,8 +181,10 @@ class WkimService {
             const extMatch = fileName.match(/\.([^.]+)$/)
             messageContent.extension = extMatch ? extMatch[0] : ''
           }
-
-          logger.info('ImageContent 已创建，SDK 将自动上传文件')
+          messageContent = new ImageContent(tempFilePath, '', content.width, content.height)
+          logger.info('ImageContent 已创建，SDK 将自动上传文件', messageContent)
+          logger.info('ImageContent-encodeJSON', typeof messageContent.encodeJSON)
+          logger.info('ImageContent-encode', typeof messageContent.encode)
         }
       } catch (error) {
         logger.error('处理图片文件失败:', error)

@@ -12,8 +12,13 @@
         <div class="font-bold text-center">{{ title }}</div>
       </div>
     </template>
-    <div class="flex flex-col p-4">
-      <img :src="imageUrl" alt="图片" class="max-w-full max-h-[500px] w-auto" />
+    <div class="flex p-4 text-center items-center justify-center">
+      <img
+        :src="imageUrl"
+        alt="图片"
+        :style="{ width: width + 'px', height: height + 'px' }"
+        class="max-w-full max-h-[400px] w-auto"
+      />
     </div>
     <div class="flex gap-2 p-4 pt-0 justify-end">
       <el-button @click="onCancelModal">取消</el-button>
@@ -23,7 +28,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 
 const props = defineProps({
   title: {
@@ -68,9 +73,17 @@ const handleFileToImage = (file) => {
   const reader = new FileReader()
   reader.readAsDataURL(file)
   reader.onloadend = function (e) {
+    console.log('e----->', e, file)
     imageUrl.value = reader.result
-    width.value = e.target.width
-    height.value = e.target.height
+
+    // 创建Image对象来获取图片原始尺寸
+    const img = new Image()
+    img.onload = function () {
+      width.value = img.naturalWidth // 获取图片原始宽度
+      height.value = img.naturalHeight // 获取图片原始高度
+      console.log('图片尺寸:', width.value, 'x', height.value)
+    }
+    img.src = reader.result
   }
 }
 handleFileToImage(props.file)

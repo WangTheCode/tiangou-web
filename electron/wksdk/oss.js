@@ -74,7 +74,7 @@ function normalizeKeyPath(keyPath) {
 // 通过后端 /file/oss/sts 获取临时授权
 async function fetchSTS() {
   const sts = await get('file/oss/sts')
-  return sts || {}
+  return sts && sts.data ? sts.data : {}
 }
 
 // OssUploadOptions 参数说明：
@@ -153,6 +153,7 @@ async function uploadFileToOSS(fileOrPath, opts = {}) {
   const client = getClient(sts)
 
   const prefix = extractPrefix(sts)
+  logger.info('uploadFileToOSS prefix----->', prefix)
 
   // 生成最终 key（不能以 / 开头）
   let key
@@ -187,25 +188,29 @@ async function uploadFileToOSS(fileOrPath, opts = {}) {
   } else {
     throw new Error('fileOrPath 必须是文件路径字符串或 Buffer 对象')
   }
-
-  // 通过 axios 发送（支持上传进度与取消）
-  await axios.put(signedUrl, fileBuffer, {
-    headers: { 'Content-Type': contentType },
-    onUploadProgress: evt => {
-      if (evt.total && typeof opts.onProgress === 'function') {
-        try {
-          opts.onProgress(evt.loaded, evt.total)
-        } catch {
-          /* ignore */
+  try {
+    // 通过 axios 发送（支持上传进度与取消）
+    await axios.put(signedUrl, fileBuffer, {
+      headers: { 'Content-Type': contentType },
+      onUploadProgress: evt => {
+        if (evt.total && typeof opts.onProgress === 'function') {
+          try {
+            opts.onProgress(evt.loaded, evt.total)
+          } catch {
+            /* ignore */
+          }
         }
-      }
-    },
-    cancelToken: opts.cancelToken,
-  })
+      },
+      cancelToken: opts.cancelToken,
+    })
 
-  const publicBase = buildPublicBaseUrl(sts)
-  const absoluteUrl = `${publicBase}/${key}`.replace(/\/$/, '')
-  return absoluteUrl
+    const publicBase = buildPublicBaseUrl(sts)
+    const absoluteUrl = `${publicBase}/${key}`.replace(/\/$/, '')
+    return absoluteUrl
+  } catch (error) {
+    logger.info('uploadFileToOSS error----->', error)
+    throw error
+  }
 }
 
 module.exports = {
