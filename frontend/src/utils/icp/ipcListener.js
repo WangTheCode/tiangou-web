@@ -66,6 +66,7 @@ export default class ipcListener {
       message.status = result.message.status
       message.voicePlaying = result.message.voicePlaying
       message.voiceReaded = result.message.voiceReaded
+      result.message = message
       // result.message.contentType = result.message.contentType
       messageListener(result)
     })
