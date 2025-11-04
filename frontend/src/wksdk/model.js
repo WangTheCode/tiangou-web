@@ -419,23 +419,47 @@ export class MergeforwardContent extends MessageContent {
 export class ImageContent extends MediaMessageContent {
   constructor(file, imgData, width, height) {
     super()
-    this.file = file
-    this.imgData = imgData
+    this.file = file // File 对象（仅 Web 环境使用）
+    this.imgData = imgData // base64 预览数据
     this.width = width || 0
     this.height = height || 0
+
+    // 新增：用于 Electron IPC 传输的字段
+    this.fileBuffer = null // ArrayBuffer 数据
+    this.fileName = file?.name // 文件名
+    this.fileType = file?.type // MIME 类型
+    this.fileSize = file?.size // 文件大小
   }
+
   decodeJSON(content) {
     this.width = content['width'] || 0
     this.height = content['height'] || 0
     this.url = content['url'] || ''
     this.remoteUrl = this.url
   }
+
   encodeJSON() {
     return { width: this.width || 0, height: this.height || 0, url: this.remoteUrl || '' }
   }
+
+  // 新增：准备 IPC 传输的数据
+  toIPCData() {
+    return {
+      contentType: this.contentType,
+      width: this.width,
+      height: this.height,
+      imgData: this.imgData,
+      fileBuffer: this.fileBuffer, // ArrayBuffer 会被自动转为 Buffer
+      fileName: this.fileName,
+      fileType: this.fileType,
+      fileSize: this.fileSize,
+    }
+  }
+
   get contentType() {
     return MessageContentTypeConst.image
   }
+
   get conversationDigest() {
     return '[图片]'
   }

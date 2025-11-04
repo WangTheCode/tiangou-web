@@ -11,10 +11,18 @@ const {
   Setting,
 } = require('wukongimjstcpsdk')
 const { post, setHttpOption } = require('../utils/http')
-const { setSyncConversationsCallback } = require('../wksdk/setCallback')
+const { setAxiosConfig } = require('../utils/axiosInstance')
+const {
+  setSyncConversationsCallback,
+  setMessageUploadTaskCallback,
+} = require('../wksdk/setCallback')
 const { webService } = require('./web')
 const { MessageContentTypeConst } = require('../wksdk/const')
 const { sqlitedbService } = require('./database/sqlitedb')
+const { Buffer } = require('buffer')
+const fs = require('fs')
+const path = require('path')
+const os = require('os')
 const { reverseArray } = require('../utils')
 /**
  * WKIM服务
@@ -42,6 +50,7 @@ class WkimService {
     sdk.chatManager.addMessageStatusListener(webService.addMessageStatusListener.bind(webService))
 
     setSyncConversationsCallback()
+    setMessageUploadTaskCallback()
 
     this._inited = true
   }
@@ -59,12 +68,16 @@ class WkimService {
     }
     this.userInfo = args
 
-    setHttpOption({
+    const httpConfig = {
       baseUrl: this.imConfig.api_addr,
       headers: {
         token: this.userInfo.token,
       },
-    })
+    }
+
+    // 同时配置项目 HTTP 和 axios
+    setHttpOption(httpConfig)
+    setAxiosConfig(httpConfig)
 
     this.sdk.config.addr = this.imConfig.tcp_addr
     this.sdk.config.uid = uid
@@ -103,17 +116,87 @@ class WkimService {
 
   async sendMessage(data) {
     const { content, mention, channel, reply } = data
-    logger.info('sendMessage----->', JSON.stringify(content))
+    logger.info(
+      'sendMessage----->',
+      JSON.stringify({
+        ...content,
+        fileBuffer: content.fileBuffer ? `<Buffer ${content.fileBuffer.length} bytes>` : undefined,
+      })
+    )
+
     let messageContent = content
+
+    // 处理文本消息
     if (content && content.text && content.contentType === MessageContentTypeConst.text) {
       messageContent = new MessageText(content.text)
     }
+
+    // 处理图片消息
+    if (content && content.contentType === MessageContentTypeConst.image) {
+      const { MediaMessageContent } = require('wukongimjstcpsdk')
+
+      // 创建 MediaMessageContent 实例并手动添加方法
+      messageContent = new MediaMessageContent()
+      messageContent.width = content.width || 0
+      messageContent.height = content.height || 0
+      messageContent.remoteUrl = ''
+
+      // 手动添加 encodeJSON 方法（SDK 的 encode() 会调用它）
+      messageContent.encodeJSON = function () {
+        return {
+          width: this.width,
+          height: this.height,
+          url: this.remoteUrl || '',
+        }
+      }
+
+      // 添加 contentType getter
+      Object.defineProperty(messageContent, 'contentType', {
+        get: function () {
+          return MessageContentTypeConst.image
+        },
+      })
+
+      // 添加 conversationDigest 方法
+      messageContent.conversationDigest = function () {
+        return '[图片]'
+      }
+
+      // 从 Buffer 重建临时文件
+      try {
+        if (content.fileBuffer) {
+          // 将 Buffer 写入临时文件
+          const buffer = Buffer.from(content.fileBuffer)
+          const tempDir = os.tmpdir()
+          const fileName = content.fileName || `image_${Date.now()}.png`
+          const tempFilePath = path.join(tempDir, fileName)
+
+          fs.writeFileSync(tempFilePath, buffer)
+          logger.info(`临时文件已创建: ${tempFilePath}, 大小: ${buffer.length} bytes`)
+
+          // 设置文件路径和扩展名（SDK 上传需要）
+          messageContent.file = tempFilePath
+          if (fileName) {
+            const extMatch = fileName.match(/\.([^.]+)$/)
+            messageContent.extension = extMatch ? extMatch[0] : ''
+          }
+
+          logger.info('ImageContent 已创建，SDK 将自动上传文件')
+        }
+      } catch (error) {
+        logger.error('处理图片文件失败:', error)
+        throw error
+      }
+    }
+
+    // 处理 mention
     if (mention) {
       const mn = new Mention()
       mn.all = mention.all
       mn.uids = mention.uids
       messageContent.mention = mn
     }
+
     const channelObject = new Channel(channel.channelID, channel.channelType)
     const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channelObject)
     let setting = new Setting()

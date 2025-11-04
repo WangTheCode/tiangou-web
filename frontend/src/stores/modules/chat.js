@@ -22,6 +22,7 @@ import {
   setSyncSubscribersCallback,
   registerGlobalChannelInfoListener,
 } from '@/wksdk/setCallback'
+import { MessageContentTypeConst } from '@/wksdk/const'
 // import { ElMessage } from 'element-plus'
 
 export const useChatStore = defineStore('chat', {
@@ -511,8 +512,43 @@ export const useChatStore = defineStore('chat', {
           if (!data.channel) {
             data.channel = this.currentConversation.channel
           }
-          data.content = { ...data.content, contentType: data.content.contentType }
-          ipcApiRoute.sendMessage(data).then((res) => {
+
+          // 序列化 channel 对象（只保留可序列化字段）
+          const serializedChannel = {
+            channelID: data.channel.channelID,
+            channelType: data.channel.channelType,
+          }
+
+          // 序列化 reply 对象（如果存在）
+          let serializedReply = null
+          if (data.reply) {
+            serializedReply = {
+              messageID: data.reply.messageID,
+              messageSeq: data.reply.messageSeq,
+              fromUID: data.reply.fromUID,
+              fromName: data.reply.fromName,
+              content: data.reply.content,
+            }
+          }
+
+          // 序列化 content 对象
+          let serializedContent
+          if (data.content && data.content.contentType === MessageContentTypeConst.image) {
+            // 使用 ImageContent 的 toIPCData 方法准备数据
+            serializedContent = data.content.toIPCData()
+          } else {
+            serializedContent = { ...data.content, contentType: data.content.contentType }
+          }
+
+          // 构建完全可序列化的 IPC 数据
+          const ipcData = {
+            content: serializedContent,
+            channel: serializedChannel,
+            reply: serializedReply,
+            mention: data.mention, // mention 是普通对象，可以直接传递
+          }
+
+          ipcApiRoute.sendMessage(ipcData).then((res) => {
             console.log('tcp sendMessage----->', res)
             resolve(res)
           })

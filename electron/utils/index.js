@@ -16,6 +16,11 @@ function getJson(args) {
     if (!args) {
       return {}
     }
+    // 如果已经是对象，直接返回
+    if (typeof args === 'object') {
+      return args
+    }
+    // 如果是字符串，尝试解析
     return JSON.parse(args)
   } catch (error) {
     return {}
