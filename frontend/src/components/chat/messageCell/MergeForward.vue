@@ -59,8 +59,6 @@ const msgs = computed(() => {
   return newMsgs
 })
 const showMessageList = () => {
-  console.log(content.value.msgs)
-
   messageListModal({
     title: title.value,
     messageList: content.value.msgs,

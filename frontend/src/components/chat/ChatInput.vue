@@ -412,84 +412,48 @@ const onDelete = async () => {
 
 // 转发消息
 const onForward = () => {
-  const selectedMessages = chatStore.getSelectedMessages()
-  if (selectedMessages.length === 0) {
-    console.warn('没有选中的消息')
-    return
-  }
-
-  conversationPicker({
-    title: '转发',
-    conversationList: chatStore.conversationList,
-    confirm: (selectedItems) => {
-      if (selectedItems && selectedItems.length > 0) {
-        for (let i = 0; i < selectedItems.length; i++) {
-          const channel = selectedItems[i].channel
-          for (let j = 0; j < selectedMessages.length; j++) {
-            const messageItem = selectedMessages[j]
-            const message = {
-              content: messageItem.content,
-              channel: channel,
-            }
-            chatStore.sendMessage(message)
-          }
-        }
-      }
-      onCancelSelect()
-    },
-  })
+  chatStore.forwardMessages()
 }
 
 // 合并转发消息
 const onMergeForward = () => {
-  const selectedMessages = chatStore.getSelectedMessages()
-  if (selectedMessages.length === 0) {
-    console.warn('没有选中的消息')
-    return
-  }
+  chatStore.mergeForwardMessages()
+  // const selectedMessages = chatStore.getSelectedMessages()
+  // if (selectedMessages.length === 0) {
+  //   console.warn('没有选中的消息')
+  //   return
+  // }
 
-  conversationPicker({
-    title: '合并转发',
-    conversationList: chatStore.conversationList,
-    multiple: true,
-    confirm: (selectedItems) => {
-      console.log(selectedItems)
+  // conversationPicker({
+  //   title: '合并转发',
+  //   conversationList: chatStore.conversationList,
+  //   multiple: true,
+  //   confirm: (selectedItems) => {
+  //     if (selectedItems && selectedItems.length > 0) {
+  //       let users = []
+  //       for (const message of selectedMessages) {
+  //         let channelInfo = getChannelInfo(newChannel(message.fromUID))
+  //         users.push({ uid: message.fromUID, name: channelInfo?.title })
+  //       }
+  //       for (let i = 0; i < selectedItems.length; i++) {
+  //         const userItem = selectedItems[i]
+  //         const channel = userItem.channel
+  //         const messageContent = new MergeforwardContent(
+  //           channel.channelType,
+  //           users,
+  //           selectedMessages,
+  //         )
+  //         const messageData = {
+  //           content: messageContent,
+  //           channel: channel,
+  //         }
+  //         chatStore.sendMessage(messageData)
+  //       }
+  //     }
 
-      if (selectedItems && selectedItems.length > 0) {
-        let users = []
-        for (const message of selectedMessages) {
-          let channelInfo = getChannelInfo(newChannel(message.fromUID))
-          users.push({ uid: message.fromUID, name: channelInfo?.title })
-        }
-        for (let i = 0; i < selectedItems.length; i++) {
-          const userItem = selectedItems[i]
-          const channel = userItem.channel
-          const messageContent = new MergeforwardContent(
-            channel.channelType,
-            users,
-            selectedMessages,
-          )
-          const messageData = {
-            content: messageContent,
-            channel: channel,
-          }
-          chatStore.sendMessage(messageData)
-          // for (let j = 0; j < selectedMessages.length; j++) {
-          //   const messageItem = selectedMessages[j]
-          //   const message = {
-          //     content: messageItem.content,
-          //     channel: channel,
-          //   }
-          //   chatStore.sendMessage(message)
-          // }
-        }
-        console.log(users)
-      }
-
-      onCancelSelect()
-    },
-  })
-  console.log('合并转发消息:', selectedMessages)
+  //     onCancelSelect()
+  //   },
+  // })
 }
 
 // 在组件挂载后添加键盘事件监听

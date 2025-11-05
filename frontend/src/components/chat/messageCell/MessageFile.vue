@@ -41,10 +41,11 @@ const imageData = computed(() => {
     } else if (props.message.content.contentObj) {
       return props.message.content.contentObj
     } else if (props.message.content.imgData) {
+      let scaleSize = imageScale(props.message.content.width, props.message.content.height)
       return {
         url: props.message.content.imgData,
-        width: props.message.content.width,
-        height: props.message.content.height,
+        width: scaleSize.width,
+        height: scaleSize.height,
       }
     }
   }

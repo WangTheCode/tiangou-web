@@ -124,8 +124,8 @@ export const sendImageMessage = ({ file, imgData, width, height }) => {
     message.content = imageContent
 
     message.channel = newChannel(channel.channelID, channel.channelType)
-    message.clientMsgNo = ''
-    message.messageID = getUUID()
+    message.clientMsgNo = getUUID()
+    message.messageID = ''
 
     message.header = {}
     message.remoteExtra = {

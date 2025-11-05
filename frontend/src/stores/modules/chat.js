@@ -23,6 +23,9 @@ import {
   registerGlobalChannelInfoListener,
 } from '@/wksdk/setCallback'
 import { MessageContentTypeConst } from '@/wksdk/const'
+import { conversationPicker } from '@/components/chat/conversationPicker/index'
+import { MergeforwardContent } from '@/wksdk/model'
+import { sortListByField } from '@/utils/helper'
 // import { ElMessage } from 'element-plus'
 
 export const useChatStore = defineStore('chat', {
@@ -146,8 +149,6 @@ export const useChatStore = defineStore('chat', {
     },
     syncSubscribers(conversation) {
       return new Promise((resolve) => {
-        console.log(conversation)
-
         if (conversation.channelInfo.orgData.group_type == 1) {
           // 如果是超级群则只获取第一页成员
           // this.subscribers = await this.getFirstPageMembers()
@@ -377,7 +378,6 @@ export const useChatStore = defineStore('chat', {
     },
     addConversation(conversation) {
       this.conversationList.push(conversation)
-      console.log('addConversation----->', conversation.channelInfo)
     },
     updateConversation(conversation) {
       const index = this.conversationList.findIndex((item) =>
@@ -406,7 +406,6 @@ export const useChatStore = defineStore('chat', {
         // 这样既保留了 Conversation 类实例，又能触发组件的 props 更新
         this.conversationList = [...this.conversationList]
       }
-      console.log('updateConversation----->', this.conversationList)
     },
     sortConversations(conversations) {
       let newConversations = conversations
@@ -427,7 +426,6 @@ export const useChatStore = defineStore('chat', {
         }
         return bScore - aScore
       })
-      console.log('sortConversations----->', sortAfter)
       return sortAfter
     },
     removeConversation(conversation) {
@@ -473,7 +471,6 @@ export const useChatStore = defineStore('chat', {
       console.log('sendNotification----->', message, description)
     },
     appendMessage(messageWrap) {
-      console.log('appendMessage----->', messageWrap)
       if (
         messageWrap.contentType == MessageContentTypeConst.image &&
         messageWrap.message &&
@@ -493,6 +490,7 @@ export const useChatStore = defineStore('chat', {
           return false
         })
         if (messageIndex !== -1) {
+          messageWrap.clientMsgNo = this.chatMessagesOfOrigin[messageIndex].clientMsgNo
           this.chatMessagesOfOrigin[messageIndex] = messageWrap
         }
       } else {
@@ -501,20 +499,15 @@ export const useChatStore = defineStore('chat', {
 
       this.chatMessages = refreshMessages(this.chatMessagesOfOrigin)
       this.currentConversationUnread++
-      // if (messageWrap.message.send) {
-      //   // 如果是发送的消息，则强制滚动到消息底部
-      //   scrollControl.scrollTo('chat-message-list', true)
-      // } else {
-      //   scrollControl.scrollTo('chat-message-list', false)
-      // }
+      if (messageWrap.message.send) {
+        // 如果是发送的消息，则强制滚动到消息底部
+        scrollControl.scrollTo('chat-message-list', true)
+      } else {
+        scrollControl.scrollTo('chat-message-list', false)
+      }
     },
     sendMessage(data) {
       return new Promise((resolve, reject) => {
-        // const { sendMessage } = useTSDD()
-        // console.log('chatStore sendMessage----->', data)
-        // const message = await sendMessage(data)
-        // console.log('sendMessage----->', message)
-
         if (!this.currentConversation) {
           reject(new Error('当前会话不存在'))
           return
@@ -532,11 +525,12 @@ export const useChatStore = defineStore('chat', {
           reply.content = this.replyMessage.content
           data.reply = reply
         }
-        if (isEE) {
-          if (!data.channel) {
-            data.channel = this.currentConversation.channel
-          }
+        if (!data.channel) {
+          data.channel = this.currentConversation.channel
+        }
+        console.log('sendMessage----->', data)
 
+        if (isEE) {
           // 序列化 channel 对象（只保留可序列化字段）
           const serializedChannel = {
             channelID: data.channel.channelID,
@@ -562,6 +556,8 @@ export const useChatStore = defineStore('chat', {
               ...data.content,
               contentType: data.content.contentType,
               imgData: '',
+              url: data.content.url,
+              remoteUrl: data.content.remoteUrl,
             }
           } else {
             serializedContent = { ...data.content, contentType: data.content.contentType }
@@ -574,17 +570,15 @@ export const useChatStore = defineStore('chat', {
             reply: serializedReply,
             mention: data.mention, // mention 是普通对象，可以直接传递
           }
-
           ipcApiRoute.sendMessage(ipcData).then((res) => {
-            console.log('tcp sendMessage----->', res)
             resolve(res)
           })
         } else {
-          let channel = this.currentConversation.channel
-          if (data.channel) {
-            channel = data.channel
-          }
-          sendMessage(channel, data).then((message) => {
+          // let channel = this.currentConversation.channel
+          // if (data.channel) {
+          //   channel = data.channel
+          // }
+          sendMessage(data.channel, data).then((message) => {
             this.setReplyMessage(null)
             resolve(message)
           })
@@ -628,6 +622,7 @@ export const useChatStore = defineStore('chat', {
         return
       }
       // 更新
+      let isUpdated = false
       for (let i = this.chatMessagesOfOrigin.length - 1; i >= 0; i--) {
         const message = this.chatMessagesOfOrigin[i]
         if (message.clientSeq === ackPacket.clientSeq) {
@@ -638,7 +633,11 @@ export const useChatStore = defineStore('chat', {
           } else {
             message.status = MessageStatus.Fail
           }
+          isUpdated = true
         }
+      }
+      if (isUpdated) {
+        scrollControl.scrollTo('chat-message-list', false)
       }
     },
     getMessageMax() {},
@@ -658,7 +657,8 @@ export const useChatStore = defineStore('chat', {
     },
     // 获取选中的消息列表
     getSelectedMessages() {
-      return Object.values(this.selectedMessagesByMessageID)
+      const list = Object.values(this.selectedMessagesByMessageID)
+      return sortListByField(list, 'messageSeq')
     },
     // 删除消息
     async deleteMessages(messages) {
@@ -690,48 +690,81 @@ export const useChatStore = defineStore('chat', {
         throw err
       }
     },
-    // 转发消息 - 显示会话选择器
-    forwardMessages(messages, callback) {
-      // 这里需要调用会话选择器组件
-      // 暂时通过 callback 返回选中的会话列表
-      if (callback) {
-        callback(messages)
+    // 转发消息-逐条
+    forwardMessages(selectedMessages) {
+      const that = this
+      if (!selectedMessages) {
+        selectedMessages = this.getSelectedMessages()
       }
-    },
-    // 逐条转发消息到指定会话
-    async forwardMessagesToChannels(messages, channels) {
-      if (!messages || messages.length === 0 || !channels || channels.length === 0) {
+      if (selectedMessages.length === 0) {
+        console.warn('没有选中的消息')
         return
       }
-
-      const promises = []
-      for (const channel of channels) {
-        for (const message of messages) {
-          // 复制消息内容并发送到新的会话
-          const content = message.content
-          promises.push(this.sendMessage({ text: content.text || '', channel }))
-        }
-      }
-
-      try {
-        await Promise.all(promises)
-        this.clearSelectedMessages()
-        console.log('转发消息成功')
-      } catch (err) {
-        console.error('转发消息失败:', err)
-        throw err
-      }
+      conversationPicker({
+        title: '转发',
+        conversationList: this.conversationList,
+        confirm: (selectedItems) => {
+          if (selectedItems && selectedItems.length > 0) {
+            for (let i = 0; i < selectedItems.length; i++) {
+              const channel = selectedItems[i].channel
+              for (let j = 0; j < selectedMessages.length; j++) {
+                const messageItem = selectedMessages[j]
+                const message = {
+                  content: messageItem.content,
+                  channel: channel,
+                }
+                that.sendMessage(message)
+              }
+            }
+          }
+          that.clearSelectedMessages()
+        },
+      })
     },
     // 合并转发消息到指定会话
-    async mergeForwardMessages(messages, channels) {
-      if (!messages || messages.length === 0 || !channels || channels.length === 0) {
+    async mergeForwardMessages() {
+      const that = this
+      const selectedMessages = this.getSelectedMessages()
+      if (selectedMessages.length === 0) {
+        console.warn('没有选中的消息')
         return
       }
 
-      // TODO: 实现合并转发逻辑
-      // 需要创建合并转发的消息内容类型
-      console.log('合并转发功能待实现')
-      this.clearSelectedMessages()
+      conversationPicker({
+        title: '合并转发',
+        conversationList: this.conversationList,
+        multiple: true,
+        confirm: (selectedItems) => {
+          if (selectedItems && selectedItems.length > 0) {
+            let users = []
+            let msgs = []
+            for (const message of selectedMessages) {
+              let channelInfo = getChannelInfo(newChannel(message.fromUID))
+              users.push({ uid: message.fromUID, name: channelInfo?.title })
+              if (message.content.contentType === MessageContentTypeConst.image) {
+                message.content = {
+                  ...message.content,
+                  url: message.content.url,
+                  remoteUrl: message.content.remoteUrl,
+                  contentType: message.content.contentType,
+                }
+              }
+              msgs.push(message)
+            }
+            for (let i = 0; i < selectedItems.length; i++) {
+              const userItem = selectedItems[i]
+              const channel = userItem.channel
+              const messageContent = new MergeforwardContent(channel.channelType, users, msgs)
+              const messageData = {
+                content: messageContent,
+                channel: channel,
+              }
+              that.sendMessage(messageData)
+            }
+          }
+          that.clearSelectedMessages()
+        },
+      })
     },
   },
 })

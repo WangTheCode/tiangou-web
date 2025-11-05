@@ -20,7 +20,7 @@ const { webService } = require('./web')
 const { MessageContentTypeConst } = require('../wksdk/const')
 const { sqlitedbService } = require('./database/sqlitedb')
 const { reverseArray } = require('../utils')
-const { ImageContent } = require('../wksdk/model')
+const { ImageContent, MergeforwardContent } = require('../wksdk/model')
 /**
  * WKIM服务
  */
@@ -113,22 +113,22 @@ class WkimService {
 
   async sendMessage(data) {
     const { content, mention, channel, reply } = data
-    console.log('sendMessage data----->', data)
     let messageContent = content
-
+    logger.info('sendMessage-data', JSON.stringify(data))
     // 处理文本消息
     if (content && content.text && content.contentType === MessageContentTypeConst.text) {
       messageContent = new MessageText(content.text)
-    }
-
-    // 处理图片消息
-    if (content && content.contentType === MessageContentTypeConst.image) {
+    } else if (content && content.contentType === MessageContentTypeConst.image) {
+      // 处理图片消息
       messageContent = new ImageContent(
         content.url,
         content.uploadKey,
         content.width,
         content.height
       )
+    } else if (content && content.contentType === MessageContentTypeConst.mergeForward) {
+      // 处理合并转发消息
+      messageContent = new MergeforwardContent(channel.channelType, content.users, content.msgs)
     }
 
     // 处理 mention
@@ -145,6 +145,7 @@ class WkimService {
     if (channelInfo?.orgData.receipt === 1) {
       setting.receiptEnabled = true
     }
+
     if (reply) {
       messageContent.reply = reply
     }

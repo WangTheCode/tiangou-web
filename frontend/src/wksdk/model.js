@@ -35,6 +35,7 @@ export class MessageWrap {
     this.voiceBuff = undefined // 声音的二进制文件，用于缓存
     this._reasonCode = undefined // 消息错误原因代码
     this.order = message.messageSeq * OrderFactor // 消息排序号
+    // this.clientMsgNo = message.clientMsgNo
   }
 
   get header() {
@@ -59,6 +60,10 @@ export class MessageWrap {
 
   get clientMsgNo() {
     return this.message.clientMsgNo
+  }
+
+  set clientMsgNo(clientMsgNo) {
+    this.message.clientMsgNo = clientMsgNo
   }
 
   get fromUID() {
@@ -403,6 +408,8 @@ export class MergeforwardContent extends MessageContent {
     let messageContent = WKSDK.shared().getMessageContent(contentType)
     messageContent.decodeJSON(payloadObj)
     message.content = messageContent
+    console.log('mapToMessage----->', messageContent)
+    debugger
     return message
   }
 
@@ -425,12 +432,6 @@ export class ImageContent extends MediaMessageContent {
     this.width = width || 0
     this.height = height || 0
     this.uploadKey = getUUID()
-
-    // 新增：用于 Electron IPC 传输的字段
-    // this.fileBuffer = null // ArrayBuffer 数据
-    // this.fileName = file?.name // 文件名
-    // this.fileType = file?.type // MIME 类型
-    // this.fileSize = file?.size // 文件大小
   }
 
   decodeJSON(content) {
@@ -443,20 +444,6 @@ export class ImageContent extends MediaMessageContent {
   encodeJSON() {
     return { width: this.width || 0, height: this.height || 0, url: this.remoteUrl || '' }
   }
-
-  // 新增：准备 IPC 传输的数据
-  // toIPCData() {
-  //   return {
-  //     contentType: this.contentType,
-  //     width: this.width,
-  //     height: this.height,
-  //     imgData: this.imgData,
-  //     fileBuffer: this.fileBuffer, // ArrayBuffer 会被自动转为 Buffer
-  //     fileName: this.fileName,
-  //     fileType: this.fileType,
-  //     fileSize: this.fileSize,
-  //   }
-  // }
 
   get contentType() {
     return MessageContentTypeConst.image
