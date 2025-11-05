@@ -199,6 +199,7 @@ const computedMentionOptions = computed(() => {
       value: '所有人',
       label: '所有人',
       uid: -1,
+      id: 'all',
     })
   }
 
@@ -209,11 +210,11 @@ const computedMentionOptions = computed(() => {
 const handleMentionSelect = (option) => {
   console.log(option)
   // 将选中的用户添加到缓存
-  // const name = option.value
-  // mentionCache[name] = {
-  //   uid: option.uid,
-  //   name: name,
-  // }
+  const name = option.label
+  mentionCache[name] = {
+    uid: option.uid,
+    name: name,
+  }
 }
 
 const onChatInputCtrlEnter = () => {
@@ -322,8 +323,6 @@ const onSendMessage = () => {
 
 // 处理粘贴的图片
 const handlePasteImage = async (file) => {
-  console.log('粘贴图片:', file)
-
   sendFileDialog({
     file: file,
     onSubmit: async (imgObj) => {
@@ -418,42 +417,6 @@ const onForward = () => {
 // 合并转发消息
 const onMergeForward = () => {
   chatStore.mergeForwardMessages()
-  // const selectedMessages = chatStore.getSelectedMessages()
-  // if (selectedMessages.length === 0) {
-  //   console.warn('没有选中的消息')
-  //   return
-  // }
-
-  // conversationPicker({
-  //   title: '合并转发',
-  //   conversationList: chatStore.conversationList,
-  //   multiple: true,
-  //   confirm: (selectedItems) => {
-  //     if (selectedItems && selectedItems.length > 0) {
-  //       let users = []
-  //       for (const message of selectedMessages) {
-  //         let channelInfo = getChannelInfo(newChannel(message.fromUID))
-  //         users.push({ uid: message.fromUID, name: channelInfo?.title })
-  //       }
-  //       for (let i = 0; i < selectedItems.length; i++) {
-  //         const userItem = selectedItems[i]
-  //         const channel = userItem.channel
-  //         const messageContent = new MergeforwardContent(
-  //           channel.channelType,
-  //           users,
-  //           selectedMessages,
-  //         )
-  //         const messageData = {
-  //           content: messageContent,
-  //           channel: channel,
-  //         }
-  //         chatStore.sendMessage(messageData)
-  //       }
-  //     }
-
-  //     onCancelSelect()
-  //   },
-  // })
 }
 
 // 在组件挂载后添加键盘事件监听

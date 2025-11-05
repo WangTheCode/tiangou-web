@@ -408,8 +408,6 @@ export class MergeforwardContent extends MessageContent {
     let messageContent = WKSDK.shared().getMessageContent(contentType)
     messageContent.decodeJSON(payloadObj)
     message.content = messageContent
-    console.log('mapToMessage----->', messageContent)
-    debugger
     return message
   }
 

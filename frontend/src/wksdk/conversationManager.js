@@ -243,3 +243,20 @@ export const closeConversation = (conversation) => {
       })
   })
 }
+
+// 清空聊天记录
+export const clearChannelMessages = (conversation) => {
+  return new Promise((resolve, reject) => {
+    chatApi
+      .clearChannelMessages({})
+      .then((res) => {
+        const chatStore = useChatStore()
+        // chatStore.removeConversation(conversation)
+        resolve(res)
+      })
+      .catch((err) => {
+        console.error(err)
+        reject(err)
+      })
+  })
+}

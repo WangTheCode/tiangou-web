@@ -145,6 +145,8 @@ export const useChatStore = defineStore('chat', {
         this.syncSubscribers(conversation).then(() => {
           this.reloadSubscribers(conversation.channel)
         })
+      } else {
+        this.subscribers = []
       }
     },
     syncSubscribers(conversation) {

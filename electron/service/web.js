@@ -98,6 +98,18 @@ class WebService {
         payload.height = message.content.height
         payload.width = message.content.width
         payload.url = message.content.url
+      } else if (message.content.contentType === MessageContentTypeConst.mergeForward) {
+        payload.channel_type = message.content.channelType
+        payload.users = message.content.users
+        payload.type = message.content.contentType
+        payload.msgs = message.content.msgs.map(p => {
+          return {
+            from_uid: p.fromUID,
+            message_id: p.messageID,
+            timestamp: p.timestamp,
+            payload: p.content.contentObj,
+          }
+        })
       }
     }
     const messageData = {
