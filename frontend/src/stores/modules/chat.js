@@ -473,16 +473,40 @@ export const useChatStore = defineStore('chat', {
       console.log('sendNotification----->', message, description)
     },
     appendMessage(messageWrap) {
-      // const senderIsSelf = messageWrap.fromUID === this.connectUserInfo.uid
-      this.chatMessagesOfOrigin.push(messageWrap)
+      console.log('appendMessage----->', messageWrap)
+      if (
+        messageWrap.contentType == MessageContentTypeConst.image &&
+        messageWrap.message &&
+        messageWrap.message.content &&
+        messageWrap.message.content.uploadKey &&
+        messageWrap.message.content.url
+      ) {
+        const messageIndex = this.chatMessagesOfOrigin.findIndex((item) => {
+          if (
+            item.contentType == MessageContentTypeConst.image &&
+            item.message &&
+            item.message.content &&
+            item.message.content.uploadKey === messageWrap.message.content.uploadKey
+          ) {
+            return true
+          }
+          return false
+        })
+        if (messageIndex !== -1) {
+          this.chatMessagesOfOrigin[messageIndex] = messageWrap
+        }
+      } else {
+        this.chatMessagesOfOrigin.push(messageWrap)
+      }
+
       this.chatMessages = refreshMessages(this.chatMessagesOfOrigin)
       this.currentConversationUnread++
-      if (messageWrap.message.send) {
-        // 如果是发送的消息，则强制滚动到消息底部
-        scrollControl.scrollTo('chat-message-list', true)
-      } else {
-        scrollControl.scrollTo('chat-message-list', false)
-      }
+      // if (messageWrap.message.send) {
+      //   // 如果是发送的消息，则强制滚动到消息底部
+      //   scrollControl.scrollTo('chat-message-list', true)
+      // } else {
+      //   scrollControl.scrollTo('chat-message-list', false)
+      // }
     },
     sendMessage(data) {
       return new Promise((resolve, reject) => {
@@ -534,8 +558,11 @@ export const useChatStore = defineStore('chat', {
           // 序列化 content 对象
           let serializedContent
           if (data.content && data.content.contentType === MessageContentTypeConst.image) {
-            // 使用 ImageContent 的 toIPCData 方法准备数据
-            serializedContent = data.content.toIPCData()
+            serializedContent = {
+              ...data.content,
+              contentType: data.content.contentType,
+              imgData: '',
+            }
           } else {
             serializedContent = { ...data.content, contentType: data.content.contentType }
           }

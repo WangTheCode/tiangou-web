@@ -34,6 +34,7 @@ declare module 'vue' {
     IconButton: typeof import('./src/components/base/IconButton.vue')['default']
     Index: typeof import('./src/components/chat/Index.vue')['default']
     MergeForward: typeof import('./src/components/chat/messageCell/MergeForward.vue')['default']
+    MessageFile: typeof import('./src/components/chat/messageCell/MessageFile.vue')['default']
     MessageHead: typeof import('./src/components/chat/messageCell/MessageHead.vue')['default']
     MessageListModal: typeof import('./src/components/chat/messageListModal/MessageListModal.vue')['default']
     MessageReply: typeof import('./src/components/chat/messageCell/MessageReply.vue')['default']

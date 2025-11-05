@@ -40,41 +40,44 @@ class MediaMessageUploadTask extends MessageTask {
   }
 
   async start() {
-    const mediaContent = this.message.content
-
+    // const mediaContent = this.message.content
+    console.log('media message----->', this.message)
+    this.status = TaskStatus.success
+    this._progress = 100
+    this.update()
     // Node.js 环境：file 是文件路径字符串
-    if (mediaContent.file && typeof mediaContent.file === 'string') {
-      const filePath = mediaContent.file
-      const fileName = this.getUUID()
-      const objectKey = `${this.message.channel.channelType}/${this.message.channel.channelID}/${fileName}${mediaContent.extension || ''}`
+    // if (mediaContent.file && typeof mediaContent.file === 'string') {
+    //   const filePath = mediaContent.file
+    //   const fileName = this.getUUID()
+    //   const objectKey = `${this.message.channel.channelType}/${this.message.channel.channelID}/${fileName}${mediaContent.extension || ''}`
 
-      // 优先尝试 OSS 直传
-      const isOssUploaded = await this.uploadViaOSS(filePath, objectKey)
-      if (isOssUploaded) {
-        logger.info('OSS 直传成功')
-        return
-      }
+    //   // 优先尝试 OSS 直传
+    //   const isOssUploaded = await this.uploadViaOSS(filePath, objectKey)
+    //   if (isOssUploaded) {
+    //     logger.info('OSS 直传成功')
+    //     return
+    //   }
 
-      // 降级：使用后端 API 上传
-      logger.info('OSS 直传失败或不可用，降级使用后端 API 上传', isOssUploaded)
-      const uploadURL = await this.getUploadURL(`/${objectKey}`)
-      if (uploadURL) {
-        await this.uploadFile(filePath, uploadURL)
-      } else {
-        logger.info('获取上传地址失败！')
-        this.status = TaskStatus.fail
-        this.update()
-      }
-    } else {
-      logger.info('多媒体消息不存在附件或附件格式错误！')
-      if (mediaContent.remoteUrl && mediaContent.remoteUrl !== '') {
-        this.status = TaskStatus.success
-        this.update()
-      } else {
-        this.status = TaskStatus.fail
-        this.update()
-      }
-    }
+    //   // 降级：使用后端 API 上传
+    //   logger.info('OSS 直传失败或不可用，降级使用后端 API 上传', isOssUploaded)
+    //   const uploadURL = await this.getUploadURL(`/${objectKey}`)
+    //   if (uploadURL) {
+    //     await this.uploadFile(filePath, uploadURL)
+    //   } else {
+    //     logger.info('获取上传地址失败！')
+    //     this.status = TaskStatus.fail
+    //     this.update()
+    //   }
+    // } else {
+    //   logger.info('多媒体消息不存在附件或附件格式错误！')
+    //   if (mediaContent.remoteUrl && mediaContent.remoteUrl !== '') {
+    //     this.status = TaskStatus.success
+    //     this.update()
+    //   } else {
+    //     this.status = TaskStatus.fail
+    //     this.update()
+    //   }
+    // }
   }
 
   /**

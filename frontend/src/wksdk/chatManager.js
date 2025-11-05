@@ -1,8 +1,12 @@
-import { WKSDK, MessageText, Mention, Setting } from 'wukongimjssdk'
-import { fetchChannelInfoIfNeed, getChannelInfo } from '@/wksdk/channelManager'
+import { WKSDK, MessageText, Mention, Setting, Message, MessageStatus } from 'wukongimjssdk'
+import { fetchChannelInfoIfNeed, getChannelInfo, newChannel } from '@/wksdk/channelManager'
 import { useChatStore } from '@/stores/index'
 import { MessageContentTypeConst, OrderFactor } from '@/wksdk/const'
 import { Convert } from './dataConvert'
+import { ImageContent } from './model'
+import { uploadFileToOSS } from './oss'
+import { getUUID } from './utils'
+import axios from 'axios'
 
 // 填充消息排序的序号
 export const fillOrder = (message) => {
@@ -83,7 +87,6 @@ export const messageStatusListener = (ackPacket) => {
 export const sendMessage = (channel, data) => {
   return new Promise((resolve, reject) => {
     const { content, mention, reply } = data
-    console.log('sendMessage----->', content, mention, reply)
     // const content = new MessageText(text)
     if (mention) {
       const mn = new Mention()
@@ -107,5 +110,68 @@ export const sendMessage = (channel, data) => {
       .catch((err) => {
         reject(err)
       })
+  })
+}
+
+export const sendImageMessage = ({ file, imgData, width, height }) => {
+  return new Promise((resolve, reject) => {
+    const chatStore = useChatStore()
+    const imageContent = new ImageContent(file, imgData, width, height)
+    const connectUserInfo = chatStore.connectUserInfo
+
+    const channel = chatStore.currentConversation.channel
+    const message = new Message()
+    message.content = imageContent
+
+    message.channel = newChannel(channel.channelID, channel.channelType)
+    message.clientMsgNo = ''
+    message.messageID = getUUID()
+
+    message.header = {}
+    message.remoteExtra = {
+      readedCount: 0,
+      unreadCount: 0,
+      revoke: false,
+      editedAt: 0,
+      isEdit: false,
+      extra: {},
+      extraVersion: 0,
+    }
+    message.setting = new Setting()
+
+    message.fromUID = connectUserInfo.channel.channelID
+    message.isDeleted = false
+
+    message.timestamp = Date.now() / 1000
+    message.status = MessageStatus.Wait
+    message.voicePlaying = false
+    message.voiceReaded = false
+    // 先临时添加到消息列表，等待发送成功后更新状态
+    messageListener(message)
+
+    // 上传到oss
+    const fileName = getUUID()
+    const objectKey = `${message.channel.channelType}/${message.channel.channelID}/${fileName}${imageContent.extension || ''}`
+    const cancelToken = new axios.CancelToken((c) => {
+      // console.log('cancelToken', c)
+      // this.canceler = c
+    })
+    uploadFileToOSS(file, {
+      objectKey,
+      // onProgress: (loaded, total) => {
+      //   const completeProgress = (loaded / total) | 0
+      // },
+      cancelToken,
+    })
+      .then((url) => {
+        imageContent.url = url
+        imageContent.remoteUrl = url
+        chatStore.sendMessage({ content: imageContent })
+      })
+      .catch((err) => {
+        reject(err)
+      })
+
+    resolve(message)
   })
 }

@@ -21,11 +21,7 @@
       @contextmenu="onBubbleContextmenu"
       @selected="onSelectMessage"
     >
-      <img
-        :src="imageData.url"
-        :style="{ width: `${imageData.width}px`, height: `${imageData.height}px` }"
-        decoding="sync"
-      />
+      <MessageFile :message="message" />
     </Bubble>
     <Bubble
       v-else-if="message.contentType === MessageContentTypeConst.mergeForward"
@@ -54,7 +50,8 @@ import Bubble from './Bubble.vue'
 import System from './System.vue'
 import TimeLine from './TimeLine.vue'
 import MergeForward from './MergeForward.vue'
-import { imageScale } from '@/wksdk/utils'
+import MessageFile from './MessageFile.vue'
+// import { imageScale } from '@/wksdk/utils'
 const props = defineProps({
   item: {
     type: Object,
@@ -80,19 +77,6 @@ const textContent = computed(() => {
     return message.value.content.text.replace(/\n/g, '<br>')
   }
   return ''
-})
-const imageData = computed(() => {
-  if (message.value && message.value.content && message.value.content.url) {
-    let scaleSize = imageScale(message.value.content.width, message.value.content.height)
-    return {
-      url: message.value.content.url,
-      width: scaleSize.width,
-      height: scaleSize.height,
-    }
-  } else if (message.value && message.value.content && message.value.content.contentObj) {
-    return message.value.content.contentObj
-  }
-  return {}
 })
 
 const emit = defineEmits(['bubbleContextmenu', 'selected'])

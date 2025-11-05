@@ -66,7 +66,10 @@ const onSubmit = () => {
     width: width.value,
     height: height.value,
   }
-  props.onSubmit && props.onSubmit(imgObj)
+  props.onSubmit &&
+    props.onSubmit(imgObj).then(() => {
+      onCancelModal()
+    })
 }
 
 const handleFileToImage = (file) => {

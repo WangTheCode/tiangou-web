@@ -13,6 +13,7 @@ export const URLS = {
   updateGroupSetting: '/groups/{channelID}/setting',
   updateUserSetting: '/users/{channelID}/setting',
   closeConversation: '/conversations/{channelID}/{channelType}',
+  getOssSts: '/file/oss/sts',
 }
 
 export default class chatApi {
@@ -31,6 +32,7 @@ export default class chatApi {
   static updateUserSetting = async (data) =>
     put({ url: getUrl(URLS.updateUserSetting, data), data: data.setting })
   static closeConversation = async (data) => del({ url: getUrl(URLS.closeConversation, data) })
+  static getOssSts = async () => get({ url: URLS.getOssSts })
 }
 
 // const apis = {}

@@ -224,6 +224,17 @@ export const generateUUID = () => {
   })
 }
 
+export const getUUID = () => {
+  const len = 32 // 32长度
+  const radix = 16 // 16进制
+  const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('')
+  const uuid = []
+  for (let i = 0; i < len; i++) {
+    uuid[i] = chars[0 | (Math.random() * radix)]
+  }
+  return uuid.join('')
+}
+
 export const getDeviceIdFromStorage = () => {
   let deviceId = Cache.get('deviceId')
   if (!deviceId || deviceId === '') {

@@ -14,15 +14,11 @@ const { post, setHttpOption } = require('../utils/http')
 const { setAxiosConfig } = require('../utils/axiosInstance')
 const {
   setSyncConversationsCallback,
-  setMessageUploadTaskCallback,
+  // setMessageUploadTaskCallback,
 } = require('../wksdk/setCallback')
 const { webService } = require('./web')
 const { MessageContentTypeConst } = require('../wksdk/const')
 const { sqlitedbService } = require('./database/sqlitedb')
-const { Buffer } = require('buffer')
-const fs = require('fs')
-const path = require('path')
-const os = require('os')
 const { reverseArray } = require('../utils')
 const { ImageContent } = require('../wksdk/model')
 /**
@@ -51,7 +47,7 @@ class WkimService {
     sdk.chatManager.addMessageStatusListener(webService.addMessageStatusListener.bind(webService))
 
     setSyncConversationsCallback()
-    setMessageUploadTaskCallback()
+    // setMessageUploadTaskCallback()
 
     this._inited = true
   }
@@ -117,14 +113,7 @@ class WkimService {
 
   async sendMessage(data) {
     const { content, mention, channel, reply } = data
-    logger.info(
-      'sendMessage----->',
-      JSON.stringify({
-        ...content,
-        fileBuffer: content.fileBuffer ? `<Buffer ${content.fileBuffer.length} bytes>` : undefined,
-      })
-    )
-
+    console.log('sendMessage data----->', data)
     let messageContent = content
 
     // 处理文本消息
@@ -134,62 +123,12 @@ class WkimService {
 
     // 处理图片消息
     if (content && content.contentType === MessageContentTypeConst.image) {
-      // const { MediaMessageContent } = require('wukongimjstcpsdk')
-
-      // // 创建 MediaMessageContent 实例并手动添加方法
-
-      // messageContent.width = content.width || 0
-      // messageContent.height = content.height || 0
-      // messageContent.remoteUrl = ''
-
-      // // 手动添加 encodeJSON 方法（SDK 的 encode() 会调用它）
-      // messageContent.encodeJSON = function () {
-      //   return {
-      //     width: this.width,
-      //     height: this.height,
-      //     url: this.remoteUrl || '',
-      //   }
-      // }
-
-      // // 添加 contentType getter
-      // Object.defineProperty(messageContent, 'contentType', {
-      //   get: function () {
-      //     return MessageContentTypeConst.image
-      //   },
-      // })
-
-      // // 添加 conversationDigest 方法
-      // messageContent.conversationDigest = function () {
-      //   return '[图片]'
-      // }
-
-      // 从 Buffer 重建临时文件
-      try {
-        if (content.fileBuffer) {
-          // 将 Buffer 写入临时文件
-          const buffer = Buffer.from(content.fileBuffer)
-          const tempDir = os.tmpdir()
-          const fileName = content.fileName || `image_${Date.now()}.png`
-          const tempFilePath = path.join(tempDir, fileName)
-
-          fs.writeFileSync(tempFilePath, buffer)
-          logger.info(`临时文件已创建: ${tempFilePath}, 大小: ${buffer.length} bytes`)
-
-          // 设置文件路径和扩展名（SDK 上传需要）
-          messageContent.file = tempFilePath
-          if (fileName) {
-            const extMatch = fileName.match(/\.([^.]+)$/)
-            messageContent.extension = extMatch ? extMatch[0] : ''
-          }
-          messageContent = new ImageContent(tempFilePath, '', content.width, content.height)
-          logger.info('ImageContent 已创建，SDK 将自动上传文件', messageContent)
-          logger.info('ImageContent-encodeJSON', typeof messageContent.encodeJSON)
-          logger.info('ImageContent-encode', typeof messageContent.encode)
-        }
-      } catch (error) {
-        logger.error('处理图片文件失败:', error)
-        throw error
-      }
+      messageContent = new ImageContent(
+        content.url,
+        content.uploadKey,
+        content.width,
+        content.height
+      )
     }
 
     // 处理 mention
@@ -240,7 +179,6 @@ class WkimService {
       lastMessageSeq,
     } = data
     try {
-      logger.info('syncChannelMessageList data----->', JSON.stringify(data))
       // 1. 查询本地数据库
       const localMessages = await sqlitedbService.getMessagesBySeqRange(
         channel_id,

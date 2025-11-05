@@ -111,6 +111,7 @@ const onScroll = (e) => {
 }
 
 const onResize = () => {
+  console.log('onResize----->')
   scrollToBottom(true)
 }
 
@@ -235,6 +236,14 @@ watch(
     }
   },
   { immediate: true },
+)
+
+watch(
+  () => chatStore.chatMessages.length,
+  () => {
+    scrollerKey.value++
+    scrollToBottom()
+  },
 )
 
 const onContextmenuSelect = (e) => {

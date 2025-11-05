@@ -37,13 +37,13 @@ function setSyncConversationsCallback() {
   }
 }
 
-function setMessageUploadTaskCallback() {
-  WKSDK.shared().config.provider.messageUploadTaskCallback = message => {
-    return new MediaMessageUploadTask(message)
-  }
-}
+// function setMessageUploadTaskCallback() {
+//   WKSDK.shared().config.provider.messageUploadTaskCallback = message => {
+//     return new MediaMessageUploadTask(message)
+//   }
+// }
 
 module.exports = {
   setSyncConversationsCallback,
-  setMessageUploadTaskCallback,
+  // setMessageUploadTaskCallback,
 }

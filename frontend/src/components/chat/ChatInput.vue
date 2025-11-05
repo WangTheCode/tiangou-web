@@ -143,7 +143,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import IconButton from '../base/IconButton.vue'
 import { useAppStore, useChatStore } from '@/stores/index'
 import { conversationPicker } from './conversationPicker/index'
-import { MessageText } from 'wukongimjssdk'
+import { MessageText, Message } from 'wukongimjssdk'
 import EmojiPicker from 'vue3-emoji-picker'
 import 'vue3-emoji-picker/css'
 import { getChannelInfo, newChannel } from '@/wksdk/channelManager'
@@ -152,6 +152,7 @@ import { ChatInput as ChatInputComponent } from 'chat-vue'
 import 'chat-vue/lib/style.css' // 修正：style.css 位于 lib 目录下
 import { sendFileDialog } from './sendFileDialog/index'
 import { isEE } from '@/utils/icp/ipcRenderer'
+import { sendImageMessage } from '@/wksdk/chatManager'
 
 const appStore = useAppStore()
 const chatStore = useChatStore()
@@ -319,20 +320,6 @@ const onSendMessage = () => {
   mentionCache = {}
 }
 
-// 读取 File 为 ArrayBuffer
-const readFileAsArrayBuffer = (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      resolve(e.target.result) // ArrayBuffer
-    }
-    reader.onerror = (e) => {
-      reject(e)
-    }
-    reader.readAsArrayBuffer(file)
-  })
-}
-
 // 处理粘贴的图片
 const handlePasteImage = async (file) => {
   console.log('粘贴图片:', file)
@@ -340,24 +327,11 @@ const handlePasteImage = async (file) => {
   sendFileDialog({
     file: file,
     onSubmit: async (imgObj) => {
-      const imageContent = new ImageContent(file, imgObj.previewUrl, imgObj.width, imgObj.height)
-
-      // Electron 环境读取 ArrayBuffer
-      if (isEE) {
-        try {
-          const arrayBuffer = await readFileAsArrayBuffer(file)
-          imageContent.fileBuffer = arrayBuffer
-          imageContent.imgData = ''
-          console.log('粘贴图片已转换为 ArrayBuffer:', arrayBuffer.byteLength, 'bytes')
-        } catch (error) {
-          console.error('读取粘贴图片失败:', error)
-          ElMessage.error('读取粘贴图片失败')
-          return
-        }
-      }
-
-      chatStore.sendMessage({
-        content: imageContent,
+      return sendImageMessage({
+        file,
+        imgData: imgObj.previewUrl,
+        width: imgObj.width,
+        height: imgObj.height,
       })
     },
   })
@@ -373,31 +347,14 @@ const handleImageChange = async (event) => {
   const file = event.target.files?.[0]
   if (!file) return
 
-  console.log('选择图片:', file)
-
   sendFileDialog({
     file: file,
     onSubmit: async (imgObj) => {
-      console.log('发送图片:', file, imgObj)
-
-      const imageContent = new ImageContent(file, imgObj.previewUrl, imgObj.width, imgObj.height)
-
-      // 如果是 Electron 环境，读取文件为 ArrayBuffer
-      if (isEE) {
-        try {
-          const arrayBuffer = await readFileAsArrayBuffer(file)
-          imageContent.fileBuffer = arrayBuffer
-          imageContent.imgData = ''
-          console.log('File 已转换为 ArrayBuffer:', arrayBuffer.byteLength, 'bytes')
-        } catch (error) {
-          console.error('读取文件失败:', error)
-          ElMessage.error('读取图片文件失败')
-          return
-        }
-      }
-
-      chatStore.sendMessage({
-        content: imageContent,
+      return sendImageMessage({
+        file,
+        imgData: imgObj.previewUrl,
+        width: imgObj.width,
+        height: imgObj.height,
       })
     },
   })
