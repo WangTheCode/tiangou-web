@@ -21,6 +21,18 @@
       @contextmenu="onBubbleContextmenu"
       @selected="onSelectMessage"
     >
+      <MessageImage :message="message" />
+    </Bubble>
+    <Bubble
+      v-else-if="message.contentType === MessageContentTypeConst.file"
+      :item="item"
+      :user-info="userInfo"
+      :show-select-message="showSelectMessage"
+      :is-selected="isSelected"
+      :show-message-trail="false"
+      @contextmenu="onBubbleContextmenu"
+      @selected="onSelectMessage"
+    >
       <MessageFile :message="message" />
     </Bubble>
     <Bubble
@@ -50,7 +62,9 @@ import Bubble from './Bubble.vue'
 import System from './System.vue'
 import TimeLine from './TimeLine.vue'
 import MergeForward from './MergeForward.vue'
+import MessageImage from './MessageImage.vue'
 import MessageFile from './MessageFile.vue'
+
 // import { imageScale } from '@/wksdk/utils'
 const props = defineProps({
   item: {

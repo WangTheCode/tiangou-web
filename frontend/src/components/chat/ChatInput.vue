@@ -74,7 +74,14 @@
               class="mr-1"
               @click="onSelectImage"
             />
-            <IconButton size="sm" icon="icon-attachment" icon-size="20px" round class="mr-1" />
+            <IconButton
+              size="sm"
+              icon="icon-attachment"
+              icon-size="20px"
+              round
+              class="mr-1"
+              @click="onSelectFile"
+            />
             <IconButton size="sm" icon="icon-box" icon-size="20px" round class="mr-1" />
             <IconButton size="sm" icon="icon-activity" icon-size="20px" round class="mr-1" />
           </div>
@@ -134,6 +141,7 @@
       @change="handleImageChange"
       style="display: none"
     />
+    <input type="file" ref="fileInputRef" @change="handleFileChange" style="display: none" />
   </div>
 </template>
 
@@ -152,7 +160,7 @@ import { ChatInput as ChatInputComponent } from 'chat-vue'
 import 'chat-vue/lib/style.css' // 修正：style.css 位于 lib 目录下
 import { sendFileDialog } from './sendFileDialog/index'
 import { isEE } from '@/utils/icp/ipcRenderer'
-import { sendImageMessage } from '@/wksdk/chatManager'
+import { sendFileMessage } from '@/wksdk/chatManager'
 
 const appStore = useAppStore()
 const chatStore = useChatStore()
@@ -165,6 +173,7 @@ const isShowEmojiPicker = ref(false)
 const currentText = ref('')
 const chatInputRef = ref(null)
 const imageInputRef = ref(null) // 图片文件输入框引用
+const fileInputRef = ref(null) // 文件输入框引用
 let mentionCache = {}
 
 const enterBehavior = computed(() => {
@@ -326,9 +335,8 @@ const handlePasteImage = async (file) => {
   sendFileDialog({
     file: file,
     onSubmit: async (imgObj) => {
-      return sendImageMessage({
-        file,
-        imgData: imgObj.previewUrl,
+      return sendFileMessage(file, {
+        imgData: imgObj.url,
         width: imgObj.width,
         height: imgObj.height,
       })
@@ -336,9 +344,14 @@ const handlePasteImage = async (file) => {
   })
 }
 
-// 触发文件选择器
+// 触发图片选择器
 const onSelectImage = () => {
   imageInputRef.value?.click()
+}
+
+// 触发文件选择器
+const onSelectFile = () => {
+  fileInputRef.value?.click()
 }
 
 // 处理选择的图片文件
@@ -349,12 +362,25 @@ const handleImageChange = async (event) => {
   sendFileDialog({
     file: file,
     onSubmit: async (imgObj) => {
-      return sendImageMessage({
-        file,
-        imgData: imgObj.previewUrl,
+      return sendFileMessage(file, {
+        imgData: imgObj.url,
         width: imgObj.width,
         height: imgObj.height,
       })
+    },
+  })
+  // 清空 input 值，允许选择相同文件
+  event.target.value = ''
+}
+
+const handleFileChange = async (event) => {
+  const file = event.target.files?.[0]
+  if (!file) return
+  console.log('file', file)
+  sendFileDialog({
+    file: file,
+    onSubmit: async (fileData) => {
+      return sendFileMessage(file, fileData)
     },
   })
 

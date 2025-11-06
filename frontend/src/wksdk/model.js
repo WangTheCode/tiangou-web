@@ -10,6 +10,7 @@ import {
 } from 'wukongimjssdk'
 import { getUUID } from '../utils/helper'
 import { BubblePosition, MessageReasonCode, OrderFactor, MessageContentTypeConst } from './const'
+import FileHelper from '@/utils/helper/fileHelper'
 
 export class Part {
   type // 文本内容： text:普通文本 emoji: emoji文本 mention：@文本
@@ -449,5 +450,32 @@ export class ImageContent extends MediaMessageContent {
 
   get conversationDigest() {
     return '[图片]'
+  }
+}
+
+export class FileContent extends MediaMessageContent {
+  constructor(file) {
+    super()
+    if (file) {
+      this.file = file
+      this.size = file.size
+      this.name = file.name
+      this.extension = FileHelper.getFileExt(file.name)
+    }
+  }
+  decodeJSON(content) {
+    this.size = content['size'] || 0
+    this.name = content['name'] || ''
+    this.url = content['url'] || ''
+    this.remoteUrl = this.url
+  }
+  encodeJSON() {
+    return { size: this.size || 0, name: this.name || '', url: this.remoteUrl || '' }
+  }
+  get contentType() {
+    return MessageContentTypeConst.file
+  }
+  get conversationDigest() {
+    return '[文件]'
   }
 }

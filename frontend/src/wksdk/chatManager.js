@@ -3,7 +3,7 @@ import { fetchChannelInfoIfNeed, getChannelInfo, newChannel } from '@/wksdk/chan
 import { useChatStore } from '@/stores/index'
 import { MessageContentTypeConst, OrderFactor } from '@/wksdk/const'
 import { Convert } from './dataConvert'
-import { ImageContent } from './model'
+import { ImageContent, FileContent } from './model'
 import { uploadFileToOSS } from './oss'
 import { getUUID } from './utils'
 import axios from 'axios'
@@ -113,49 +113,27 @@ export const sendMessage = (channel, data) => {
   })
 }
 
-export const sendImageMessage = ({ file, imgData, width, height }) => {
+export const sendFileMessage = (file, data) => {
   return new Promise((resolve, reject) => {
     const chatStore = useChatStore()
-    const imageContent = new ImageContent(file, imgData, width, height)
-    const connectUserInfo = chatStore.connectUserInfo
+
+    let content = ''
+    if (file.type && file.type.startsWith('image/')) {
+      content = new ImageContent(file, data.imgData, data.width, data.height)
+    } else if (file.type && file.type.startsWith('video/')) {
+    } else {
+      content = new FileContent(file)
+    }
 
     const channel = chatStore.currentConversation.channel
-    const message = new Message()
-    message.content = imageContent
-
-    message.channel = newChannel(channel.channelID, channel.channelType)
-    message.clientMsgNo = getUUID()
-    message.messageID = ''
-
-    message.header = {}
-    message.remoteExtra = {
-      readedCount: 0,
-      unreadCount: 0,
-      revoke: false,
-      editedAt: 0,
-      isEdit: false,
-      extra: {},
-      extraVersion: 0,
-    }
-    message.setting = new Setting()
-
-    message.fromUID = connectUserInfo.channel.channelID
-    message.isDeleted = false
-
-    message.timestamp = Date.now() / 1000
-    message.status = MessageStatus.Wait
-    message.voicePlaying = false
-    message.voiceReaded = false
+    const message = renderMessageTempData(channel, content)
     // 先临时添加到消息列表，等待发送成功后更新状态
     messageListener(message)
 
     // 上传到oss
     const fileName = getUUID()
-    const objectKey = `${message.channel.channelType}/${message.channel.channelID}/${fileName}${imageContent.extension || ''}`
-    const cancelToken = new axios.CancelToken((c) => {
-      // console.log('cancelToken', c)
-      // this.canceler = c
-    })
+    const objectKey = `${message.channel.channelType}/${message.channel.channelID}/${fileName}${content.extension || ''}`
+    const cancelToken = new axios.CancelToken((c) => {})
     uploadFileToOSS(file, {
       objectKey,
       // onProgress: (loaded, total) => {
@@ -164,9 +142,9 @@ export const sendImageMessage = ({ file, imgData, width, height }) => {
       cancelToken,
     })
       .then((url) => {
-        imageContent.url = url
-        imageContent.remoteUrl = url
-        chatStore.sendMessage({ content: imageContent })
+        content.url = url
+        content.remoteUrl = url
+        chatStore.sendMessage({ content: content })
       })
       .catch((err) => {
         reject(err)
@@ -174,4 +152,36 @@ export const sendImageMessage = ({ file, imgData, width, height }) => {
 
     resolve(message)
   })
+}
+
+export const renderMessageTempData = (channel, content) => {
+  const chatStore = useChatStore()
+  const connectUserInfo = chatStore.connectUserInfo
+  const message = new Message()
+  message.content = content
+
+  message.channel = newChannel(channel.channelID, channel.channelType)
+  message.clientMsgNo = getUUID()
+  message.messageID = ''
+
+  message.header = {}
+  message.remoteExtra = {
+    readedCount: 0,
+    unreadCount: 0,
+    revoke: false,
+    editedAt: 0,
+    isEdit: false,
+    extra: {},
+    extraVersion: 0,
+  }
+  message.setting = new Setting()
+
+  message.fromUID = connectUserInfo.channel.channelID
+  message.isDeleted = false
+
+  message.timestamp = Date.now() / 1000
+  message.status = MessageStatus.Wait
+  message.voicePlaying = false
+  message.voiceReaded = false
+  return message
 }

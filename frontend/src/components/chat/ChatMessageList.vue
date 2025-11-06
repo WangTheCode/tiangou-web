@@ -60,7 +60,6 @@ import { useChatStore, useUserStore } from '../../stores/index'
 import Contextmenu from '@/components/base/Contextmenu.vue'
 import { scrollControl } from '@/hooks/useScrollControl'
 import { copyMessageContent } from '@/wksdk/utils'
-import { conversationPicker } from './conversationPicker/index'
 import { addFaveMessage } from '@/wksdk/faveManage'
 
 const chatStore = useChatStore()

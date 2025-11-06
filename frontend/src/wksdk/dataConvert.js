@@ -108,6 +108,9 @@ class Convert {
     if (contentObj) {
       contentType = contentObj.type
     }
+    if (message.payload && message.payload.type === 8) {
+      debugger
+    }
     const messageContent = WKSDK.shared().getMessageContent(contentType)
     if (contentObj) {
       messageContent.decode(this.stringToUint8Array(JSON.stringify(contentObj)))

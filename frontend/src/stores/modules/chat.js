@@ -188,7 +188,7 @@ export const useChatStore = defineStore('chat', {
           : ''
       const cacheMessages = this.cacheChatMessagesByChannelID[key]
       if (cacheMessages && cacheMessages.length > 0) {
-        const lastMessage = cacheMessages[0]
+        const lastMessage = cacheMessages[cacheMessages.length - 1]
         const isCacheValid = lastMessage.messageID === lastMessageID
         if (isCacheValid) {
           return cacheMessages
@@ -245,6 +245,7 @@ export const useChatStore = defineStore('chat', {
             }
             this.chatMessagesOfOrigin = messages
             this.chatMessages = refreshMessages(messages)
+            console.log('chatMessages', this.chatMessages)
             this.markConversationUnread(channel, 0)
             resolve(messages)
           })
@@ -264,6 +265,7 @@ export const useChatStore = defineStore('chat', {
           resp = chatApi.syncChannelMessageList(params)
         }
 
+        console.log('resp', resp)
         let messages = []
         const messageList = resp && resp.data && resp.data['messages']
         if (messageList) {
@@ -480,7 +482,7 @@ export const useChatStore = defineStore('chat', {
     },
     appendMessage(messageWrap) {
       if (
-        messageWrap.contentType == MessageContentTypeConst.image &&
+        // messageWrap.contentType == MessageContentTypeConst.image &&
         messageWrap.message &&
         messageWrap.message.content &&
         messageWrap.message.content.uploadKey &&
@@ -488,7 +490,7 @@ export const useChatStore = defineStore('chat', {
       ) {
         const messageIndex = this.chatMessagesOfOrigin.findIndex((item) => {
           if (
-            item.contentType == MessageContentTypeConst.image &&
+            //item.contentType == MessageContentTypeConst.image &&
             item.message &&
             item.message.content &&
             item.message.content.uploadKey === messageWrap.message.content.uploadKey

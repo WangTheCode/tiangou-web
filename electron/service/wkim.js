@@ -20,7 +20,7 @@ const { webService } = require('./web')
 const { MessageContentTypeConst } = require('../wksdk/const')
 const { sqlitedbService } = require('./database/sqlitedb')
 const { reverseArray } = require('../utils')
-const { ImageContent, MergeforwardContent } = require('../wksdk/model')
+const { ImageContent, MergeforwardContent, FileContent } = require('../wksdk/model')
 /**
  * WKIM服务
  */
@@ -126,6 +126,9 @@ class WkimService {
         content.width,
         content.height
       )
+    } else if (content && content.contentType === MessageContentTypeConst.file) {
+      // 处理文件消息
+      messageContent = new FileContent(content)
     } else if (content && content.contentType === MessageContentTypeConst.mergeForward) {
       // 处理合并转发消息
       messageContent = new MergeforwardContent(channel.channelType, content.users, content.msgs)

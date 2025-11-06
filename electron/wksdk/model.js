@@ -382,6 +382,38 @@ class ImageContent extends MediaMessageContent {
   }
 }
 
+class FileContent extends MediaMessageContent {
+  constructor(content) {
+    super()
+    this.url = content.url
+    this.size = content.size
+    this.name = content.name
+    this.extension = content.extension
+  }
+  decodeJSON(content) {
+    this.size = content['size'] || 0
+    this.name = content['name'] || ''
+    this.url = content['url'] || ''
+    this.remoteUrl = this.url
+  }
+  encodeJSON() {
+    return { size: this.size || 0, name: this.name || '', url: this.remoteUrl || '' }
+  }
+  get contentType() {
+    return MessageContentTypeConst.file
+  }
+  get conversationDigest() {
+    return '[文件]'
+  }
+
+  set url(url) {
+    this.remoteUrl = url
+  }
+  get url() {
+    return this.remoteUrl
+  }
+}
+
 class MergeforwardContent extends MessageContent {
   constructor(channelType, users, msgs) {
     super()
@@ -456,5 +488,6 @@ module.exports = {
   Part,
   MessageWrap,
   ImageContent,
+  FileContent,
   MergeforwardContent,
 }
