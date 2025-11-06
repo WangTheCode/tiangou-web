@@ -3,7 +3,7 @@ import { fetchChannelInfoIfNeed, getChannelInfo, newChannel } from '@/wksdk/chan
 import { useChatStore } from '@/stores/index'
 import { MessageContentTypeConst, OrderFactor } from '@/wksdk/const'
 import { Convert } from './dataConvert'
-import { ImageContent, FileContent } from './model'
+import { ImageContent, FileContent, VideoContent } from './model'
 import { uploadFileToOSS } from './oss'
 import { getUUID } from './utils'
 import axios from 'axios'
@@ -121,6 +121,7 @@ export const sendFileMessage = (file, data) => {
     if (file.type && file.type.startsWith('image/')) {
       content = new ImageContent(file, data.imgData, data.width, data.height)
     } else if (file.type && file.type.startsWith('video/')) {
+      content = new VideoContent(file, '', data.width, data.height, data.second)
     } else {
       content = new FileContent(file)
     }

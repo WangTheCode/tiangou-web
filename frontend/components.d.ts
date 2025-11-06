@@ -39,6 +39,7 @@ declare module 'vue' {
     MessageImage: typeof import('./src/components/chat/messageCell/MessageImage.vue')['default']
     MessageListModal: typeof import('./src/components/chat/messageListModal/MessageListModal.vue')['default']
     MessageReply: typeof import('./src/components/chat/messageCell/MessageReply.vue')['default']
+    MessageSmallVideo: typeof import('./src/components/chat/messageCell/MessageSmallVideo.vue')['default']
     MessageTrail: typeof import('./src/components/chat/messageCell/MessageTrail.vue')['default']
     ReplyMessage: typeof import('./src/components/chat/ReplyMessage.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

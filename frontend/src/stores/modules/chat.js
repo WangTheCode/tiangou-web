@@ -502,6 +502,7 @@ export const useChatStore = defineStore('chat', {
         if (messageIndex !== -1) {
           messageWrap.clientMsgNo = this.chatMessagesOfOrigin[messageIndex].clientMsgNo
           this.chatMessagesOfOrigin[messageIndex] = messageWrap
+          console.log(this.chatMessagesOfOrigin)
         }
       } else {
         this.chatMessagesOfOrigin.push(messageWrap)

@@ -461,6 +461,7 @@ export class FileContent extends MediaMessageContent {
       this.size = file.size
       this.name = file.name
       this.extension = FileHelper.getFileExt(file.name)
+      this.uploadKey = getUUID()
     }
   }
   decodeJSON(content) {
@@ -468,14 +469,74 @@ export class FileContent extends MediaMessageContent {
     this.name = content['name'] || ''
     this.url = content['url'] || ''
     this.remoteUrl = this.url
+    this.uploadKey = content['uploadKey'] || ''
   }
   encodeJSON() {
-    return { size: this.size || 0, name: this.name || '', url: this.remoteUrl || '' }
+    return {
+      size: this.size || 0,
+      name: this.name || '',
+      url: this.remoteUrl || '',
+      uploadKey: this.uploadKey || '',
+    }
   }
   get contentType() {
     return MessageContentTypeConst.file
   }
   get conversationDigest() {
     return '[文件]'
+  }
+}
+
+export class VideoContent extends MediaMessageContent {
+  // url: string = ''  // 小视频下载地址
+  // cover: string = '' // 小视频封面图片下载地址
+  // size: number = 0 // 小视频大小 单位byte
+  // width: number = 0 // 小视频宽度
+  // height: number = 0 // 小视频高度
+  // second: number = 0 // 小视频秒长
+
+  constructor(file, cover, width, height, second) {
+    super()
+    if (file) {
+      this.file = file
+      this.size = file.size
+    }
+    this.cover = cover || ''
+    this.width = width || 0
+    this.height = height || 0
+    this.second = second || 0
+    this.url = '' // 初始化为空字符串
+    this.uploadKey = getUUID()
+  }
+
+  decodeJSON(content) {
+    this.url = content['url'] || ''
+    this.cover = content['cover'] || ''
+    this.size = content['size'] || 0
+    this.width = content['width'] || 0
+    this.height = content['height'] || 0
+    this.second = content['second'] || 0
+    this.uploadKey = content['uploadKey'] || ''
+    this.remoteUrl = this.url
+  }
+
+  encodeJSON() {
+    return {
+      url: this.url || '',
+      cover: this.cover || '',
+      size: this.size || 0,
+      width: this.width || 0,
+      height: this.height || 0,
+      second: this.second || 0,
+      uploadKey: this.uploadKey || '',
+    }
+  }
+
+  get contentType() {
+    return MessageContentTypeConst.smallVideo
+  }
+
+  get conversationDigest() {
+    return '[小视频]'
   }
 }

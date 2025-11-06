@@ -19,7 +19,7 @@
       <img
         :src="fileData.url"
         alt="图片"
-        :style="{ width: fileData.width + 'px', height: fileData.height + 'px' }"
+        :style="{ width: scaleSize.width + 'px', height: scaleSize.height + 'px' }"
         class="max-w-full max-h-[400px] w-auto"
       />
     </div>
@@ -27,7 +27,15 @@
       v-else-if="type === MessageContentTypeConst.video"
       class="flex p-4 text-center items-center justify-center"
     >
-      <video :src="fileData.url" class="max-w-full max-h-[400px] w-auto" />
+      <video
+        v-if="fileData.videoUrl"
+        :src="fileData.videoUrl"
+        :style="{ width: scaleSize.width + 'px', height: scaleSize.height + 'px' }"
+        controls
+        class="max-w-full max-h-[400px] w-auto"
+      >
+        <source :src="fileData.videoUrl" type="video/mp4" />
+      </video>
     </div>
     <div v-if="type === MessageContentTypeConst.file" class="flex p-4">
       <div class="w-14 h-14 rounded p-2" :style="{ backgroundColor: fileData.color }">
@@ -53,7 +61,7 @@
 import { ref, onMounted } from 'vue'
 import { MessageContentTypeConst } from '@/wksdk/const'
 import FileHelper from '@/utils/helper/fileHelper'
-
+import { imageScale, videoScale } from '@/wksdk/utils'
 const props = defineProps({
   file: {
     type: File,
@@ -73,6 +81,7 @@ const title = ref('发送图片')
 const isShow = ref(false)
 const type = ref(MessageContentTypeConst.image)
 const fileData = ref({})
+const scaleSize = ref({ width: 0, height: 0 })
 
 // 取消按钮点击
 const onCancelModal = () => {
@@ -90,10 +99,34 @@ const showFile = (file) => {
   if (file.type && file.type.startsWith('image/')) {
     title.value = '发送图片'
     type.value = MessageContentTypeConst.image
+    scaleSize.value = imageScale(file.width, file.height)
     handleFileToImage(file)
   } else if (file.type && file.type.startsWith('video/')) {
     title.value = '发送视频'
     type.value = MessageContentTypeConst.video
+
+    const fileIcon = FileHelper.getFileIconInfo(file.name)
+    const videoUrl = URL.createObjectURL(file)
+
+    // 创建视频元素获取元数据（用于更新尺寸信息）
+    const video = document.createElement('video')
+    video.src = videoUrl
+    video.preload = 'metadata'
+    fileData.value = {
+      videoUrl: videoUrl,
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      icon: fileIcon.icon,
+      color: fileIcon.color,
+    }
+
+    video.onloadedmetadata = () => {
+      fileData.value.width = video.videoWidth
+      fileData.value.height = video.videoHeight
+      fileData.value.second = video.duration || 0
+      scaleSize.value = videoScale(video.videoWidth, video.videoHeight)
+    }
   } else {
     title.value = '发送文件'
     type.value = MessageContentTypeConst.file

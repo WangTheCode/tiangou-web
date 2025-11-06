@@ -1,7 +1,11 @@
 <template>
   <div class="relative">
     <div class="flex cursor-pointer" @click="onDownloadFile">
-      <div class="w-14 h-14 rounded p-2" :style="{ backgroundColor: fileIcon.color }">
+      <div
+        v-if="fileIcon"
+        class="w-14 h-14 rounded p-2"
+        :style="{ backgroundColor: fileIcon.color }"
+      >
         <img :src="fileIcon.icon" class="w-full h-full object-cover" />
       </div>
       <div v-if="message.content" class="flex-1 pl-2">

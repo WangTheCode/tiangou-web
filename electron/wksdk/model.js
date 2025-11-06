@@ -386,18 +386,26 @@ class FileContent extends MediaMessageContent {
   constructor(content) {
     super()
     this.url = content.url
+    this.remoteUrl = this.url
     this.size = content.size
     this.name = content.name
     this.extension = content.extension
+    this.uploadKey = content.uploadKey
   }
   decodeJSON(content) {
     this.size = content['size'] || 0
     this.name = content['name'] || ''
     this.url = content['url'] || ''
     this.remoteUrl = this.url
+    this.uploadKey = content['uploadKey'] || ''
   }
   encodeJSON() {
-    return { size: this.size || 0, name: this.name || '', url: this.remoteUrl || '' }
+    return {
+      size: this.size || 0,
+      name: this.name || '',
+      url: this.remoteUrl || '',
+      uploadKey: this.uploadKey || '',
+    }
   }
   get contentType() {
     return MessageContentTypeConst.file
@@ -405,12 +413,56 @@ class FileContent extends MediaMessageContent {
   get conversationDigest() {
     return '[文件]'
   }
+}
 
-  set url(url) {
-    this.remoteUrl = url
+class VideoContent extends MediaMessageContent {
+  // url: string = ''  // 小视频下载地址
+  // cover: string = '' // 小视频封面图片下载地址
+  // size: number = 0 // 小视频大小 单位byte
+  // width: number = 0 // 小视频宽度
+  // height: number = 0 // 小视频高度
+  // second: number = 0 // 小视频秒长
+
+  constructor(content) {
+    super()
+    this.size = content.size
+    this.cover = content.cover || ''
+    this.width = content.width || 0
+    this.height = content.height || 0
+    this.second = content.second || 0
+    this.url = content.url
+    this.uploadKey = content.uploadKey
   }
-  get url() {
-    return this.remoteUrl
+
+  decodeJSON(content) {
+    this.url = content['url'] || ''
+    this.cover = content['cover'] || ''
+    this.size = content['size'] || 0
+    this.width = content['width'] || 0
+    this.height = content['height'] || 0
+    this.second = content['second'] || 0
+    this.uploadKey = content['uploadKey'] || ''
+    this.remoteUrl = this.url
+  }
+
+  encodeJSON() {
+    return {
+      url: this.url || '',
+      cover: this.cover || '',
+      size: this.size || 0,
+      width: this.width || 0,
+      height: this.height || 0,
+      second: this.second || 0,
+      uploadKey: this.uploadKey || '',
+    }
+  }
+
+  get contentType() {
+    return MessageContentTypeConst.smallVideo
+  }
+
+  get conversationDigest() {
+    return '[小视频]'
   }
 }
 
@@ -490,4 +542,5 @@ module.exports = {
   ImageContent,
   FileContent,
   MergeforwardContent,
+  VideoContent,
 }

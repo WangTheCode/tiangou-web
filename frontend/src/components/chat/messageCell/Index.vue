@@ -11,47 +11,39 @@
     >
       <span v-html="textContent"></span>
     </Bubble>
-    <Bubble
-      v-else-if="message.contentType === MessageContentTypeConst.image"
-      :item="item"
-      :user-info="userInfo"
-      :show-select-message="showSelectMessage"
-      :is-selected="isSelected"
-      :show-message-trail="false"
-      @contextmenu="onBubbleContextmenu"
-      @selected="onSelectMessage"
-    >
-      <MessageImage :message="message" />
-    </Bubble>
-    <Bubble
-      v-else-if="message.contentType === MessageContentTypeConst.file"
-      :item="item"
-      :user-info="userInfo"
-      :show-select-message="showSelectMessage"
-      :is-selected="isSelected"
-      :show-message-trail="false"
-      @contextmenu="onBubbleContextmenu"
-      @selected="onSelectMessage"
-    >
-      <MessageFile :message="message" />
-    </Bubble>
-    <Bubble
-      v-else-if="message.contentType === MessageContentTypeConst.mergeForward"
-      :item="item"
-      :user-info="userInfo"
-      :show-select-message="showSelectMessage"
-      :is-selected="isSelected"
-      :show-message-trail="false"
-      @contextmenu="onBubbleContextmenu"
-      @selected="onSelectMessage"
-    >
-      <MergeForward :message="message" />
-    </Bubble>
+
     <TimeLine v-else-if="message.contentType === MessageContentTypeConst.time" :message="message" />
     <System
       v-else-if="message.contentType <= 2000 && message.contentType >= 1000"
       :message="message"
     />
+    <Bubble
+      v-else
+      :item="item"
+      :user-info="userInfo"
+      :show-select-message="showSelectMessage"
+      :is-selected="isSelected"
+      :show-message-trail="false"
+      @contextmenu="onBubbleContextmenu"
+      @selected="onSelectMessage"
+    >
+      <MessageImage
+        v-if="message.contentType === MessageContentTypeConst.image"
+        :message="message"
+      />
+      <MessageFile
+        v-else-if="message.contentType === MessageContentTypeConst.file"
+        :message="message"
+      />
+      <MessageSmallVideo
+        v-else-if="message.contentType === MessageContentTypeConst.smallVideo"
+        :message="message"
+      />
+      <MergeForward
+        v-else-if="message.contentType === MessageContentTypeConst.mergeForward"
+        :message="message"
+      />
+    </Bubble>
   </div>
 </template>
 
@@ -64,6 +56,7 @@ import TimeLine from './TimeLine.vue'
 import MergeForward from './MergeForward.vue'
 import MessageImage from './MessageImage.vue'
 import MessageFile from './MessageFile.vue'
+import MessageSmallVideo from './MessageSmallVideo.vue'
 
 // import { imageScale } from '@/wksdk/utils'
 const props = defineProps({

@@ -98,6 +98,19 @@ class WebService {
         payload.height = message.content.height
         payload.width = message.content.width
         payload.url = message.content.url
+      } else if (message.content.contentType === MessageContentTypeConst.smallVideo) {
+        payload.cover = message.content.cover
+        payload.height = message.content.height
+        payload.width = message.content.width
+        payload.second = message.content.second
+        payload.size = message.content.size
+        payload.type = message.content.type
+        payload.url = message.content.url
+      } else if (message.content.contentType === MessageContentTypeConst.file) {
+        payload.name = message.content.name
+        payload.size = message.content.size
+        payload.type = message.content.type
+        payload.url = message.content.url
       } else if (message.content.contentType === MessageContentTypeConst.mergeForward) {
         payload.channel_type = message.content.channelType
         payload.users = message.content.users

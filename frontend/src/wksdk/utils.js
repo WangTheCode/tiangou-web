@@ -534,3 +534,51 @@ export const copyMessageContent = async (message) => {
     })
   }
 }
+
+export const videoScale = (orgWidth, orgHeight, maxWidth = 380, maxHeight = 380) => {
+  let actSize = { width: orgWidth, height: orgHeight }
+  if (orgWidth > orgHeight) {
+    //横图
+    if (orgWidth > maxWidth) {
+      // 横图超过最大宽度
+      let rate = maxWidth / orgWidth // 缩放比例
+      actSize.width = maxWidth
+      actSize.height = orgHeight * rate
+    }
+  } else if (orgWidth < orgHeight) {
+    //竖图
+    if (orgHeight > maxHeight) {
+      let rate = maxHeight / orgHeight // 缩放比例
+      actSize.width = orgWidth * rate
+      actSize.height = maxHeight
+    }
+  } else if (orgWidth === orgHeight) {
+    if (orgWidth > maxWidth) {
+      let rate = maxWidth / orgWidth // 缩放比例
+      actSize.width = maxWidth
+      actSize.height = orgHeight * rate
+    }
+  }
+  return actSize
+}
+
+export const secondFormat = (second) => {
+  const minute = parseInt(`${second / 60}`)
+  const realSecond = parseInt(`${second % 60}`)
+
+  let minuteFormat = ''
+  if (minute > 9) {
+    minuteFormat = `${minute}`
+  } else {
+    minuteFormat = `0${minute}`
+  }
+
+  let secondFormat = ''
+  if (realSecond > 9) {
+    secondFormat = `${realSecond}`
+  } else {
+    secondFormat = `0${realSecond}`
+  }
+
+  return `${minuteFormat}:${secondFormat}`
+}

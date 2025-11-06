@@ -39,7 +39,12 @@ const imageData = computed(() => {
         height: scaleSize.height,
       }
     } else if (props.message.content.contentObj) {
-      return props.message.content.contentObj
+      let scaleSize = imageScale(props.message.content.width, props.message.content.height)
+      return {
+        ...props.message.content.contentObj,
+        width: scaleSize.width,
+        height: scaleSize.height,
+      }
     } else if (props.message.content.imgData) {
       let scaleSize = imageScale(props.message.content.width, props.message.content.height)
       return {
