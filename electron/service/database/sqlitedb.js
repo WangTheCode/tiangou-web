@@ -136,6 +136,18 @@ class SqlitedbService extends BasedbService {
   }
 
   /*
+   * 删 - 清空频道消息
+   */
+  async delChatMessagesByChannel(channelId, channelType, messageSeq) {
+    const conversationId = `${channelId}_${channelType}`
+    const delInfo = this.db.prepare(
+      `DELETE FROM ${this.chatMessagesTableName} WHERE conversation_id = ? AND message_seq < ?`
+    )
+    delInfo.run(conversationId, messageSeq)
+    return true
+  }
+
+  /*
    * 改 - 更新消息状态（如已读状态）
    */
   async updateChatMessageStatus(messageId, updates) {

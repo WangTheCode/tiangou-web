@@ -315,6 +315,12 @@ class WkimService {
     return true
   }
 
+  async clearChannelMessages(data) {
+    const { channel_id, channel_type, message_seq } = data
+    await sqlitedbService.delChatMessagesByChannel(channel_id, channel_type, message_seq)
+    return true
+  }
+
   /**
    * 停止服务，断开连接
    */

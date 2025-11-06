@@ -246,17 +246,17 @@ export const closeConversation = (conversation) => {
 
 // 清空聊天记录
 export const clearChannelMessages = (conversation) => {
-  return new Promise((resolve, reject) => {
-    chatApi
-      .clearChannelMessages({})
-      .then((res) => {
-        const chatStore = useChatStore()
-        // chatStore.removeConversation(conversation)
-        resolve(res)
+  return new Promise(async (resolve, reject) => {
+    try {
+      // 调用清空接口
+      const res = await chatApi.clearChannelMessages({
+        channel_id: conversation.channel.channelID,
+        channel_type: conversation.channel.channelType,
+        message_seq: conversation.lastMessage?.messageSeq || 0,
       })
-      .catch((err) => {
-        console.error(err)
-        reject(err)
-      })
+
+      const chatStore = useChatStore()
+      chatStore.clearChannelMessages(conversation)
+    } catch (error) {}
   })
 }

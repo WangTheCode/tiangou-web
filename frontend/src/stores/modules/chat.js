@@ -435,6 +435,26 @@ export const useChatStore = defineStore('chat', {
         (item) => !item.channel.isEqual(conversation.channel),
       )
     },
+    // 清空频道消息
+    clearChannelMessages(conversation) {
+      if (
+        this.currentConversation &&
+        this.currentConversation.channel.isEqual(conversation.channel)
+      ) {
+        this.chatMessagesOfOrigin = []
+        this.chatMessages = []
+        this.currentConversationUnread = 0
+        this.currentConversation.lastMessage = null
+      }
+      const cacheKey = `${conversation.channel.channelID}_${conversation.channel.channelType}`
+      this.cacheChatMessagesByChannelID[cacheKey] = []
+      this.conversationList = this.conversationList.map((item) => {
+        if (item.channel.isEqual(conversation.channel)) {
+          item.lastMessage = null
+        }
+        return item
+      })
+    },
     tipsAudio() {
       const appStore = useAppStore()
       appStore.setPlayAudioUrl('')
