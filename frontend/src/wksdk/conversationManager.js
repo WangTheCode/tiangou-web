@@ -245,18 +245,29 @@ export const closeConversation = (conversation) => {
 }
 
 // 清空聊天记录
-export const clearChannelMessages = (conversation) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      // 调用清空接口
-      const res = await chatApi.clearChannelMessages({
+export const clearChannelMessages = async (conversation) => {
+  try {
+    // 调用清空接口
+    const res = await chatApi.clearChannelMessages({
+      channel_id: conversation.channel.channelID,
+      channel_type: conversation.channel.channelType,
+      message_seq: conversation.lastMessage?.messageSeq || 0,
+    })
+
+    // 清空本地缓存
+    if (isEE) {
+      await ipcApiRoute.clearChannelMessages({
         channel_id: conversation.channel.channelID,
         channel_type: conversation.channel.channelType,
         message_seq: conversation.lastMessage?.messageSeq || 0,
       })
+    }
 
-      const chatStore = useChatStore()
-      chatStore.clearChannelMessages(conversation)
-    } catch (error) {}
-  })
+    const chatStore = useChatStore()
+    chatStore.clearChannelMessages(conversation)
+    Promise.resolve(res)
+  } catch (error) {
+    console.error(error)
+    return Promise.reject(error)
+  }
 }

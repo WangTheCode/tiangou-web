@@ -166,6 +166,6 @@ export const setSyncSubscribersCallback = () => {
 // 消息上传任务
 export const setMessageUploadTaskCallback = () => {
   WKSDK.shared().config.provider.messageUploadTaskCallback = (message) => {
-    return new MediaMessageUploadTask(message)
+    // return new MediaMessageUploadTask(message)
   }
 }

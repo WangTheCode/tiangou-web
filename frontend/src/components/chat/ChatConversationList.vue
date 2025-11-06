@@ -24,7 +24,7 @@ import { computed, ref } from 'vue'
 import { useChatStore } from '@/stores/index'
 import ConversationItem from './ConversationItem.vue'
 import Contextmenu from '@/components/base/Contextmenu.vue'
-import { updateSetting, closeConversation } from '@/wksdk/conversationManager'
+import { updateSetting, closeConversation, clearChannelMessages } from '@/wksdk/conversationManager'
 
 const chatStore = useChatStore()
 const conversationList = computed(() => chatStore.conversationList)

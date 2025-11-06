@@ -237,6 +237,12 @@ export const useChatStore = defineStore('chat', {
               const key = `${channel.channelID}_${channel.channelType}`
               this.cacheChatMessagesByChannelID[key] = messages
             }
+            const sendingMessages = this.getQueueSendMessages(
+              this.currentConversation.channel.getChannelKey(),
+            )
+            if (sendingMessages && sendingMessages.length > 0) {
+              messages = [...messages, ...sendingMessages]
+            }
             this.chatMessagesOfOrigin = messages
             this.chatMessages = refreshMessages(messages)
             this.markConversationUnread(channel, 0)
@@ -247,53 +253,33 @@ export const useChatStore = defineStore('chat', {
           })
       })
     },
-    fetchChannelMessageList(params) {
-      return new Promise((resolve, reject) => {
+    async fetchChannelMessageList(params) {
+      try {
+        let resp = ''
         if (isEE) {
           params.lastMessageSeq = this.currentConversation?.lastMessage?.messageSeq || 0
           params.lastMessageID = this.currentConversation?.lastMessage?.messageID || ''
-          ipcApiRoute
-            .syncChannelMessageList(params)
-            .then((resp) => {
-              let messages = []
-              const messageList = resp.data && resp.data['messages']
-              if (messageList) {
-                messageList.forEach((msg) => {
-                  if (!msg.is_deleted) {
-                    const message = Convert.toMessage(msg)
-                    const messageWrap = Convert.toMessageWrap(message)
-                    messages.push(messageWrap)
-                  }
-                })
-              }
-              resolve(messages)
-            })
-            .catch((err) => {
-              reject(err)
-            })
+          resp = await ipcApiRoute.syncChannelMessageList(params)
         } else {
-          chatApi
-            .syncChannelMessageList(params)
-            .then((resp) => {
-              let messages = []
-              const messageList = resp && resp['messages']
-              if (messageList) {
-                messageList.forEach((msg) => {
-                  if (!msg.is_deleted) {
-                    const message = Convert.toMessage(msg)
-                    const messageWrap = Convert.toMessageWrap(message)
-                    messages.push(messageWrap)
-                  }
-                })
-              }
-
-              resolve(messages)
-            })
-            .catch((err) => {
-              reject(err)
-            })
+          resp = chatApi.syncChannelMessageList(params)
         }
-      })
+
+        let messages = []
+        const messageList = resp && resp.data && resp.data['messages']
+        if (messageList) {
+          messageList.forEach((msg) => {
+            if (!msg.is_deleted) {
+              const message = Convert.toMessage(msg)
+              const messageWrap = Convert.toMessageWrap(message)
+              messages.push(messageWrap)
+            }
+          })
+        }
+
+        return Promise.resolve(messages)
+      } catch (error) {
+        return Promise.reject(error)
+      }
     },
     // 加载更多历史消息
     loadMoreMessages(channel, limit = 30) {
@@ -593,7 +579,13 @@ export const useChatStore = defineStore('chat', {
             mention: data.mention, // mention 是普通对象，可以直接传递
           }
           ipcApiRoute.sendMessage(ipcData).then((res) => {
-            resolve(res)
+            console.log(res.data)
+            const message = Convert.toMessageFromIpc(res.data)
+            const messageWrap = Convert.toMessageWrap(message)
+            console.log(messageWrap)
+            this.addSendMessageToQueue(messageWrap)
+            this.setReplyMessage(null)
+            resolve(messageWrap)
           })
         } else {
           // let channel = this.currentConversation.channel
@@ -602,6 +594,8 @@ export const useChatStore = defineStore('chat', {
           // }
           sendMessage(data.channel, data).then((message) => {
             this.setReplyMessage(null)
+            const messageWrap = Convert.toMessageWrap(message)
+            this.addSendMessageToQueue(messageWrap)
             resolve(message)
           })
         }
@@ -617,8 +611,17 @@ export const useChatStore = defineStore('chat', {
       this.sendMessageQueue[channelKey] = [messageWrap]
     },
     // 获取发送队列
-    getSendMessageQueue(channelKey) {
-      return this.sendMessageQueue[channelKey]
+    getQueueSendMessages(channelKey) {
+      let sendingMessages = this.sendMessageQueue[channelKey]
+      // 检查时间，如果大于指定时间未发送的消息直接删掉,因为没意义了
+      if (sendingMessages && sendingMessages.length > 0) {
+        const now = Math.floor(new Date().getTime() / 1000)
+        sendingMessages = sendingMessages.filter((msg) => {
+          return now - msg.timestamp < 10 * 60 // 10分钟
+        })
+        this.sendMessageQueue[channelKey] = sendingMessages
+        return sendingMessages || []
+      }
     },
     // 删除消息从发送队列
     removeSendMessageFromQueue(clientSeq, channel) {
@@ -655,6 +658,7 @@ export const useChatStore = defineStore('chat', {
           } else {
             message.status = MessageStatus.Fail
           }
+          this.removeSendMessageFromQueue(message.clientSeq, message.channel)
           isUpdated = true
         }
       }
