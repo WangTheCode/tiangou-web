@@ -168,3 +168,9 @@ export const setUrlParameter = (field, val) => {
     newurl,
   )
 }
+
+export const sortListByField = (list, field) => {
+  return list.sort((a, b) => {
+    return a[field] - b[field]
+  })
+}

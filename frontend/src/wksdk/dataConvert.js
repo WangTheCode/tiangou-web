@@ -18,6 +18,7 @@ import {
   MessageExtra,
 } from 'wukongimjssdk'
 import { MessageWrap } from './model'
+import { newChannel } from './channelManager'
 
 class Convert {
   static toConversation(conversationMap) {
@@ -107,6 +108,9 @@ class Convert {
     if (contentObj) {
       contentType = contentObj.type
     }
+    if (message.payload && message.payload.type === 8) {
+      debugger
+    }
     const messageContent = WKSDK.shared().getMessageContent(contentType)
     if (contentObj) {
       messageContent.decode(this.stringToUint8Array(JSON.stringify(contentObj)))
@@ -121,6 +125,30 @@ class Convert {
 
   static toMessageWrap(message) {
     return new MessageWrap(message)
+  }
+
+  static toMessageFromIpc(messageData) {
+    const message = new Message()
+    message.channel = newChannel(messageData.channel.channelID, messageData.channel.channelType)
+    message.messageID = messageData.messageID
+    message.messageSeq = messageData.messageSeq
+    message.clientSeq = messageData.clientSeq
+    message.clientMsgNo = messageData.clientMsgNo
+
+    // 还需处理类型
+    message.content = messageData.content
+    message.header = messageData.header
+    message.remoteExtra = messageData.remoteExtra
+    message.setting = messageData.setting
+
+    message.fromUID = messageData.fromUID
+    message.isDeleted = messageData.isDeleted
+
+    message.timestamp = messageData.timestamp
+    message.status = messageData.status
+    message.voicePlaying = messageData.voicePlaying
+    message.voiceReaded = messageData.voiceReaded
+    return message
   }
 
   static toMessageExtra(msgExtraMap) {

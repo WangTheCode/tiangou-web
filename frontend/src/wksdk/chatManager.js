@@ -1,8 +1,12 @@
-import { WKSDK, MessageText, Mention, Setting } from 'wukongimjssdk'
-import { fetchChannelInfoIfNeed, getChannelInfo } from '@/wksdk/channelManager'
+import { WKSDK, MessageText, Mention, Setting, Message, MessageStatus } from 'wukongimjssdk'
+import { fetchChannelInfoIfNeed, getChannelInfo, newChannel } from '@/wksdk/channelManager'
 import { useChatStore } from '@/stores/index'
 import { MessageContentTypeConst, OrderFactor } from '@/wksdk/const'
 import { Convert } from './dataConvert'
+import { ImageContent, FileContent, VideoContent } from './model'
+import { uploadFileToOSS } from './oss'
+import { getUUID } from './utils'
+import axios from 'axios'
 
 // 填充消息排序的序号
 export const fillOrder = (message) => {
@@ -83,7 +87,6 @@ export const messageStatusListener = (ackPacket) => {
 export const sendMessage = (channel, data) => {
   return new Promise((resolve, reject) => {
     const { content, mention, reply } = data
-    console.log('sendMessage----->', content, mention, reply)
     // const content = new MessageText(text)
     if (mention) {
       const mn = new Mention()
@@ -108,4 +111,78 @@ export const sendMessage = (channel, data) => {
         reject(err)
       })
   })
+}
+
+export const sendFileMessage = (file, data) => {
+  return new Promise((resolve, reject) => {
+    const chatStore = useChatStore()
+
+    let content = ''
+    if (file.type && file.type.startsWith('image/')) {
+      content = new ImageContent(file, data.imgData, data.width, data.height)
+    } else if (file.type && file.type.startsWith('video/')) {
+      content = new VideoContent(file, '', data.width, data.height, data.second)
+    } else {
+      content = new FileContent(file)
+    }
+
+    const channel = chatStore.currentConversation.channel
+    const message = renderMessageTempData(channel, content)
+    // 先临时添加到消息列表，等待发送成功后更新状态
+    messageListener(message)
+
+    // 上传到oss
+    const fileName = getUUID()
+    const objectKey = `${message.channel.channelType}/${message.channel.channelID}/${fileName}${content.extension || ''}`
+    const cancelToken = new axios.CancelToken((c) => {})
+    uploadFileToOSS(file, {
+      objectKey,
+      // onProgress: (loaded, total) => {
+      //   const completeProgress = (loaded / total) | 0
+      // },
+      cancelToken,
+    })
+      .then((url) => {
+        content.url = url
+        content.remoteUrl = url
+        chatStore.sendMessage({ content: content })
+      })
+      .catch((err) => {
+        reject(err)
+      })
+
+    resolve(message)
+  })
+}
+
+export const renderMessageTempData = (channel, content) => {
+  const chatStore = useChatStore()
+  const connectUserInfo = chatStore.connectUserInfo
+  const message = new Message()
+  message.content = content
+
+  message.channel = newChannel(channel.channelID, channel.channelType)
+  message.clientMsgNo = getUUID()
+  message.messageID = ''
+
+  message.header = {}
+  message.remoteExtra = {
+    readedCount: 0,
+    unreadCount: 0,
+    revoke: false,
+    editedAt: 0,
+    isEdit: false,
+    extra: {},
+    extraVersion: 0,
+  }
+  message.setting = new Setting()
+
+  message.fromUID = connectUserInfo.channel.channelID
+  message.isDeleted = false
+
+  message.timestamp = Date.now() / 1000
+  message.status = MessageStatus.Wait
+  message.voicePlaying = false
+  message.voiceReaded = false
+  return message
 }

@@ -2,7 +2,6 @@ const { post } = require('../utils/http')
 const { Convert } = require('./dataConvert')
 const { WKSDK, Subscriber } = require('wukongimjstcpsdk')
 const { webService } = require('../service/web')
-const { MediaMessageUploadTask } = require('./messageUploadTask')
 
 function setSyncConversationsCallback() {
   WKSDK.shared().config.provider.syncConversationsCallback = async filter => {
@@ -37,13 +36,6 @@ function setSyncConversationsCallback() {
   }
 }
 
-function setMessageUploadTaskCallback() {
-  WKSDK.shared().config.provider.messageUploadTaskCallback = message => {
-    return new MediaMessageUploadTask(message)
-  }
-}
-
 module.exports = {
   setSyncConversationsCallback,
-  setMessageUploadTaskCallback,
 }

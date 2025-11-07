@@ -12,9 +12,10 @@
   },
   "dependencies": {
     "@vueuse/core": "^13.5.0",
+    "ali-oss": "^6.23.0",
     "axios": "^1.11.0",
     "bignumber.js": "^9.3.1",
-    "chat-vue": "file:C:/Code/tiangou-web-new/frontend/chat-vue-0.0.6.tgz",
+    "chat-vue": "file:chat-vue-0.0.7.tgz",
     "dayjs": "^1.11.13",
     "element-plus": "^2.11.5",
     "lodash-es": "^4.17.21",

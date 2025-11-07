@@ -11,39 +11,39 @@
     >
       <span v-html="textContent"></span>
     </Bubble>
-    <Bubble
-      v-else-if="message.contentType === MessageContentTypeConst.image"
-      :item="item"
-      :user-info="userInfo"
-      :show-select-message="showSelectMessage"
-      :is-selected="isSelected"
-      :show-message-trail="false"
-      @contextmenu="onBubbleContextmenu"
-      @selected="onSelectMessage"
-    >
-      <img
-        :src="imageData.url"
-        :style="{ width: `${imageData.width}px`, height: `${imageData.height}px` }"
-        decoding="sync"
-      />
-    </Bubble>
-    <Bubble
-      v-else-if="message.contentType === MessageContentTypeConst.mergeForward"
-      :item="item"
-      :user-info="userInfo"
-      :show-select-message="showSelectMessage"
-      :is-selected="isSelected"
-      :show-message-trail="false"
-      @contextmenu="onBubbleContextmenu"
-      @selected="onSelectMessage"
-    >
-      <MergeForward :message="message" />
-    </Bubble>
+
     <TimeLine v-else-if="message.contentType === MessageContentTypeConst.time" :message="message" />
     <System
       v-else-if="message.contentType <= 2000 && message.contentType >= 1000"
       :message="message"
     />
+    <Bubble
+      v-else
+      :item="item"
+      :user-info="userInfo"
+      :show-select-message="showSelectMessage"
+      :is-selected="isSelected"
+      :show-message-trail="false"
+      @contextmenu="onBubbleContextmenu"
+      @selected="onSelectMessage"
+    >
+      <MessageImage
+        v-if="message.contentType === MessageContentTypeConst.image"
+        :message="message"
+      />
+      <MessageFile
+        v-else-if="message.contentType === MessageContentTypeConst.file"
+        :message="message"
+      />
+      <MessageSmallVideo
+        v-else-if="message.contentType === MessageContentTypeConst.smallVideo"
+        :message="message"
+      />
+      <MergeForward
+        v-else-if="message.contentType === MessageContentTypeConst.mergeForward"
+        :message="message"
+      />
+    </Bubble>
   </div>
 </template>
 
@@ -54,7 +54,11 @@ import Bubble from './Bubble.vue'
 import System from './System.vue'
 import TimeLine from './TimeLine.vue'
 import MergeForward from './MergeForward.vue'
-import { imageScale } from '@/wksdk/utils'
+import MessageImage from './MessageImage.vue'
+import MessageFile from './MessageFile.vue'
+import MessageSmallVideo from './MessageSmallVideo.vue'
+
+// import { imageScale } from '@/wksdk/utils'
 const props = defineProps({
   item: {
     type: Object,
@@ -80,19 +84,6 @@ const textContent = computed(() => {
     return message.value.content.text.replace(/\n/g, '<br>')
   }
   return ''
-})
-const imageData = computed(() => {
-  if (message.value && message.value.content && message.value.content.url) {
-    let scaleSize = imageScale(message.value.content.width, message.value.content.height)
-    return {
-      url: message.value.content.url,
-      width: scaleSize.width,
-      height: scaleSize.height,
-    }
-  } else if (message.value && message.value.content && message.value.content.contentObj) {
-    return message.value.content.contentObj
-  }
-  return {}
 })
 
 const emit = defineEmits(['bubbleContextmenu', 'selected'])

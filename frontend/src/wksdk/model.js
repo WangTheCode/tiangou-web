@@ -10,6 +10,7 @@ import {
 } from 'wukongimjssdk'
 import { getUUID } from '../utils/helper'
 import { BubblePosition, MessageReasonCode, OrderFactor, MessageContentTypeConst } from './const'
+import FileHelper from '@/utils/helper/fileHelper'
 
 export class Part {
   type // 文本内容： text:普通文本 emoji: emoji文本 mention：@文本
@@ -35,6 +36,7 @@ export class MessageWrap {
     this.voiceBuff = undefined // 声音的二进制文件，用于缓存
     this._reasonCode = undefined // 消息错误原因代码
     this.order = message.messageSeq * OrderFactor // 消息排序号
+    // this.clientMsgNo = message.clientMsgNo
   }
 
   get header() {
@@ -59,6 +61,10 @@ export class MessageWrap {
 
   get clientMsgNo() {
     return this.message.clientMsgNo
+  }
+
+  set clientMsgNo(clientMsgNo) {
+    this.message.clientMsgNo = clientMsgNo
   }
 
   get fromUID() {
@@ -420,15 +426,11 @@ export class ImageContent extends MediaMessageContent {
   constructor(file, imgData, width, height) {
     super()
     this.file = file // File 对象（仅 Web 环境使用）
+    // this.remoteUrl = this.url
     this.imgData = imgData // base64 预览数据
     this.width = width || 0
     this.height = height || 0
-
-    // 新增：用于 Electron IPC 传输的字段
-    this.fileBuffer = null // ArrayBuffer 数据
-    this.fileName = file?.name // 文件名
-    this.fileType = file?.type // MIME 类型
-    this.fileSize = file?.size // 文件大小
+    this.uploadKey = getUUID()
   }
 
   decodeJSON(content) {
@@ -442,25 +444,99 @@ export class ImageContent extends MediaMessageContent {
     return { width: this.width || 0, height: this.height || 0, url: this.remoteUrl || '' }
   }
 
-  // 新增：准备 IPC 传输的数据
-  toIPCData() {
-    return {
-      contentType: this.contentType,
-      width: this.width,
-      height: this.height,
-      imgData: this.imgData,
-      fileBuffer: this.fileBuffer, // ArrayBuffer 会被自动转为 Buffer
-      fileName: this.fileName,
-      fileType: this.fileType,
-      fileSize: this.fileSize,
-    }
-  }
-
   get contentType() {
     return MessageContentTypeConst.image
   }
 
   get conversationDigest() {
     return '[图片]'
+  }
+}
+
+export class FileContent extends MediaMessageContent {
+  constructor(file) {
+    super()
+    if (file) {
+      this.file = file
+      this.size = file.size
+      this.name = file.name
+      this.extension = FileHelper.getFileExt(file.name)
+      this.uploadKey = getUUID()
+    }
+  }
+  decodeJSON(content) {
+    this.size = content['size'] || 0
+    this.name = content['name'] || ''
+    this.url = content['url'] || ''
+    this.remoteUrl = this.url
+    this.uploadKey = content['uploadKey'] || ''
+  }
+  encodeJSON() {
+    return {
+      size: this.size || 0,
+      name: this.name || '',
+      url: this.remoteUrl || '',
+      uploadKey: this.uploadKey || '',
+    }
+  }
+  get contentType() {
+    return MessageContentTypeConst.file
+  }
+  get conversationDigest() {
+    return '[文件]'
+  }
+}
+
+export class VideoContent extends MediaMessageContent {
+  // url: string = ''  // 小视频下载地址
+  // cover: string = '' // 小视频封面图片下载地址
+  // size: number = 0 // 小视频大小 单位byte
+  // width: number = 0 // 小视频宽度
+  // height: number = 0 // 小视频高度
+  // second: number = 0 // 小视频秒长
+
+  constructor(file, cover, width, height, second) {
+    super()
+    if (file) {
+      this.file = file
+      this.size = file.size
+    }
+    this.cover = cover || ''
+    this.width = width || 0
+    this.height = height || 0
+    this.second = second || 0
+    this.url = '' // 初始化为空字符串
+    this.uploadKey = getUUID()
+  }
+
+  decodeJSON(content) {
+    this.url = content['url'] || ''
+    this.cover = content['cover'] || ''
+    this.size = content['size'] || 0
+    this.width = content['width'] || 0
+    this.height = content['height'] || 0
+    this.second = content['second'] || 0
+    this.uploadKey = content['uploadKey'] || ''
+    this.remoteUrl = this.url
+  }
+
+  encodeJSON() {
+    return {
+      url: this.url || '',
+      cover: this.cover || '',
+      size: this.size || 0,
+      width: this.width || 0,
+      height: this.height || 0,
+      second: this.second || 0,
+      uploadKey: this.uploadKey || '',
+    }
+  }
+
+  get contentType() {
+    return MessageContentTypeConst.smallVideo
+  }
+
+  get conversationDigest() {
+    return '[小视频]'
   }
 }

@@ -1,35 +1,69 @@
-// 基于 ali-oss 的阿里云 OSS 直传工具（Node.js 版本）
+// 基于 ali-oss 的阿里云 OSS 直传工具
 // 说明：
 // - 通过后端 /file/oss/sts 获取临时凭证（STS）
 // - 使用 ali-oss 生成预签名 PUT URL（signatureUrl），配合 axios 发送，支持进度/取消
-// - 返回可访问的绝对 URL，兼容 Electron 主进程
-// - 支持 Node.js 文件路径上传（自动读取文件内容）
+// - 返回可访问的绝对 URL，兼容 Electron 渲染进程与浏览器
 
-const { get } = require('../utils/http')
-const axios = require('axios')
-const OSS = require('ali-oss')
-const fs = require('fs')
-const path = require('path')
-const { logger } = require('ee-core/log')
+import axios from 'axios'
+import OSS from 'ali-oss'
+import chatApi from '@/api/chat'
+
 // STS 返回的常见字段集合（兼容多种后端命名）
-// 注释：TypeScript 类型已移除，保留说明供参考
-// accessKeyId, access_key_id, accessId, OSSAccessKeyId - 基本鉴权
-// accessKeySecret, access_key_secret
-// stsToken, securityToken, security_token, x-oss-security-token
-// region, ossRegion, endpoint - 资源位置
-// bucket, bucketName
-// upload_path, dir, prefix - 上传路径前缀
-// bucket_url, baseUrl, cdn - 直链/加速域名
-// expire, expiration - 过期时间
+// STSLike 对象包含以下可能的字段：
+// - 基本鉴权: accessKeyId, access_key_id, accessId, OSSAccessKeyId
+// - 密钥: accessKeySecret, access_key_secret
+// - Token: stsToken, securityToken, security_token, x-oss-security-token
+// - 资源位置: region, ossRegion, endpoint, bucket, bucketName
+// - 上传路径前缀: upload_path, dir, prefix
+// - 直链/加速域名: bucket_url, baseUrl, cdn
+// - 过期时间: expire, expiration
 
-// 规范化 region（若传入 cn-xxx 则补全为 oss-cn-xxx）
+/**
+ * 规范化 region（若传入 cn-xxx 则补全为 oss-cn-xxx）
+ * @param {string} region - 区域代码
+ * @returns {string|undefined}
+ */
 function normalizeRegion(region) {
   if (!region) return undefined
   if (region.startsWith('oss-')) return region
   return `oss-${region}`
 }
 
-// 生成最终可访问直链前缀（优先后端给的自定义）
+/**
+ * 生成上传使用的 host（POST 提交地址）
+ * @param {Object} sts - STS 配置对象
+ * @returns {string}
+ * @private 暂未使用，保留供将来扩展
+ */
+// eslint-disable-next-line no-unused-vars
+function buildUploadHost(sts) {
+  const bucket = sts.bucket || sts.bucketName || ''
+  const endpoint = (sts.endpoint || '').replace(/^https?:\/\//i, '')
+  const regionRaw = sts.region || sts.ossRegion
+
+  if (endpoint) {
+    // endpoint 存在：
+    // - 如果是官方域名（包含 aliyuncs.com），走 bucket.endpoint
+    // - 否则视为 CNAME 自定义域名，直接使用 endpoint
+    if (/aliyuncs\.com$/i.test(endpoint)) {
+      return `https://${bucket}.${endpoint}`
+    }
+    return `https://${endpoint}`
+  }
+
+  // 根据 region 拼接
+  const region = normalizeRegion(regionRaw)
+  if (bucket && region) {
+    return `https://${bucket}.${region}.aliyuncs.com`
+  }
+  throw new Error('无效的 STS：缺少 endpoint 或 region/bucket')
+}
+
+/**
+ * 生成最终可访问直链前缀（优先后端给的自定义）
+ * @param {Object} sts - STS 配置对象
+ * @returns {string}
+ */
 function buildPublicBaseUrl(sts) {
   if (sts.bucket_url) return sts.bucket_url.replace(/\/$/, '')
   if (sts.baseUrl) return sts.baseUrl.replace(/\/$/, '')
@@ -52,13 +86,20 @@ function buildPublicBaseUrl(sts) {
   return ''
 }
 
-// 从 STS 中提取上传前缀（目录）
+/**
+ * 从 STS 中提取上传前缀（目录）
+ * @param {Object} sts - STS 配置对象
+ * @returns {string}
+ */
 function extractPrefix(sts) {
   const raw = (sts.upload_path || sts.dir || sts.prefix || 'chat').replace(/^\/+|\/+$/g, '')
   return raw || 'chat'
 }
 
-// 生成随机文件名（32位16进制）
+/**
+ * 生成随机文件名（32位16进制）
+ * @returns {string}
+ */
 function randomHex32() {
   const chars = '0123456789abcdef'
   let out = ''
@@ -66,27 +107,40 @@ function randomHex32() {
   return out
 }
 
-// 将绝对/相对 path 规范化为不以 / 开头
-function normalizeKeyPath(keyPath) {
-  return keyPath.replace(/^\/+/, '')
+/**
+ * 将绝对/相对 path 规范化为不以 / 开头
+ * @param {string} path - 路径
+ * @returns {string}
+ */
+function normalizeKeyPath(path) {
+  return path.replace(/^\/+/, '')
 }
 
-// 通过后端 /file/oss/sts 获取临时授权
+/**
+ * 通过后端 /file/oss/sts 获取临时授权
+ * @returns {Promise<Object>}
+ */
 async function fetchSTS() {
-  const sts = await get('file/oss/sts')
+  const sts = await chatApi.getOssSts()
   return sts || {}
 }
 
-// OssUploadOptions 参数说明：
-// - objectKey: 指定最终对象 key（会拼在 sts 目录后）
-// - onProgress: 进度回调 (loaded, total) => void
+// OssUploadOptions 对象说明：
+// - objectKey: 指定最终对象 key（会拼在 sts 目录后），例如："chat/1/uid/xxx.png" 或 "1/uid/xxx.png"
+//              若未传，则默认：`${prefix}/${random}.${ext}`
+// - onProgress: 进度回调函数 (loaded, total) => void
 // - maxSize: 覆盖最大体积（默认 100MB）
-// - cancelToken: axios CancelToken
+// - cancelToken: 可选取消 token（axios CancelToken）
 
 // client 简单缓存，避免重复创建
 let cachedClient = null
 let cachedClientKey = ''
 
+/**
+ * 生成客户端缓存 key
+ * @param {Object} sts - STS 配置对象
+ * @returns {string}
+ */
 function makeClientKey(sts) {
   const bucket = sts.bucket || sts.bucketName || ''
   const ep = sts.endpoint || ''
@@ -97,6 +151,11 @@ function makeClientKey(sts) {
   return [bucket, ep, region, ak, token].join('|')
 }
 
+/**
+ * 构建 OSS 客户端配置选项
+ * @param {Object} sts - STS 配置对象
+ * @returns {Object}
+ */
 function buildClientOptions(sts) {
   const bucket = sts.bucket || sts.bucketName || ''
   const accessKeyId =
@@ -126,6 +185,11 @@ function buildClientOptions(sts) {
   return opts
 }
 
+/**
+ * 获取 OSS 客户端实例（带缓存）
+ * @param {Object} sts - STS 配置对象
+ * @returns {Object}
+ */
 function getClient(sts) {
   const key = makeClientKey(sts)
   if (cachedClient && cachedClientKey === key) return cachedClient
@@ -137,61 +201,40 @@ function getClient(sts) {
 
 /**
  * 执行 OSS 直传（signatureUrl + PUT）并返回绝对 URL
- * Node.js 环境适配版本
- * @param {string|Buffer} fileOrPath - 文件路径字符串或 Buffer 对象
+ * @param {File} file - 文件对象
  * @param {Object} opts - 上传选项
  * @param {string} opts.objectKey - 指定最终对象 key
- * @param {string} opts.fileName - 文件名（用于提取扩展名）
- * @param {string} opts.contentType - MIME 类型
- * @param {function} opts.onProgress - 进度回调
- * @param {any} opts.cancelToken - axios CancelToken
+ * @param {Function} opts.onProgress - 进度回调
+ * @param {number} opts.maxSize - 最大体积
+ * @param {any} opts.cancelToken - 取消 token
  * @returns {Promise<string>} 可访问的绝对 URL
  */
-async function uploadFileToOSS(fileOrPath, opts = {}) {
+export async function uploadFileToOSS(file, opts = {}) {
   const sts = await fetchSTS()
-  logger.info('uploadFileToOSS sts----->', JSON.stringify(sts))
   const client = getClient(sts)
 
   const prefix = extractPrefix(sts)
-
   // 生成最终 key（不能以 / 开头）
   let key
   if (opts.objectKey && opts.objectKey.trim() !== '') {
     key = normalizeKeyPath(`${prefix}/${normalizeKeyPath(opts.objectKey)}`)
   } else {
-    // Node.js 环境：从 opts.fileName 或文件路径提取扩展名
-    const name =
-      opts.fileName || (typeof fileOrPath === 'string' ? path.basename(fileOrPath) : 'file')
+    const name = file.name || 'file'
     const ext = (name.split('.').pop() || 'bin').toLowerCase()
     key = normalizeKeyPath(`${prefix}/${randomHex32()}.${ext}`)
   }
-
-  // 获取 Content-Type
-  const contentType = opts.contentType || 'application/octet-stream'
 
   // 生成预签名 PUT URL（STS token 会自动附加在 query）
   const signedUrl = client.signatureUrl(key, {
     method: 'PUT',
     expires: 3600,
-    'Content-Type': contentType,
+    'Content-Type': file.type || 'application/octet-stream',
   })
 
-  // Node.js 环境：读取文件为 Buffer
-  let fileBuffer
-  if (typeof fileOrPath === 'string') {
-    // 文件路径 → 读取为 Buffer
-    fileBuffer = fs.readFileSync(fileOrPath)
-  } else if (Buffer.isBuffer(fileOrPath)) {
-    // 已经是 Buffer
-    fileBuffer = fileOrPath
-  } else {
-    throw new Error('fileOrPath 必须是文件路径字符串或 Buffer 对象')
-  }
-
   // 通过 axios 发送（支持上传进度与取消）
-  await axios.put(signedUrl, fileBuffer, {
-    headers: { 'Content-Type': contentType },
-    onUploadProgress: evt => {
+  await axios.put(signedUrl, file, {
+    headers: { 'Content-Type': file.type || 'application/octet-stream' },
+    onUploadProgress: (evt) => {
       if (evt.total && typeof opts.onProgress === 'function') {
         try {
           opts.onProgress(evt.loaded, evt.total)
@@ -206,8 +249,4 @@ async function uploadFileToOSS(fileOrPath, opts = {}) {
   const publicBase = buildPublicBaseUrl(sts)
   const absoluteUrl = `${publicBase}/${key}`.replace(/\/$/, '')
   return absoluteUrl
-}
-
-module.exports = {
-  uploadFileToOSS,
 }

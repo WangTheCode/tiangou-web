@@ -12,8 +12,43 @@
         <div class="font-bold text-center">{{ title }}</div>
       </div>
     </template>
-    <div class="flex flex-col p-4">
-      <img :src="imageUrl" alt="图片" class="max-w-full max-h-[500px] w-auto" />
+    <div
+      v-if="type === MessageContentTypeConst.image"
+      class="flex p-4 text-center items-center justify-center"
+    >
+      <img
+        :src="fileData.url"
+        alt="图片"
+        :style="{ width: scaleSize.width + 'px', height: scaleSize.height + 'px' }"
+        class="max-w-full max-h-[400px] w-auto"
+      />
+    </div>
+    <div
+      v-else-if="type === MessageContentTypeConst.video"
+      class="flex p-4 text-center items-center justify-center"
+    >
+      <video
+        v-if="fileData.videoUrl"
+        :src="fileData.videoUrl"
+        :style="{ width: scaleSize.width + 'px', height: scaleSize.height + 'px' }"
+        controls
+        class="max-w-full max-h-[400px] w-auto"
+      >
+        <source :src="fileData.videoUrl" type="video/mp4" />
+      </video>
+    </div>
+    <div v-if="type === MessageContentTypeConst.file" class="flex p-4">
+      <div class="w-14 h-14 rounded p-2" :style="{ backgroundColor: fileData.color }">
+        <img :src="fileData.icon" class="w-full h-full object-cover" />
+      </div>
+      <div class="flex-1 pl-2">
+        <div class="text-sm mb-2">
+          {{ fileData.name }}
+        </div>
+        <div class="text-sm text-gray-400">
+          {{ FileHelper.getFileSizeFormat(fileData.size || 0) }}
+        </div>
+      </div>
     </div>
     <div class="flex gap-2 p-4 pt-0 justify-end">
       <el-button @click="onCancelModal">取消</el-button>
@@ -23,13 +58,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-
+import { ref, onMounted } from 'vue'
+import { MessageContentTypeConst } from '@/wksdk/const'
+import FileHelper from '@/utils/helper/fileHelper'
+import { imageScale, videoScale } from '@/wksdk/utils'
 const props = defineProps({
-  title: {
-    type: String,
-    default: '发送图片',
-  },
   file: {
     type: File,
     default: () => null,
@@ -44,10 +77,11 @@ const props = defineProps({
   },
 })
 
+const title = ref('发送图片')
 const isShow = ref(false)
-const imageUrl = ref('')
-const width = ref(0)
-const height = ref(0)
+const type = ref(MessageContentTypeConst.image)
+const fileData = ref({})
+const scaleSize = ref({ width: 0, height: 0 })
 
 // 取消按钮点击
 const onCancelModal = () => {
@@ -56,24 +90,77 @@ const onCancelModal = () => {
 }
 
 const onSubmit = () => {
-  const imgObj = {
-    previewUrl: imageUrl.value,
-    width: width.value,
-    height: height.value,
+  props.onSubmit &&
+    props.onSubmit(fileData.value).then(() => {
+      onCancelModal()
+    })
+}
+const showFile = (file) => {
+  if (file.type && file.type.startsWith('image/')) {
+    title.value = '发送图片'
+    type.value = MessageContentTypeConst.image
+    scaleSize.value = imageScale(file.width, file.height)
+    handleFileToImage(file)
+  } else if (file.type && file.type.startsWith('video/')) {
+    title.value = '发送视频'
+    type.value = MessageContentTypeConst.video
+
+    const fileIcon = FileHelper.getFileIconInfo(file.name)
+    const videoUrl = URL.createObjectURL(file)
+
+    // 创建视频元素获取元数据（用于更新尺寸信息）
+    const video = document.createElement('video')
+    video.src = videoUrl
+    video.preload = 'metadata'
+    fileData.value = {
+      videoUrl: videoUrl,
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      icon: fileIcon.icon,
+      color: fileIcon.color,
+    }
+
+    video.onloadedmetadata = () => {
+      fileData.value.width = video.videoWidth
+      fileData.value.height = video.videoHeight
+      fileData.value.second = video.duration || 0
+      scaleSize.value = videoScale(video.videoWidth, video.videoHeight)
+    }
+  } else {
+    title.value = '发送文件'
+    type.value = MessageContentTypeConst.file
+    const fileIcon = FileHelper.getFileIconInfo(file.name)
+    fileData.value = {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      icon: fileIcon.icon,
+      color: fileIcon.color,
+    }
   }
-  props.onSubmit && props.onSubmit(imgObj)
 }
 
 const handleFileToImage = (file) => {
   const reader = new FileReader()
   reader.readAsDataURL(file)
-  reader.onloadend = function (e) {
-    imageUrl.value = reader.result
-    width.value = e.target.width
-    height.value = e.target.height
+  reader.onloadend = function () {
+    // 创建Image对象来获取图片原始尺寸
+    const img = new Image()
+    img.onload = function () {
+      fileData.value = {
+        width: img.naturalWidth,
+        height: img.naturalHeight,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        url: reader.result,
+      }
+    }
+    img.src = reader.result
   }
 }
-handleFileToImage(props.file)
+showFile(props.file)
 
 onMounted(() => {
   isShow.value = true

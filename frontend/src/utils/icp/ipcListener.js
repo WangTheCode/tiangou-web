@@ -9,7 +9,7 @@ import { handleSyncConversations } from '@/wksdk/setCallback'
 import { messageListener, messageStatusListener } from '@/wksdk/chatManager'
 import { newChannel } from '@/wksdk/channelManager'
 import { conversationListener } from '@/wksdk/conversationManager'
-
+import { Convert } from '@/wksdk/dataConvert'
 // const userStore = useUserStore()
 export const URLS = {
   onConnectStatus: 'controller.web.onConnectStatus',
@@ -45,30 +45,8 @@ export default class ipcListener {
     ipc.removeAllListeners(URLS.onAddMessageListener)
     ipc.on(URLS.onAddMessageListener, (_e, result) => {
       console.log('📨 tcp收到消息:', result)
-      result.channel = newChannel(result.channel.channelID, result.channel.channelType)
-      const message = new Message()
-      message.channel = newChannel(result.channel.channelID, result.channel.channelType)
-      message.messageID = result.messageID
-      message.messageSeq = result.messageSeq
-      message.clientSeq = result.clientSeq
-      message.clientMsgNo = result.clientMsgNo
-
-      // 还需处理类型
-      message.content = result.content
-      message.header = result.header
-      message.remoteExtra = result.remoteExtra
-      message.setting = result.setting
-
-      message.fromUID = result.fromUID
-      message.isDeleted = result.isDeleted
-
-      message.timestamp = result.timestamp
-      message.status = result.status
-      message.voicePlaying = result.voicePlaying
-      message.voiceReaded = result.voiceReaded
-      result.message = message
-      // result.message.contentType = result.message.contentType
-      messageListener(result)
+      const message = Convert.toMessageFromIpc(result)
+      messageListener(message)
     })
   }
   static onAddConversationListener = () => {

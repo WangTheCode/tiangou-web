@@ -64,7 +64,7 @@ class Lifecycle {
       }
 
       // 关闭数据库连接
-      const { sqlitedbService } = require('../service/database/sqlitedb')
+      const { sqlitedbService } = require('../service/database/chatMessagedb')
       if (sqlitedbService && sqlitedbService.db) {
         logger.info('[lifecycle] 关闭数据库连接')
         sqlitedbService.db.close()

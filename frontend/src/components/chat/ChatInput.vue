@@ -74,7 +74,14 @@
               class="mr-1"
               @click="onSelectImage"
             />
-            <IconButton size="sm" icon="icon-attachment" icon-size="20px" round class="mr-1" />
+            <IconButton
+              size="sm"
+              icon="icon-attachment"
+              icon-size="20px"
+              round
+              class="mr-1"
+              @click="onSelectFile"
+            />
             <IconButton size="sm" icon="icon-box" icon-size="20px" round class="mr-1" />
             <IconButton size="sm" icon="icon-activity" icon-size="20px" round class="mr-1" />
           </div>
@@ -134,6 +141,7 @@
       @change="handleImageChange"
       style="display: none"
     />
+    <input type="file" ref="fileInputRef" @change="handleFileChange" style="display: none" />
   </div>
 </template>
 
@@ -143,7 +151,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import IconButton from '../base/IconButton.vue'
 import { useAppStore, useChatStore } from '@/stores/index'
 import { conversationPicker } from './conversationPicker/index'
-import { MessageText } from 'wukongimjssdk'
+import { MessageText, Message } from 'wukongimjssdk'
 import EmojiPicker from 'vue3-emoji-picker'
 import 'vue3-emoji-picker/css'
 import { getChannelInfo, newChannel } from '@/wksdk/channelManager'
@@ -152,6 +160,7 @@ import { ChatInput as ChatInputComponent } from 'chat-vue'
 import 'chat-vue/lib/style.css' // 修正：style.css 位于 lib 目录下
 import { sendFileDialog } from './sendFileDialog/index'
 import { isEE } from '@/utils/icp/ipcRenderer'
+import { sendFileMessage } from '@/wksdk/chatManager'
 
 const appStore = useAppStore()
 const chatStore = useChatStore()
@@ -164,6 +173,7 @@ const isShowEmojiPicker = ref(false)
 const currentText = ref('')
 const chatInputRef = ref(null)
 const imageInputRef = ref(null) // 图片文件输入框引用
+const fileInputRef = ref(null) // 文件输入框引用
 let mentionCache = {}
 
 const enterBehavior = computed(() => {
@@ -198,6 +208,7 @@ const computedMentionOptions = computed(() => {
       value: '所有人',
       label: '所有人',
       uid: -1,
+      id: 'all',
     })
   }
 
@@ -208,11 +219,11 @@ const computedMentionOptions = computed(() => {
 const handleMentionSelect = (option) => {
   console.log(option)
   // 将选中的用户添加到缓存
-  // const name = option.value
-  // mentionCache[name] = {
-  //   uid: option.uid,
-  //   name: name,
-  // }
+  const name = option.label
+  mentionCache[name] = {
+    uid: option.uid,
+    name: name,
+  }
 }
 
 const onChatInputCtrlEnter = () => {
@@ -319,52 +330,28 @@ const onSendMessage = () => {
   mentionCache = {}
 }
 
-// 读取 File 为 ArrayBuffer
-const readFileAsArrayBuffer = (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      resolve(e.target.result) // ArrayBuffer
-    }
-    reader.onerror = (e) => {
-      reject(e)
-    }
-    reader.readAsArrayBuffer(file)
-  })
-}
-
 // 处理粘贴的图片
 const handlePasteImage = async (file) => {
-  console.log('粘贴图片:', file)
-
   sendFileDialog({
     file: file,
     onSubmit: async (imgObj) => {
-      const imageContent = new ImageContent(file, imgObj.previewUrl, imgObj.width, imgObj.height)
-
-      // Electron 环境读取 ArrayBuffer
-      if (isEE) {
-        try {
-          const arrayBuffer = await readFileAsArrayBuffer(file)
-          imageContent.fileBuffer = arrayBuffer
-          console.log('粘贴图片已转换为 ArrayBuffer:', arrayBuffer.byteLength, 'bytes')
-        } catch (error) {
-          console.error('读取粘贴图片失败:', error)
-          ElMessage.error('读取粘贴图片失败')
-          return
-        }
-      }
-
-      chatStore.sendMessage({
-        content: imageContent,
+      return sendFileMessage(file, {
+        imgData: imgObj.url,
+        width: imgObj.width,
+        height: imgObj.height,
       })
     },
   })
 }
 
-// 触发文件选择器
+// 触发图片选择器
 const onSelectImage = () => {
   imageInputRef.value?.click()
+}
+
+// 触发文件选择器
+const onSelectFile = () => {
+  fileInputRef.value?.click()
 }
 
 // 处理选择的图片文件
@@ -372,31 +359,28 @@ const handleImageChange = async (event) => {
   const file = event.target.files?.[0]
   if (!file) return
 
-  console.log('选择图片:', file)
-
   sendFileDialog({
     file: file,
     onSubmit: async (imgObj) => {
-      console.log('发送图片:', file, imgObj)
-
-      const imageContent = new ImageContent(file, imgObj.previewUrl, imgObj.width, imgObj.height)
-
-      // 如果是 Electron 环境，读取文件为 ArrayBuffer
-      if (isEE) {
-        try {
-          const arrayBuffer = await readFileAsArrayBuffer(file)
-          imageContent.fileBuffer = arrayBuffer
-          console.log('File 已转换为 ArrayBuffer:', arrayBuffer.byteLength, 'bytes')
-        } catch (error) {
-          console.error('读取文件失败:', error)
-          ElMessage.error('读取图片文件失败')
-          return
-        }
-      }
-
-      chatStore.sendMessage({
-        content: imageContent,
+      return sendFileMessage(file, {
+        imgData: imgObj.url,
+        width: imgObj.width,
+        height: imgObj.height,
       })
+    },
+  })
+  // 清空 input 值，允许选择相同文件
+  event.target.value = ''
+}
+
+const handleFileChange = async (event) => {
+  const file = event.target.files?.[0]
+  if (!file) return
+  console.log('file', file)
+  sendFileDialog({
+    file: file,
+    onSubmit: async (fileData) => {
+      return sendFileMessage(file, fileData)
     },
   })
 
@@ -453,84 +437,12 @@ const onDelete = async () => {
 
 // 转发消息
 const onForward = () => {
-  const selectedMessages = chatStore.getSelectedMessages()
-  if (selectedMessages.length === 0) {
-    console.warn('没有选中的消息')
-    return
-  }
-
-  conversationPicker({
-    title: '转发',
-    conversationList: chatStore.conversationList,
-    confirm: (selectedItems) => {
-      if (selectedItems && selectedItems.length > 0) {
-        for (let i = 0; i < selectedItems.length; i++) {
-          const channel = selectedItems[i].channel
-          for (let j = 0; j < selectedMessages.length; j++) {
-            const messageItem = selectedMessages[j]
-            const message = {
-              content: messageItem.content,
-              channel: channel,
-            }
-            chatStore.sendMessage(message)
-          }
-        }
-      }
-      onCancelSelect()
-    },
-  })
+  chatStore.forwardMessages()
 }
 
 // 合并转发消息
 const onMergeForward = () => {
-  const selectedMessages = chatStore.getSelectedMessages()
-  if (selectedMessages.length === 0) {
-    console.warn('没有选中的消息')
-    return
-  }
-
-  conversationPicker({
-    title: '合并转发',
-    conversationList: chatStore.conversationList,
-    multiple: true,
-    confirm: (selectedItems) => {
-      console.log(selectedItems)
-
-      if (selectedItems && selectedItems.length > 0) {
-        let users = []
-        for (const message of selectedMessages) {
-          let channelInfo = getChannelInfo(newChannel(message.fromUID))
-          users.push({ uid: message.fromUID, name: channelInfo?.title })
-        }
-        for (let i = 0; i < selectedItems.length; i++) {
-          const userItem = selectedItems[i]
-          const channel = userItem.channel
-          const messageContent = new MergeforwardContent(
-            channel.channelType,
-            users,
-            selectedMessages,
-          )
-          const messageData = {
-            content: messageContent,
-            channel: channel,
-          }
-          chatStore.sendMessage(messageData)
-          // for (let j = 0; j < selectedMessages.length; j++) {
-          //   const messageItem = selectedMessages[j]
-          //   const message = {
-          //     content: messageItem.content,
-          //     channel: channel,
-          //   }
-          //   chatStore.sendMessage(message)
-          // }
-        }
-        console.log(users)
-      }
-
-      onCancelSelect()
-    },
-  })
-  console.log('合并转发消息:', selectedMessages)
+  chatStore.mergeForwardMessages()
 }
 
 // 在组件挂载后添加键盘事件监听

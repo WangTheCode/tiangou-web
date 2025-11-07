@@ -5,7 +5,7 @@
       :items="chatMessages"
       :min-item-size="44"
       class="chat-message-wraper"
-      key-field="messageID"
+      key-field="clientMsgNo"
       :key="scrollerKey"
       @resize="onResize"
       @scroll="onScroll"
@@ -60,7 +60,6 @@ import { useChatStore, useUserStore } from '../../stores/index'
 import Contextmenu from '@/components/base/Contextmenu.vue'
 import { scrollControl } from '@/hooks/useScrollControl'
 import { copyMessageContent } from '@/wksdk/utils'
-import { conversationPicker } from './conversationPicker/index'
 import { addFaveMessage } from '@/wksdk/faveManage'
 
 const chatStore = useChatStore()
@@ -207,7 +206,6 @@ const loadMoreMessages = () => {
 }
 
 const scrollToBottom = (force = false) => {
-  console.log('scrollToBottom----->', isAtBottom.value, force)
   if (!isAtBottom.value && !force) {
     return
   }
@@ -237,6 +235,14 @@ watch(
   { immediate: true },
 )
 
+// watch(
+//   () => chatStore.chatMessages.length,
+//   () => {
+//     scrollerKey.value++
+//     scrollToBottom()
+//   },
+// )
+
 const onContextmenuSelect = (e) => {
   const { key, data } = e
   switch (key) {
@@ -250,23 +256,8 @@ const onContextmenuSelect = (e) => {
       addFaveMessage(data)
       break
     case 'forward':
-      conversationPicker({
-        title: '转发',
-        conversationList: chatStore.conversationList,
-        multiple: true,
-        confirm: (selectedItems) => {
-          if (selectedItems && selectedItems.length > 0) {
-            for (let i = 0; i < selectedItems.length; i++) {
-              const channel = selectedItems[i].channel
-              const message = {
-                content: data.content,
-                channel: channel,
-              }
-              chatStore.sendMessage(message)
-            }
-          }
-        },
-      })
+      chatStore.forwardMessages([data])
+
       break
     case 'select':
       chatStore.addSelectedMessage(data)
@@ -288,7 +279,6 @@ const onBubbleContextmenu = ({ event, message }) => {
 }
 
 onMounted(() => {
-  console.log('onMounted----->')
   scrollControl.registerScrollHandler('chat-message-list', scrollToBottom)
 })
 

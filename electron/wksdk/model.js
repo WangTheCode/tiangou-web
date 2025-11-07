@@ -1,5 +1,12 @@
 // import { useUserStore } from '../stores'
-const { WKSDK, Channel, ChannelTypePerson, MessageStatus } = require('wukongimjstcpsdk')
+const {
+  WKSDK,
+  Channel,
+  ChannelTypePerson,
+  MessageStatus,
+  MediaMessageContent,
+  MessageContent,
+} = require('wukongimjstcpsdk')
 const { getUUID } = require('../utils')
 const {
   BubblePosition,
@@ -339,7 +346,201 @@ class MessageWrap {
   }
 }
 
+class ImageContent extends MediaMessageContent {
+  constructor(url, uploadKey, width, height) {
+    super()
+    this.url = url
+    this.remoteUrl = this.url
+    this.uploadKey = uploadKey
+    this.width = width || 0
+    this.height = height || 0
+  }
+
+  decodeJSON(content) {
+    this.width = content['width'] || 0
+    this.height = content['height'] || 0
+    this.url = content['url'] || ''
+    this.remoteUrl = this.url
+    this.uploadKey = content['uploadKey'] || ''
+  }
+
+  encodeJSON() {
+    return {
+      width: this.width || 0,
+      height: this.height || 0,
+      url: this.remoteUrl || '',
+      uploadKey: this.uploadKey || '',
+    }
+  }
+
+  get contentType() {
+    return MessageContentTypeConst.image
+  }
+
+  get conversationDigest() {
+    return '[图片]'
+  }
+}
+
+class FileContent extends MediaMessageContent {
+  constructor(content) {
+    super()
+    this.url = content.url
+    this.remoteUrl = this.url
+    this.size = content.size
+    this.name = content.name
+    this.extension = content.extension
+    this.uploadKey = content.uploadKey
+  }
+  decodeJSON(content) {
+    this.size = content['size'] || 0
+    this.name = content['name'] || ''
+    this.url = content['url'] || ''
+    this.remoteUrl = this.url
+    this.uploadKey = content['uploadKey'] || ''
+  }
+  encodeJSON() {
+    return {
+      size: this.size || 0,
+      name: this.name || '',
+      url: this.remoteUrl || '',
+      uploadKey: this.uploadKey || '',
+    }
+  }
+  get contentType() {
+    return MessageContentTypeConst.file
+  }
+  get conversationDigest() {
+    return '[文件]'
+  }
+}
+
+class VideoContent extends MediaMessageContent {
+  // url: string = ''  // 小视频下载地址
+  // cover: string = '' // 小视频封面图片下载地址
+  // size: number = 0 // 小视频大小 单位byte
+  // width: number = 0 // 小视频宽度
+  // height: number = 0 // 小视频高度
+  // second: number = 0 // 小视频秒长
+
+  constructor(content) {
+    super()
+    this.size = content.size
+    this.cover = content.cover || ''
+    this.width = content.width || 0
+    this.height = content.height || 0
+    this.second = content.second || 0
+    this.url = content.url
+    this.uploadKey = content.uploadKey
+  }
+
+  decodeJSON(content) {
+    this.url = content['url'] || ''
+    this.cover = content['cover'] || ''
+    this.size = content['size'] || 0
+    this.width = content['width'] || 0
+    this.height = content['height'] || 0
+    this.second = content['second'] || 0
+    this.uploadKey = content['uploadKey'] || ''
+    this.remoteUrl = this.url
+  }
+
+  encodeJSON() {
+    return {
+      url: this.url || '',
+      cover: this.cover || '',
+      size: this.size || 0,
+      width: this.width || 0,
+      height: this.height || 0,
+      second: this.second || 0,
+      uploadKey: this.uploadKey || '',
+    }
+  }
+
+  get contentType() {
+    return MessageContentTypeConst.smallVideo
+  }
+
+  get conversationDigest() {
+    return '[小视频]'
+  }
+}
+
+class MergeforwardContent extends MessageContent {
+  constructor(channelType, users, msgs) {
+    super()
+    this.channelType = channelType
+    this.users = users
+    this.msgs = msgs
+  }
+
+  decodeJSON(content) {
+    this.channelType = content['channel_type'] || 0
+    this.users = content['users'] || []
+    let msgMaps = content['msgs']
+
+    let messages = new Array()
+    if (msgMaps && msgMaps.length > 0) {
+      for (const msgMap of msgMaps) {
+        messages.push(this.mapToMessage(msgMap))
+      }
+    }
+    this.msgs = messages
+  }
+
+  encodeJSON() {
+    let messageMaps = new Array()
+    if (this.msgs && this.msgs.length > 0) {
+      for (const msg of this.msgs) {
+        messageMaps.push(this.messageToMap(msg))
+      }
+    }
+    return { channel_type: this.channelType || 0, users: this.users, msgs: messageMaps }
+  }
+
+  get contentType() {
+    return MessageContentTypeConst.mergeForward
+  }
+
+  get conversationDigest() {
+    return '[合并转发]'
+  }
+
+  mapToMessage(messageMap) {
+    let message = new Message()
+    message.messageID = `${messageMap['message_id']}`
+    message.timestamp = messageMap['timestamp']
+    message.fromUID = messageMap['from_uid']
+
+    let payloadObj = messageMap['payload']
+    if (!payloadObj) {
+      payloadObj = {}
+    }
+    let contentType = 0
+    if (payloadObj) {
+      contentType = payloadObj.type
+    }
+    let messageContent = WKSDK.shared().getMessageContent(contentType)
+    messageContent.decodeJSON(payloadObj)
+    message.content = messageContent
+    return message
+  }
+
+  messageToMap(message) {
+    return {
+      message_id: message.messageID,
+      from_uid: message.fromUID ?? '',
+      timestamp: message.timestamp,
+      payload: message.content.contentObj,
+    }
+  }
+}
+
 module.exports = {
   Part,
   MessageWrap,
+  ImageContent,
+  FileContent,
+  MergeforwardContent,
+  VideoContent,
 }

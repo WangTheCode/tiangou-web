@@ -224,6 +224,17 @@ export const generateUUID = () => {
   })
 }
 
+export const getUUID = () => {
+  const len = 32 // 32长度
+  const radix = 16 // 16进制
+  const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('')
+  const uuid = []
+  for (let i = 0; i < len; i++) {
+    uuid[i] = chars[0 | (Math.random() * radix)]
+  }
+  return uuid.join('')
+}
+
 export const getDeviceIdFromStorage = () => {
   let deviceId = Cache.get('deviceId')
   if (!deviceId || deviceId === '') {
@@ -522,4 +533,52 @@ export const copyMessageContent = async (message) => {
       type: 'error',
     })
   }
+}
+
+export const videoScale = (orgWidth, orgHeight, maxWidth = 380, maxHeight = 380) => {
+  let actSize = { width: orgWidth, height: orgHeight }
+  if (orgWidth > orgHeight) {
+    //横图
+    if (orgWidth > maxWidth) {
+      // 横图超过最大宽度
+      let rate = maxWidth / orgWidth // 缩放比例
+      actSize.width = maxWidth
+      actSize.height = orgHeight * rate
+    }
+  } else if (orgWidth < orgHeight) {
+    //竖图
+    if (orgHeight > maxHeight) {
+      let rate = maxHeight / orgHeight // 缩放比例
+      actSize.width = orgWidth * rate
+      actSize.height = maxHeight
+    }
+  } else if (orgWidth === orgHeight) {
+    if (orgWidth > maxWidth) {
+      let rate = maxWidth / orgWidth // 缩放比例
+      actSize.width = maxWidth
+      actSize.height = orgHeight * rate
+    }
+  }
+  return actSize
+}
+
+export const secondFormat = (second) => {
+  const minute = parseInt(`${second / 60}`)
+  const realSecond = parseInt(`${second % 60}`)
+
+  let minuteFormat = ''
+  if (minute > 9) {
+    minuteFormat = `${minute}`
+  } else {
+    minuteFormat = `0${minute}`
+  }
+
+  let secondFormat = ''
+  if (realSecond > 9) {
+    secondFormat = `${realSecond}`
+  } else {
+    secondFormat = `0${realSecond}`
+  }
+
+  return `${minuteFormat}:${secondFormat}`
 }
