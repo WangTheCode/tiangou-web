@@ -13,6 +13,7 @@
     </Bubble>
 
     <TimeLine v-else-if="message.contentType === MessageContentTypeConst.time" :message="message" />
+    <HistorySplit v-else-if="message.contentType === MessageContentTypeConst.historySplit" />
     <System
       v-else-if="message.contentType <= 2000 && message.contentType >= 1000"
       :message="message"
@@ -57,6 +58,7 @@ import MergeForward from './MergeForward.vue'
 import MessageImage from './MessageImage.vue'
 import MessageFile from './MessageFile.vue'
 import MessageSmallVideo from './MessageSmallVideo.vue'
+import HistorySplit from './HistorySplit.vue'
 
 // import { imageScale } from '@/wksdk/utils'
 const props = defineProps({

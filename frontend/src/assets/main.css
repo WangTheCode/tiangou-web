@@ -42,7 +42,8 @@
   line-height: 20px;
   margin-bottom: 4px;
 }
-.color-primary {
+.color-primary,
+.text-primary {
   color: var(--primary-color);
 }
 .bg-primary {
@@ -52,4 +53,8 @@
   padding: 0 !important;
   border-radius: 10px !important;
   overflow: hidden !important;
+}
+.bg-gradient {
+  /* background: linear-gradient(to bottom, #c1defd, #fff); */
+  background-image: linear-gradient(0deg, #fff 30%, #c1defd 100%);
 }
