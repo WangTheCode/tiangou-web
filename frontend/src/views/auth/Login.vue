@@ -23,10 +23,10 @@
             <img src="/images/login/img11.png" class="w-[100px] h-auto" />
           </div>
           <div class="bg-primary p-4 rounded-t-xl text-white text-lg">欢迎登录甜狗窝</div>
-          <div class="p-4 bg-white rounded-b-xl">
+          <div class="p-4 bg-white rounded-b-xl" style="height: 390px">
             <Tabs :tabs="tabs" v-model:activeKey="loginType" />
 
-            <div class="mt-10">
+            <div v-if="loginType === 'scan'" class="mt-10">
               <div class="text-center text-black">
                 使用<span class="text-primary">甜狗窝APP</span>扫码登录
               </div>
@@ -34,6 +34,47 @@
               <div class="w-[200px] h-[200px]"></div>
               <div class="text-center text-gray-400">
                 打开<span class="text-primary">甜狗窝APP</span>点击消息-点击右上角扫一扫
+              </div>
+            </div>
+            <div v-if="loginType === 'phone'" class="mt-10">
+              <PhoneSmsCheck ref="phoneLoginFormRef" />
+              <div class="text-center mt-6 mb-10">
+                <el-button type="primary" size="large" @click="onSubmitPhoneLogin" class="w-full"
+                  >登录</el-button
+                >
+              </div>
+            </div>
+            <div v-if="loginType === 'account'" class="mt-10">
+              <el-form class="phone-form" :model="accountLoginData">
+                <el-form-item>
+                  <PhoneInput
+                    ref="phoneInputRef"
+                    v-model:phone="accountLoginData.phone"
+                    v-model:countryCode="accountLoginData.countryCode"
+                  />
+                </el-form-item>
+                <el-form-item>
+                  <el-input
+                    size="large"
+                    v-model="accountLoginData.password"
+                    placeholder="请输入密码"
+                    type="password"
+                    show-password
+                  />
+                </el-form-item>
+              </el-form>
+              <div class="text-center mt-6 mb-10">
+                <el-button type="primary" size="large" @click="onSubmitPhoneLogin" class="w-full"
+                  >登录</el-button
+                >
+              </div>
+            </div>
+            <div class="flex" v-if="loginType === 'account' || loginType === 'phone'">
+              <div class="flex-1">
+                还没有账号？<a class="text-primary" @click="onRegister">立即注册</a>
+              </div>
+              <div class="flex-1 text-right">
+                <a class="text-primary" @click="onForgotPassword">忘记密码？</a>
               </div>
             </div>
           </div>
@@ -53,12 +94,22 @@ import { useRouter } from 'vue-router'
 import { useUserStore, useChatStore } from '@/stores/index'
 import Logo from '@/components/ui/Logo.vue'
 import Tabs from '@/components/base/Tabs.vue'
+import commonApi from '@/api/common'
+// import PhoneInput from '@/components/base/PhoneInput.vue'
+import PhoneSmsCheck from '@/components/base/PhoneSmsCheck.vue'
+
 const userStore = useUserStore()
 const router = useRouter()
 const chatStore = useChatStore()
 const username = ref('008613155550002')
 const password = ref('123456')
 const loginType = ref('scan')
+const accountLoginData = ref({
+  phone: '',
+  countryCode: '0086',
+  password: '',
+})
+const phoneLoginFormRef = ref(null)
 
 const tabs = [
   {
@@ -85,6 +136,24 @@ const login = () => {
       chatStore.connectIm(res)
       router.push('/')
     })
+}
+
+const onSubmitPhoneLogin = () => {
+  phoneLoginFormRef.value.validate((valid, formData, errorMsgs) => {
+    if (valid) {
+      console.log(formData)
+    } else {
+      console.log(errorMsgs)
+    }
+  })
+}
+
+const onRegister = () => {
+  router.push('/register')
+}
+
+const onForgotPassword = () => {
+  router.push('/forgot-password')
 }
 
 defineOptions({
