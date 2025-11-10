@@ -48,6 +48,7 @@ const msgs = computed(() => {
     if (channelInfo) {
       name = channelInfo.title
     } else {
+      debugger
       fetchChannelInfo(channel)
     }
     return {

@@ -36,8 +36,8 @@ export const fillOrder = (message) => {
 export const messageListener = (message) => {
   const chatStore = useChatStore()
   console.log('📨 收到消息:', message, message.channel)
-  const currentConversation = chatStore.currentConversation || {}
-  if (!(currentConversation.channel && message.channel.isEqual(currentConversation.channel))) {
+  const currentChannel = chatStore.currentChannel || {}
+  if (!(currentChannel && message.channel.isEqual(currentChannel))) {
     return
   }
   if (message.contentType == MessageContentTypeConst.rtcData) {
@@ -126,7 +126,7 @@ export const sendFileMessage = (file, data) => {
       content = new FileContent(file)
     }
 
-    const channel = chatStore.currentConversation.channel
+    const channel = chatStore.currentChannel
     const message = renderMessageTempData(channel, content)
     // 先临时添加到消息列表，等待发送成功后更新状态
     messageListener(message)

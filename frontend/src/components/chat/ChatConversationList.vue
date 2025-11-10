@@ -4,9 +4,7 @@
       v-for="(item, index) in conversationList"
       :key="index"
       :item="item"
-      :is-current="
-        currentConversation && currentConversation.channel.channelID === item.channel.channelID
-      "
+      :is-current="currentChannel && currentChannel.channelID === item.channel.channelID"
       :userInfo="userInfo"
       @click="handleClick(item)"
       @contextmenu="onContextmenu($event, item)"
@@ -28,17 +26,16 @@ import { updateSetting, closeConversation, clearChannelMessages } from '@/wksdk/
 
 const chatStore = useChatStore()
 const conversationList = computed(() => chatStore.conversationList)
-const currentConversation = computed(() => chatStore.currentConversation)
+const currentChannel = computed(() => chatStore.currentChannel)
 const userInfo = computed(() => chatStore.connectUserInfo)
 
 const handleClick = (item) => {
-  chatStore.setCurrentConversation(item)
+  chatStore.setCurrentChannel(item.channel)
 }
 
 const contextmenuDropdownRef = ref(null)
 const contextmenuItems = ref([])
 const onContextmenu = (event, item) => {
-  console.log(event, item)
   const menuItems = [
     { key: 'top', label: '置顶', icon: 'icon-pin' },
     { key: 'mute', label: '开启免打扰', icon: 'icon-mute' },

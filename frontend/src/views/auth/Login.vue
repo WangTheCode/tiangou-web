@@ -39,7 +39,12 @@
             <div v-if="loginType === 'phone'" class="mt-10">
               <PhoneSmsCheck ref="phoneLoginFormRef" />
               <div class="text-center mt-6 mb-10">
-                <el-button type="primary" size="large" @click="onSubmitPhoneLogin" class="w-full"
+                <el-button
+                  type="primary"
+                  size="large"
+                  @click="onSubmitPhoneLogin"
+                  class="w-full"
+                  :loading="loading"
                   >登录</el-button
                 >
               </div>
@@ -64,7 +69,12 @@
                 </el-form-item>
               </el-form>
               <div class="text-center mt-6 mb-10">
-                <el-button type="primary" size="large" @click="onSubmitPhoneLogin" class="w-full"
+                <el-button
+                  type="primary"
+                  size="large"
+                  @click="onSubmitAccountLogin"
+                  class="w-full"
+                  :loading="loading"
                   >登录</el-button
                 >
               </div>
@@ -97,7 +107,9 @@ import Tabs from '@/components/base/Tabs.vue'
 import commonApi from '@/api/common'
 // import PhoneInput from '@/components/base/PhoneInput.vue'
 import PhoneSmsCheck from '@/components/base/PhoneSmsCheck.vue'
+import useLoading from '@/hooks/useLoading'
 
+const { loading, startLoading, endLoading } = useLoading()
 const userStore = useUserStore()
 const router = useRouter()
 const chatStore = useChatStore()
@@ -139,6 +151,7 @@ const login = () => {
 }
 
 const onSubmitPhoneLogin = () => {
+  startLoading()
   phoneLoginFormRef.value.validate((valid, formData, errorMsgs) => {
     if (valid) {
       console.log(formData)
@@ -154,6 +167,28 @@ const onRegister = () => {
 
 const onForgotPassword = () => {
   router.push('/forgot-password')
+}
+
+const onSubmitAccountLogin = () => {
+  if (loading.value) return
+  startLoading
+  console.log(accountLoginData.value)
+  const username = accountLoginData.value.countryCode + accountLoginData.value.phone
+  const password = accountLoginData.value.password
+  userStore
+    .login({
+      username,
+      password,
+    })
+    .then((res) => {
+      endLoading()
+      chatStore.connectIm(res)
+      router.push('/')
+    })
+    .catch((err) => {
+      endLoading()
+      console.log(err)
+    })
 }
 
 defineOptions({

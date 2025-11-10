@@ -13,8 +13,14 @@ import {
   syncConversationList,
   setOpenConversation,
   refreshMessages,
+  findConversation,
 } from '@/wksdk/conversationManager'
-import { fetchChannelInfoIfNeed, getChannelInfo, newChannel } from '@/wksdk/channelManager'
+import {
+  fetchChannelInfoIfNeed,
+  getChannelInfo,
+  newChannel,
+  avatarUser,
+} from '@/wksdk/channelManager'
 import { sendMessage } from '@/wksdk/chatManager'
 import {
   setChannelInfoCallback,
@@ -33,10 +39,15 @@ export const useChatStore = defineStore('chat', {
     connectUserInfo: null,
     // 通信连接状态
     connectStatus: 'loading', // loading, success, error
+    // 会话列表
     conversationList: [],
-    currentConversation: null,
+    // 当前会话
+    currentChannel: null,
+    // 发送消息模式
     sendMessageMode: 'enter',
+    // 当前会话的消息列表，显示用
     chatMessages: [],
+    // 当前会话原始消息列表
     chatMessagesOfOrigin: [],
     // 缓存已打开的频道首屏消息
     cacheChatMessagesByChannelID: {},
@@ -59,6 +70,8 @@ export const useChatStore = defineStore('chat', {
     isLoadingHistory: false,
     // channelInfo 更新触发器，用于通知组件重新渲染
     channelInfoUpdateTrigger: 0,
+    // 联系人列表
+    contactList: [],
   }),
   getters: {},
   actions: {
@@ -109,31 +122,29 @@ export const useChatStore = defineStore('chat', {
       this.channelInfoUpdateTrigger++
     },
     setConversationList(conversations) {
+      console.log(1111, conversations)
       this.conversationList = this.sortConversations(conversations)
     },
-    setCurrentConversation(conversation) {
+    async setCurrentChannel(channel) {
       if (
-        this.currentConversation &&
-        this.currentConversation.channel &&
-        this.currentConversation.channel.channelID === conversation.channel.channelID
+        this.currentChannel &&
+        this.currentChannel.channelID === channel.channelID &&
+        this.currentChannel.channelType === channel.channelType
       ) {
         return
       }
-      if (
-        this.currentConversationUnread > 0 &&
-        this.currentConversation &&
-        this.currentConversation.channel
-      ) {
-        this.markConversationUnread(this.currentConversation.channel, 0)
+      const conversation = await findConversation(channel)
+      if (conversation) {
+        this.markConversationUnread(channel, 0)
         this.currentConversationUnread = 0
+        setOpenConversation(conversation)
       }
+      this.currentChannel = channel
       this.chatMessagesOfOrigin = []
       this.chatMessages = []
       this.setReplyMessage(null)
-      this.currentConversation = conversation
-      setOpenConversation(conversation)
-      fetchChannelInfoIfNeed(conversation.channel)
-      this.getChannelFirstMessageList(conversation.channel, {
+      fetchChannelInfoIfNeed(channel)
+      this.getChannelFirstMessageList(channel, {
         limit: 30,
         startMessageSeq: 0,
         endMessageSeq: 0,
@@ -141,28 +152,30 @@ export const useChatStore = defineStore('chat', {
       })
 
       // 群聊
-      if (conversation.channel.channelType === ChannelTypeGroup) {
-        this.syncSubscribers(conversation).then(() => {
-          this.reloadSubscribers(conversation.channel)
+      if (channel.channelType === ChannelTypeGroup) {
+        this.syncSubscribers(channel).then(() => {
+          this.reloadSubscribers(channel)
         })
       } else {
         this.subscribers = []
       }
     },
-    syncSubscribers(conversation) {
+
+    syncSubscribers(channel) {
       return new Promise((resolve) => {
-        if (conversation.channelInfo.orgData.group_type == 1) {
+        const channelInfo = getChannelInfo(channel)
+        if (channelInfo && channelInfo.orgData && channelInfo.orgData.group_type == 1) {
           // 如果是超级群则只获取第一页成员
           // this.subscribers = await this.getFirstPageMembers()
           WKSDK.shared().channelManager.subscribeCacheMap.set(
-            conversation.channel.getChannelKey(),
+            channel.getChannelKey(),
             this.subscribers,
           )
-          WKSDK.shared().channelManager.notifySubscribeChangeListeners(conversation.channel)
+          WKSDK.shared().channelManager.notifySubscribeChangeListeners(channel)
           resolve(true)
         } else {
           WKSDK.shared()
-            .channelManager.syncSubscribes(conversation.channel)
+            .channelManager.syncSubscribes(channel)
             .then(() => {
               resolve(true)
             })
@@ -178,16 +191,15 @@ export const useChatStore = defineStore('chat', {
       Cache.set('sendMessageMode', mode)
     },
     // 获取缓存的首屏消息
-    getCacheChatMessages(channel) {
+    async getCacheChatMessages(channel) {
       const key = `${channel.channelID}_${channel.channelType}`
-      const lastMessageID =
-        this.currentConversation &&
-        this.currentConversation.lastMessage &&
-        this.currentConversation.lastMessage.messageID
-          ? this.currentConversation.lastMessage.messageID
-          : ''
       const cacheMessages = this.cacheChatMessagesByChannelID[key]
       if (cacheMessages && cacheMessages.length > 0) {
+        const conversation = await findConversation(channel)
+        const lastMessageID =
+          conversation && conversation.lastMessage && conversation.lastMessage.messageID
+            ? conversation.lastMessage.messageID
+            : ''
         const lastMessage = cacheMessages[cacheMessages.length - 1]
         const isCacheValid = lastMessage.messageID === lastMessageID
         if (isCacheValid) {
@@ -237,12 +249,11 @@ export const useChatStore = defineStore('chat', {
               const key = `${channel.channelID}_${channel.channelType}`
               this.cacheChatMessagesByChannelID[key] = messages
             }
-            const sendingMessages = this.getQueueSendMessages(
-              this.currentConversation.channel.getChannelKey(),
-            )
+            const sendingMessages = this.getQueueSendMessages(this.currentChannel.getChannelKey())
             if (sendingMessages && sendingMessages.length > 0) {
               messages = [...messages, ...sendingMessages]
             }
+
             this.chatMessagesOfOrigin = messages
             this.chatMessages = refreshMessages(messages)
             console.log('chatMessages', this.chatMessages)
@@ -256,18 +267,19 @@ export const useChatStore = defineStore('chat', {
     },
     async fetchChannelMessageList(params) {
       try {
-        let resp = ''
+        let messageList = []
         if (isEE) {
-          params.lastMessageSeq = this.currentConversation?.lastMessage?.messageSeq || 0
-          params.lastMessageID = this.currentConversation?.lastMessage?.messageID || ''
-          resp = await ipcApiRoute.syncChannelMessageList(params)
+          const conversation = await findConversation(this.currentChannel)
+          params.lastMessageSeq = conversation?.lastMessage?.messageSeq || 0
+          params.lastMessageID = conversation?.lastMessage?.messageID || ''
+          const resp = await ipcApiRoute.syncChannelMessageList(params)
+          messageList = resp && resp.data && resp.data['messages']
         } else {
-          resp = chatApi.syncChannelMessageList(params)
+          const resp = await chatApi.syncChannelMessageList(params)
+          messageList = resp && resp['messages']
         }
 
-        console.log('resp', resp)
         let messages = []
-        const messageList = resp && resp.data && resp.data['messages']
         if (messageList) {
           messageList.forEach((msg) => {
             if (!msg.is_deleted) {
@@ -357,15 +369,15 @@ export const useChatStore = defineStore('chat', {
         })
     },
 
-    findConversation(channel) {
-      if (this.conversationList) {
-        for (const conversation of this.conversationList) {
-          if (conversation.channel.isEqual(channel)) {
-            return conversation
-          }
-        }
-      }
-    },
+    // findConversation(channel) {
+    //   if (this.conversationList) {
+    //     for (const conversation of this.conversationList) {
+    //       if (conversation.channel.isEqual(channel)) {
+    //         return conversation
+    //       }
+    //     }
+    //   }
+    // },
     addConversation(conversation) {
       this.conversationList.push(conversation)
     },
@@ -376,10 +388,7 @@ export const useChatStore = defineStore('chat', {
       if (index !== -1) {
         // 修改原 Conversation 实例的属性，保留类的所有方法和 getter
         const item = this.conversationList[index]
-        if (
-          this.currentConversation &&
-          this.currentConversation.channel.isEqual(conversation.channel)
-        ) {
+        if (this.currentChannel && this.currentChannel.isEqual(conversation.channel)) {
           // 记录当前会话的未读数，用于在离开时请求清空未读
           this.currentConversationUnread = conversation.unread
         } else {
@@ -425,14 +434,10 @@ export const useChatStore = defineStore('chat', {
     },
     // 清空频道消息
     clearChannelMessages(conversation) {
-      if (
-        this.currentConversation &&
-        this.currentConversation.channel.isEqual(conversation.channel)
-      ) {
+      if (this.currentChannel && this.currentChannel.isEqual(conversation.channel)) {
         this.chatMessagesOfOrigin = []
         this.chatMessages = []
         this.currentConversationUnread = 0
-        this.currentConversation.lastMessage = null
       }
       const cacheKey = `${conversation.channel.channelID}_${conversation.channel.channelType}`
       this.cacheChatMessagesByChannelID[cacheKey] = []
@@ -519,7 +524,7 @@ export const useChatStore = defineStore('chat', {
     },
     sendMessage(data) {
       return new Promise((resolve, reject) => {
-        if (!this.currentConversation) {
+        if (!this.currentChannel) {
           reject(new Error('当前会话不存在'))
           return
         }
@@ -537,7 +542,7 @@ export const useChatStore = defineStore('chat', {
           data.reply = reply
         }
         if (!data.channel) {
-          data.channel = this.currentConversation.channel
+          data.channel = this.currentChannel
         }
         console.log('sendMessage----->', data)
 
@@ -591,10 +596,6 @@ export const useChatStore = defineStore('chat', {
             resolve(messageWrap)
           })
         } else {
-          // let channel = this.currentConversation.channel
-          // if (data.channel) {
-          //   channel = data.channel
-          // }
           sendMessage(data.channel, data).then((message) => {
             this.setReplyMessage(null)
             const messageWrap = Convert.toMessageWrap(message)
@@ -793,6 +794,14 @@ export const useChatStore = defineStore('chat', {
           }
           that.clearSelectedMessages()
         },
+      })
+    },
+    // 获取联系人列表
+    async fetchContactList() {
+      const resp = await chatApi.syncContactList({ version: '', api_version: 1 })
+      this.contactList = resp.map((p) => {
+        p.avatar = avatarUser(p.uid)
+        return p
       })
     },
   },

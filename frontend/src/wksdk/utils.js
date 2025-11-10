@@ -150,6 +150,7 @@ export const getRevokeTip = (message, userInfo) => {
       if (message.from) {
         memberFromName = message.from.title
       } else {
+        debugger
         fetchChannelInfo(newChannel(message.fromUID))
       }
       return `${name}撤回了成员“${memberFromName}”的一条消息`
@@ -161,6 +162,7 @@ export const getRevokeTip = (message, userInfo) => {
     if (channelInfo) {
       name = channelInfo.title
     } else {
+      debugger
       fetchChannelInfo(channel)
       name = '--'
     }

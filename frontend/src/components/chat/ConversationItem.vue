@@ -89,6 +89,7 @@ const chatStore = useChatStore()
 onMounted(() => {
   // 如果 channelInfo 不存在，主动触发获取（全局监听器会处理更新通知）
   if (!props.item.channelInfo) {
+    debugger
     fetchChannelInfo(props.item.channel)
   }
 })
@@ -135,6 +136,7 @@ const lastContent = computed(() => {
   if (lastMessage.channel && lastMessage.channel.channelType === ChannelTypePerson) {
     return lastMessage.content?.conversationDigest || ''
   } else {
+    // 群消息
     let from = ''
     if (lastMessage.fromUID && lastMessage.fromUID !== '') {
       const fromChannel = newChannel(lastMessage.fromUID, ChannelTypePerson)
@@ -142,7 +144,9 @@ const lastContent = computed(() => {
       if (fromChannelInfo) {
         from = `${fromChannelInfo.title}: `
       } else {
-        fetchChannelInfo(fromChannel)
+        debugger
+        // const channelInfo =  fetchChannelInfo(fromChannel)
+        // from = `${channelInfo.title}: `
       }
     }
 

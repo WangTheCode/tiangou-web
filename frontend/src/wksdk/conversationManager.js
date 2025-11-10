@@ -12,14 +12,16 @@ import { Convert } from './dataConvert'
 import dayjs from 'dayjs'
 import chatApi from '@/api/chat'
 import * as channelSettingManager from '@/wksdk/channelSettingManager'
+import { fetchChannelInfoIfNeed } from '@/wksdk/channelManager'
 
 export const conversationListener = (conversation, action) => {
   console.log('收到会话处理----->', conversation, action)
   const chatStore = useChatStore()
-  const channelInfo = WKSDK.shared().channelManager.getChannelInfo(conversation.channel)
-  if (!channelInfo) {
-    WKSDK.shared().channelManager.fetchChannelInfo(conversation.channel)
-  }
+  // const channelInfo = WKSDK.shared().channelManager.getChannelInfo(conversation.channel)
+  // if (!channelInfo) {
+  //   WKSDK.shared().channelManager.fetchChannelInfo(conversation.channel)
+  // }
+  fetchChannelInfoIfNeed(conversation.channel)
   if (action === ConversationAction.add) {
     console.log('ConversationAction-----add')
     // 过滤敏感词
@@ -43,13 +45,6 @@ export const conversationListener = (conversation, action) => {
     // }
 
     chatStore.sortConversations()
-    // const conversationY = this.currentConversationListY()
-    // console.log("conversationY----->", conversationY)
-    // this.notifyListener(() => {
-    //     if (conversationY) {
-    //         this.keepPosition(conversationY)
-    //     }
-    // })
   } else if (action === ConversationAction.remove) {
     // this.removeConversation(conversation.channel)
   }
@@ -270,4 +265,15 @@ export const clearChannelMessages = async (conversation) => {
     console.error(error)
     return Promise.reject(error)
   }
+}
+
+export const findConversation = async (channel) => {
+  if (isEE) {
+    const res = await ipcApiRoute.clearChannelMessages({
+      channel_id: channel.channelID,
+      channel_type: channel.channelType,
+    })
+    return res.data
+  }
+  return WKSDK.shared().conversationManager.findConversation(channel)
 }

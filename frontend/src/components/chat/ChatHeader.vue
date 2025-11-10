@@ -23,14 +23,32 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useChatStore } from '@/stores/index'
-import { avatarChannel } from '@/wksdk/channelManager'
+import { avatarChannel, fetchChannelInfoIfNeed } from '@/wksdk/channelManager'
 import IconButton from '../base/IconButton.vue'
+
 const chatStore = useChatStore()
-const currentConversation = computed(() => chatStore.currentConversation || {})
-const channelInfo = computed(() => currentConversation.value.channelInfo || {})
-const avatar = computed(() => avatarChannel(channelInfo.value.channel))
+const currentChannel = computed(() => chatStore.currentChannel || {})
+const channelInfo = ref({})
+const avatar = ref('')
+
+const renderChannelInfo = async () => {
+  if (!(currentChannel.value && currentChannel.value.channelID)) {
+    return
+  }
+  channelInfo.value = await fetchChannelInfoIfNeed(currentChannel.value)
+  console.log('channelInfo', channelInfo.value)
+  avatar.value = avatarChannel(currentChannel.value)
+}
+
+watch(currentChannel, () => {
+  renderChannelInfo()
+})
+
+onMounted(() => {
+  renderChannelInfo()
+})
 </script>
 
 <style lang="less" scoped></style>

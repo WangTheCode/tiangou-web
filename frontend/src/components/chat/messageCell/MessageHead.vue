@@ -93,9 +93,6 @@ const getTitleColor = (title = '') => {
 const init = () => {
   const fromChannel = newChannel(props.message.fromUID)
   let channelInfo = getChannelInfo(fromChannel)
-  // if (!channelInfo) {
-  //   WKSDK.shared().channelManager.fetchChannelInfo(fromChannel)
-  // }
 
   displayName.value =
     channelInfo && channelInfo.orgData && channelInfo.orgData.displayName

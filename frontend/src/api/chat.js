@@ -15,6 +15,7 @@ export const URLS = {
   closeConversation: '/conversations/{channelID}/{channelType}',
   getOssSts: '/file/oss/sts',
   clearChannelMessages: '/message/offset',
+  syncContactList: '/friend/sync',
 }
 
 export default class chatApi {
@@ -35,6 +36,7 @@ export default class chatApi {
   static closeConversation = async (data) => del({ url: getUrl(URLS.closeConversation, data) })
   static getOssSts = async () => get({ url: URLS.getOssSts })
   static clearChannelMessages = async (data) => post({ url: URLS.clearChannelMessages, data })
+  static syncContactList = async (params) => get({ url: URLS.syncContactList, params })
 }
 
 // const apis = {}

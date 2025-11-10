@@ -115,7 +115,7 @@ const onResize = () => {
 
 // 加载更多历史消息
 const loadMoreMessages = () => {
-  if (!chatStore.currentConversation?.channel) {
+  if (!chatStore.currentChannel) {
     return
   }
 
@@ -140,7 +140,7 @@ const loadMoreMessages = () => {
   let restoredScrollTop = null // 记录已恢复的位置
 
   chatStore
-    .loadMoreMessages(chatStore.currentConversation.channel, 30)
+    .loadMoreMessages(chatStore.currentChannel, 30)
     .then(({ messages, hasMore }) => {
       if (!hasMore || messages.length === 0) {
         noMore.value = true
@@ -215,7 +215,7 @@ const scrollToBottom = (force = false) => {
 
 // 监听当前会话变化，重置滚动器
 watch(
-  () => chatStore.currentConversation?.channel?.getChannelKey?.(),
+  () => chatStore.currentChannel?.getChannelKey?.(),
   (newChannelKey) => {
     if (newChannelKey && newChannelKey !== currentChannelKey.value) {
       // 切换联系人时，强制重新渲染滚动器
