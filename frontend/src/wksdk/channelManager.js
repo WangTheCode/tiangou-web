@@ -22,7 +22,13 @@ export const getChannelInfo = (channel) => {
 }
 
 export const fetchChannelInfo = (channel) => {
-  return WKSDK.shared().channelManager.fetchChannelInfo(channel)
+  // return WKSDK.shared().channelManager.fetchChannelInfo(channel)
+  return new Promise((resolve) => {
+    fetchChannelInfoSync(channel).then((res) => {
+      WKSDK.shared().channelManager.setChannleInfoForCache(res)
+      resolve(res)
+    })
+  })
 }
 
 export const getImageURL = (path, opts) => {
@@ -113,6 +119,7 @@ export const fetchChannelInfoSync = (channel) => {
             channelInfo.logo = `groups/${channel.channelID}/avatar`
           }
         }
+        channelInfo.avatar = avatarChannel(channel)
 
         channelInfo.orgData = data.extra || {}
         channelInfo.orgData.remark = data.remark ?? ''

@@ -1,11 +1,11 @@
 <template>
   <div>
-    <div>
+    <div class="pb-2">
       <el-input v-model="keyword" placeholder="联系人" @keyup.enter="handleSearch" />
     </div>
     <div>
       <div v-for="key in currentIndexMap" :key="key">
-        <div class="text-sm bg-gray-100 p-2">{{ key }}</div>
+        <div class="text-sm bg-gray-100 p-2 my-1">{{ key }}</div>
         <div>
           <ContactItem
             v-for="item in currentIndexItemMap[key]"

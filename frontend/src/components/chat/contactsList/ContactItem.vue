@@ -8,19 +8,19 @@
     @click="handleClick"
   >
     <div class="w-[50px] h-[50px] rounded-lg overflow-hidden">
-      <img :src="item.avatar" alt="" class="w-full h-full object-cover" />
+      <!-- <img :src="item.avatar" alt="" class="w-full h-full object-cover" /> -->
+      <Avatar :src="item.avatar" shape="circle" />
     </div>
     <div class="flex-1 pl-3">
-      <div class="flex leading-8 items-center">
-        <div class="font-bold flex flex-1 min-w-0">
-          <h4 class="truncate">{{ item.name }}</h4>
-        </div>
+      <div class="flex items-center leading-[50px]">
+        {{ item.name }}
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import Avatar from '@/components/base/Avatar.vue'
 const props = defineProps({
   item: {
     type: Object,

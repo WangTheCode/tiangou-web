@@ -62,7 +62,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { avatarChannel, newChannel, getChannelInfo, fetchChannelInfo } from '@/wksdk/channelManager'
 import { getTimeStringAutoShort2, getRevokeTip, getFlameTip } from '@/wksdk/utils'
 import { ChannelTypePerson } from 'wukongimjssdk'
@@ -86,13 +86,20 @@ const props = defineProps({
 
 const chatStore = useChatStore()
 
-onMounted(() => {
-  // 如果 channelInfo 不存在，主动触发获取（全局监听器会处理更新通知）
-  if (!props.item.channelInfo) {
-    debugger
-    fetchChannelInfo(props.item.channel)
-  }
-})
+watch(
+  () => props.item._updateTime,
+  () => {
+    renderLastContent()
+  },
+  { deep: true },
+)
+
+watch(
+  () => chatStore.channelInfoUpdateTrigger,
+  () => {
+    renderLastContent()
+  },
+)
 
 // 依赖 Store 的全局触发器来触发重新计算
 const channelInfo = computed(() => {
@@ -107,34 +114,34 @@ const avatar = computed(() => {
   return avatarChannel(props.item.channel)
 })
 
-const lastContent = computed(() => {
+const lastContent = ref('')
+
+const renderLastContent = async () => {
   const conversationWrap = props.item
-  // 依赖更新时间戳，确保每次更新都能触发重新计算
-  // eslint-disable-next-line no-unused-vars
-  const _ = conversationWrap._updateTime
-  // 明确依赖 lastMessage，确保当它变化时重新计算
   const lastMessage = conversationWrap.lastMessage
-
   if (!lastMessage) {
-    return ''
+    lastContent.value = ''
+    return
   }
-
   const draft = conversationWrap.remoteExtra?.draft
   if (draft && draft !== '') {
-    return draft
+    lastContent.value = draft
+    return
   }
-
   if (lastMessage.isDeleted) {
-    return ''
+    lastContent.value = ''
+    return
   }
   if (lastMessage.revoke) {
-    return getRevokeTip(lastMessage)
+    lastContent.value = getRevokeTip(lastMessage)
+    return
   }
   if (lastMessage.flame) {
-    return getFlameTip()
+    lastContent.value = getFlameTip()
+    return
   }
   if (lastMessage.channel && lastMessage.channel.channelType === ChannelTypePerson) {
-    return lastMessage.content?.conversationDigest || ''
+    lastContent.value = lastMessage.content?.conversationDigest || ''
   } else {
     // 群消息
     let from = ''
@@ -144,17 +151,21 @@ const lastContent = computed(() => {
       if (fromChannelInfo) {
         from = `${fromChannelInfo.title}: `
       } else {
-        debugger
-        // const channelInfo =  fetchChannelInfo(fromChannel)
-        // from = `${channelInfo.title}: `
+        const channelInfo = await fetchChannelInfo(fromChannel)
+        // debugger
+        from = `${channelInfo.title}: `
       }
     }
 
-    return `${from}${lastMessage.content?.conversationDigest || ''}`
+    lastContent.value = `${from}${lastMessage.content?.conversationDigest || ''}`
   }
-})
+}
 
 const emit = defineEmits(['click'])
+
+onMounted(() => {
+  renderLastContent()
+})
 
 const handleClick = () => {
   emit('click', props.item)
