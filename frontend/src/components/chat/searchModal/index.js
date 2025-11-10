@@ -1,7 +1,7 @@
 import { createApp } from 'vue'
 import Popup from './SearchModal.vue'
 
-export const sendFileDialog = (props) => {
+export const chatSearchModal = (props) => {
   // 实例化组件，createApp第二个参数是props
   const confirmInstance = createApp(Popup, {
     ...props,

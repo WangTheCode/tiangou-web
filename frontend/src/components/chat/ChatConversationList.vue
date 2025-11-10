@@ -1,19 +1,30 @@
 <template>
-  <div class="w-full">
-    <ConversationItem
-      v-for="(item, index) in conversationList"
-      :key="index"
-      :item="item"
-      :is-current="currentChannel && currentChannel.channelID === item.channel.channelID"
-      :userInfo="userInfo"
-      @click="handleClick(item)"
-      @contextmenu="onContextmenu($event, item)"
-    />
-    <Contextmenu
-      ref="contextmenuDropdownRef"
-      :menu-items="contextmenuItems"
-      @select="onContextmenuSelect"
-    />
+  <div>
+    <div class="px-2 py-1 flex bg-gray-100 mb-2">
+      <div class="flex-1 leading-[40px]">
+        <span v-if="connectStatus === 'loading'">连接中</span>
+        <span v-else-if="connectStatus === 'success'">在线</span>
+        <span v-else>离线</span>
+      </div>
+      <IconButton icon="icon-search" iconSize="20px" @click="onShowSearchModal" />
+      <IconButton icon="icon-add" iconSize="20px" />
+    </div>
+    <div class="w-full">
+      <ConversationItem
+        v-for="(item, index) in conversationList"
+        :key="index"
+        :item="item"
+        :is-current="currentChannel && currentChannel.channelID === item.channel.channelID"
+        :userInfo="userInfo"
+        @click="handleClick(item)"
+        @contextmenu="onContextmenu($event, item)"
+      />
+      <Contextmenu
+        ref="contextmenuDropdownRef"
+        :menu-items="contextmenuItems"
+        @select="onContextmenuSelect"
+      />
+    </div>
   </div>
 </template>
 
@@ -23,11 +34,14 @@ import { useChatStore } from '@/stores/index'
 import ConversationItem from './ConversationItem.vue'
 import Contextmenu from '@/components/base/Contextmenu.vue'
 import { updateSetting, closeConversation, clearChannelMessages } from '@/wksdk/conversationManager'
+import IconButton from '@/components/base/IconButton.vue'
+import { chatSearchModal } from './searchModal/index'
 
 const chatStore = useChatStore()
 const conversationList = computed(() => chatStore.conversationList)
 const currentChannel = computed(() => chatStore.currentChannel)
 const userInfo = computed(() => chatStore.connectUserInfo)
+const connectStatus = computed(() => chatStore.connectStatus)
 
 const handleClick = (item) => {
   chatStore.setCurrentChannel(item.channel)
@@ -76,6 +90,10 @@ const onContextmenuSelect = (e) => {
       clearChannelMessages(data)
       break
   }
+}
+
+const onShowSearchModal = () => {
+  chatSearchModal({})
 }
 </script>
 

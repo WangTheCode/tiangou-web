@@ -1,8 +1,8 @@
 <template>
   <div>
-    <div class="pb-2">
+    <!-- <div class="pb-2">
       <el-input v-model="keyword" placeholder="联系人" @keyup.enter="handleSearch" />
-    </div>
+    </div> -->
     <div>
       <div v-for="key in currentIndexMap" :key="key">
         <div class="text-sm bg-gray-100 p-2 my-1">{{ key }}</div>

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <img :src="image" :style="{ width: imageWidth + 'px' }" />
+    <img :src="image" :style="{ width: imageWidth + 'px' }" class="inline-block" />
     <div class="text-2xl text-gray-400">
       <slot></slot> <span v-if="text">{{ text }}</span>
     </div>

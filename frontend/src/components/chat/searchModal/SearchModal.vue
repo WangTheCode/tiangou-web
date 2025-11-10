@@ -1,7 +1,11 @@
 <template>
-  <el-dialog v-model="isShow" width="800" align-center @close="onCancelModal">
+  <el-dialog v-model="isShow" width="800" @close="onCancelModal">
     <div>
-      <el-input v-model="keyword" placeholder="搜索" @keyup.enter="handleSearch" />
+      <el-input v-model="keyword" placeholder="搜索" @keyup.enter="handleSearch">
+        <template #prefix>
+          <i class="iconfont icon-search" />
+        </template>
+      </el-input>
     </div>
     <el-tabs v-model="activeTab" @tab-click="handleTabClick">
       <el-tab-pane label="聊天" name="message">User</el-tab-pane>
@@ -29,6 +33,14 @@ const activeTab = ref('message')
 const onCancelModal = () => {
   isShow.value = false
   props.onCancel && props.onCancel()
+}
+
+const handleSearch = () => {
+  console.log(keyword.value)
+}
+
+const handleTabClick = (tab) => {
+  console.log(tab)
 }
 
 onMounted(() => {

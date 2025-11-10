@@ -64,14 +64,14 @@
                   @select="onSelectEmoji"
                 />
               </template>
-              <IconButton size="sm" icon="icon-emoji" icon-size="20px" round class="mr-1" />
+              <IconButton size="sm" icon="icon-emoji" icon-size="20px" round class="mr-2" />
             </el-tooltip>
             <IconButton
               size="sm"
               icon="icon-image"
               icon-size="20px"
               round
-              class="mr-1"
+              class="mr-2"
               @click="onSelectImage"
             />
             <IconButton
@@ -79,11 +79,11 @@
               icon="icon-attachment"
               icon-size="20px"
               round
-              class="mr-1"
+              class="mr-2"
               @click="onSelectFile"
             />
-            <IconButton size="sm" icon="icon-box" icon-size="20px" round class="mr-1" />
-            <IconButton size="sm" icon="icon-activity" icon-size="20px" round class="mr-1" />
+            <IconButton size="sm" icon="icon-box" icon-size="20px" round class="mr-2" />
+            <IconButton size="sm" icon="icon-activity" icon-size="20px" round class="mr-2" />
           </div>
           <div v-if="device != 'mobile'">
             <!-- <Tooltip v-model:open="isShowEmojiPicker" placement="left" trigger="click"> -->

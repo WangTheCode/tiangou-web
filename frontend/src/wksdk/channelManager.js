@@ -83,6 +83,10 @@ export const avatarUser = (uid) => {
   return avatarChannel(newChannel(uid, ChannelTypePerson))
 }
 
+// 请求缓存 Map，用于防止相同 channel 的重复请求
+// key: channelKey (格式: channelType-channelID), value: Promise
+const fetchChannelInfoPromiseCache = new Map()
+
 // 获取频道信息，如果频道信息不存在，则从服务器获取
 export const fetchChannelInfoIfNeed = (channel) => {
   return new Promise((resolve) => {
@@ -98,9 +102,18 @@ export const fetchChannelInfoIfNeed = (channel) => {
   })
 }
 
-// 从服务器获取频道信息
+// 从服务器获取频道信息（带请求去重逻辑）
 export const fetchChannelInfoSync = (channel) => {
-  return new Promise((resolve, reject) => {
+  // 生成唯一的 channel key
+  const channelKey = `${channel.channelType}-${channel.channelID}`
+
+  // 如果已经有相同 channel 的请求正在进行中，直接返回缓存的 Promise
+  if (fetchChannelInfoPromiseCache.has(channelKey)) {
+    return fetchChannelInfoPromiseCache.get(channelKey)
+  }
+
+  // 创建新的请求 Promise
+  const requestPromise = new Promise((resolve, reject) => {
     chatApi
       .getChannelInfo(channel)
       .then((data) => {
@@ -156,5 +169,14 @@ export const fetchChannelInfoSync = (channel) => {
       .catch((err) => {
         reject(err)
       })
+      .finally(() => {
+        // 请求完成（无论成功或失败）后，从缓存中移除
+        fetchChannelInfoPromiseCache.delete(channelKey)
+      })
   })
+
+  // 将新创建的 Promise 存入缓存
+  fetchChannelInfoPromiseCache.set(channelKey, requestPromise)
+
+  return requestPromise
 }

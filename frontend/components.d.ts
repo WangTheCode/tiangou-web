@@ -42,6 +42,7 @@ declare module 'vue' {
     GetSmsCodeButton: typeof import('./src/components/base/GetSmsCodeButton.vue')['default']
     HistorySplit: typeof import('./src/components/chat/messageCell/HistorySplit.vue')['default']
     IconButton: typeof import('./src/components/base/IconButton.vue')['default']
+    IconComponent: typeof import('./src/components/base/IconComponent.vue')['default']
     Index: typeof import('./src/components/chat/Index.vue')['default']
     Logo: typeof import('./src/components/ui/Logo.vue')['default']
     MergeForward: typeof import('./src/components/chat/messageCell/MergeForward.vue')['default']

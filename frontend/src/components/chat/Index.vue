@@ -37,11 +37,18 @@
         </div>
       </el-splitter-panel>
       <el-splitter-panel :min="200">
-        <div class="flex-1 flex flex-col h-full">
+        <div v-if="currentChannel && currentChannel.channelID" class="flex-1 flex flex-col h-full">
           <ChatHeader />
           <ChatMessageList />
 
           <ChatInput />
+        </div>
+        <div v-else class="flex items-center justify-center h-full">
+          <Logo class="text-center">
+            <span class="text-black"
+              >来窝里，遇见心有灵犀的<span class="text-primary">ta</span></span
+            >
+          </Logo>
         </div>
       </el-splitter-panel>
     </el-splitter>
@@ -57,12 +64,21 @@ import ChatMessageList from './ChatMessageList.vue'
 import ChatContactList from './contactsList/ContactsList.vue'
 import ChatInput from './ChatInput.vue'
 import { init } from '@/wksdk/main'
+import Logo from '@/components/ui/Logo.vue'
+
 const userStore = useUserStore()
 const chatStore = useChatStore()
+
+const currentChannel = computed(() => chatStore.currentChannel)
 
 init()
 
 const currentActiveTab = ref('conversation')
+const keyword = ref('')
+
+const handleSearch = () => {
+  console.log(keyword.value)
+}
 </script>
 
 <style lang="less" scoped></style>
