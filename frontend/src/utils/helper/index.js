@@ -174,3 +174,20 @@ export const sortListByField = (list, field) => {
     return a[field] - b[field]
   })
 }
+
+// export const jsonToUint8Array = (json) => {
+//   // 将 JSON 对象转换为字符串
+//   const jsonString = JSON.stringify(json)
+
+//   return stringToUint8Array(jsonString)
+// }
+
+// export const stringToUint8Array = (str) => {
+//   const newStr = unescape(encodeURIComponent(str))
+//   const arr = []
+//   for (let i = 0, j = newStr.length; i < j; ++i) {
+//     arr.push(newStr.charCodeAt(i))
+//   }
+//   const tmpUint8Array = new Uint8Array(arr)
+//   return tmpUint8Array
+// }

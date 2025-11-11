@@ -7,7 +7,21 @@
         <span v-else>离线</span>
       </div>
       <IconButton icon="icon-search" iconSize="20px" @click="onShowSearchModal" />
-      <IconButton icon="icon-add" iconSize="20px" />
+      <el-dropdown>
+        <IconButton icon="icon-add" iconSize="20px" />
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item>
+              <i class="iconfont icon-chat-group-add"></i>
+              添加群聊
+            </el-dropdown-item>
+            <el-dropdown-item>
+              <i class="iconfont icon-add-user"></i>
+              添加好友
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
     </div>
     <div class="w-full">
       <ConversationItem

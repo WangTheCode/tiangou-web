@@ -54,11 +54,12 @@
 <script setup>
 import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue'
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
+
 import MessageCell from './messageCell/Index.vue'
 import { useChatStore, useUserStore } from '../../stores/index'
 import Contextmenu from '@/components/base/Contextmenu.vue'
 import { scrollControl } from '@/hooks/useScrollControl'
+import { scrollToMessage } from '@/hooks/useScrollToMessage'
 import { copyMessageContent } from '@/wksdk/utils'
 import { addFaveMessage } from '@/wksdk/faveManage'
 
@@ -278,12 +279,18 @@ const onBubbleContextmenu = ({ event, message }) => {
   contextmenuDropdownRef.value?.open(event, message)
 }
 
+const handleScrollToMessage = (index) => {
+  scrollerRef.value.scrollToItem(index)
+}
+
 onMounted(() => {
   scrollControl.registerScrollHandler('chat-message-list', scrollToBottom)
+  scrollToMessage.registerScrollHandler('to-chat-message', handleScrollToMessage)
 })
 
 onUnmounted(() => {
   scrollControl.unregisterScrollHandler('chat-message-list')
+  scrollToMessage.unregisterScrollHandler('to-chat-message')
 })
 
 // 暴露方法给父组件

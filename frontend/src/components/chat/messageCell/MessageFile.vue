@@ -3,16 +3,17 @@
     <div class="flex cursor-pointer" @click="onDownloadFile">
       <div
         v-if="fileIcon"
-        class="w-14 h-14 rounded p-2"
+        class="w-10 h-10 rounded p-2"
         :style="{ backgroundColor: fileIcon.color }"
       >
         <img :src="fileIcon.icon" class="w-full h-full object-cover" />
       </div>
       <div v-if="message.content" class="flex-1 pl-2">
-        <div class="text-sm mb-2">
+        <div class="text-sm mb-1">
           {{ message.content.name }}
         </div>
-        <div class="text-sm text-gray-400">
+        <slot name="intro"></slot>
+        <div v-if="showSize" class="text-xs text-gray-400">
           {{ FileHelper.getFileSizeFormat(message.content.size || 0) }}
         </div>
       </div>
@@ -36,6 +37,10 @@ const props = defineProps({
   message: {
     type: Object,
     required: true,
+  },
+  showSize: {
+    type: Boolean,
+    default: true,
   },
 })
 

@@ -255,6 +255,12 @@ class Convert {
     var tmpUint8Array = new Uint8Array(arr)
     return tmpUint8Array
   }
+  static jsonToUint8Array(json) {
+    // 将 JSON 对象转换为字符串
+    const jsonString = JSON.stringify(json)
+
+    return this.stringToUint8Array(jsonString)
+  }
 }
 
 export { Convert }

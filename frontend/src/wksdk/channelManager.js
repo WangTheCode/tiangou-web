@@ -79,8 +79,8 @@ export const avatarChannel = (channel) => {
   return ''
 }
 
-export const avatarUser = (uid) => {
-  return avatarChannel(newChannel(uid, ChannelTypePerson))
+export const avatarUser = (uid, type = ChannelTypePerson) => {
+  return avatarChannel(newChannel(uid, type))
 }
 
 // 请求缓存 Map，用于防止相同 channel 的重复请求

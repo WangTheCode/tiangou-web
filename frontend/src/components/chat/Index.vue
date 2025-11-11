@@ -14,7 +14,7 @@
               @click="currentActiveTab = 'conversation'"
             >
               <SvgLoad
-                name="icon-mb"
+                :name="currentActiveTab === 'conversation' ? 'icon-message' : 'icon-message-o'"
                 :color="currentActiveTab === 'conversation' ? '#785bf6' : '#999'"
               />
             </div>
@@ -23,15 +23,19 @@
               @click="currentActiveTab = 'contact'"
             >
               <SvgLoad
-                name="icon-mb"
+                :name="currentActiveTab === 'contact' ? 'icon-user' : 'icon-user-o'"
                 :color="currentActiveTab === 'contact' ? '#785bf6' : '#999'"
               />
             </div>
             <div
               class="flex-1 text-center py-3 hover:bg-gray-100 cursor-pointer"
-              @click="currentActiveTab = 'group'"
+              @click="currentActiveTab = 'user'"
             >
-              <SvgLoad name="icon-mb" :color="currentActiveTab === 'group' ? '#785bf6' : '#999'" />
+              <!-- <SvgLoad name="icon-mb" :color="currentActiveTab === 'group' ? '#785bf6' : '#999'" /> -->
+              <SvgLoad
+                :name="currentActiveTab === 'user' ? 'icon-my' : 'icon-my-o'"
+                :color="currentActiveTab === 'user' ? '#785bf6' : '#999'"
+              />
             </div>
           </div>
         </div>
@@ -44,11 +48,11 @@
           <ChatInput />
         </div>
         <div v-else class="flex items-center justify-center h-full">
-          <Logo class="text-center">
+          <!-- <Logo class="text-center">
             <span class="text-black"
               >来窝里，遇见心有灵犀的<span class="text-primary">ta</span></span
             >
-          </Logo>
+          </Logo> -->
         </div>
       </el-splitter-panel>
     </el-splitter>

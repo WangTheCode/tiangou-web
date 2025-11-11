@@ -6,6 +6,27 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "2593578",
+      "name": "群聊",
+      "font_class": "chat",
+      "unicode": "e60a",
+      "unicode_decimal": 58890
+    },
+    {
+      "icon_id": "11013332",
+      "name": "群聊",
+      "font_class": "chat-group-add",
+      "unicode": "e644",
+      "unicode_decimal": 58948
+    },
+    {
+      "icon_id": "17935594",
+      "name": "82添加好友",
+      "font_class": "add-user",
+      "unicode": "e625",
+      "unicode_decimal": 58917
+    },
+    {
       "icon_id": "577399",
       "name": "向下2",
       "font_class": "direction-down",

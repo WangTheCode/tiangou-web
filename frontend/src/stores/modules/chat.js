@@ -4,11 +4,12 @@ import Cache from '@/utils/cache'
 import chatApi from '@/api/chat'
 import ipcApiRoute from '@/utils/icp/ipcRoute'
 import { Convert } from '@/wksdk/dataConvert'
-import { WKSDK, MessageStatus, Reply, ChannelTypeGroup } from 'wukongimjssdk'
+import { WKSDK, MessageStatus, Reply, ChannelTypeGroup, PullMode } from 'wukongimjssdk'
 import { useAppStore } from '@/stores'
 import { isEE } from '@/utils/icp/ipcRenderer'
 import { connectWebSocket } from '@/wksdk/web'
 import { scrollControl } from '@/hooks/useScrollControl'
+import { scrollToMessage } from '@/hooks/useScrollToMessage'
 import {
   syncConversationList,
   setOpenConversation,
@@ -125,7 +126,7 @@ export const useChatStore = defineStore('chat', {
       console.log(1111, conversations)
       this.conversationList = this.sortConversations(conversations)
     },
-    async setCurrentChannel(channel) {
+    async setCurrentChannel(channel, opts = {}) {
       if (
         this.currentChannel &&
         this.currentChannel.channelID === channel.channelID &&
@@ -149,6 +150,9 @@ export const useChatStore = defineStore('chat', {
         startMessageSeq: 0,
         endMessageSeq: 0,
         pullMode: 0,
+        ...opts.getMessageListParams,
+      }).then((res) => {
+        opts.getMessageListCallback && opts.getMessageListCallback(res)
       })
 
       // 群聊
@@ -159,6 +163,69 @@ export const useChatStore = defineStore('chat', {
       } else {
         this.subscribers = []
       }
+    },
+    async jumpToMessage(message) {
+      const channel = newChannel(message.channel.channel_id, message.channel.channel_type)
+      // 先判断是否在当前会话
+      if (this.currentChannel && this.currentChannel.isEqual(channel)) {
+        // 在当前会话，则定位到指定消息
+        const messageIndex = this.chatMessagesOfOrigin.findIndex((item) => {
+          return item.messageID === message.messageID
+        })
+        if (messageIndex !== -1) {
+          scrollToMessage.scrollTo('to-chat-message', messageIndex)
+          return
+        }
+        // 当前聊天信息中不存在该消息，重新加载
+
+        return
+      }
+
+      const initMessageSeq = message.message_seq
+      const lastRemoteMessage = await this.getChannelLastMessage(channel)
+      let lastRemoteMessageSeq = 0
+      if (lastRemoteMessage) {
+        lastRemoteMessageSeq = lastRemoteMessage.messageSeq
+      }
+      let opts = {
+        start_message_seq: 0,
+        pull_mode: 1,
+        limit: 30,
+      }
+      if (initMessageSeq && initMessageSeq > 0) {
+        if (lastRemoteMessageSeq <= 0 && initMessageSeq > 30) {
+          opts.start_message_seq = initMessageSeq - 5
+          if (opts.start_message_seq < 0) {
+            opts.start_message_seq = 0
+          }
+          opts.pull_mode = PullMode.Up
+        } else if (lastRemoteMessageSeq > 0 && lastRemoteMessageSeq - initMessageSeq > opts.limit) {
+          opts.start_message_seq = initMessageSeq - 5
+          if (opts.start_message_seq < 0) {
+            opts.start_message_seq = 0
+          }
+          opts.pull_mode = PullMode.Up
+        }
+      }
+
+      // 不在当前会话，则设置当前会话
+      this.setCurrentChannel(channel, {
+        getMessageListParams: opts,
+        getMessageListCallback: (res) => {
+          console.log(res)
+        },
+      })
+    },
+    getChannelLastMessage(channel) {
+      return new Promise((resolve) => {
+        findConversation(channel).then((conversation) => {
+          if (conversation && conversation.lastMessage) {
+            resolve(conversation.lastMessage)
+          } else {
+            resolve(null)
+          }
+        })
+      })
     },
 
     syncSubscribers(channel) {

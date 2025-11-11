@@ -289,14 +289,17 @@ class WkimService {
       return false
     }
 
-    // 条件A：检查数量是否满足
-    const hasEnoughMessages = messages.length === limit
-
     // 条件B：检查 message_seq 连续性
     const isContinuous = this._isSeqContinuous(messages)
 
-    // 必须同时满足数量和连续性
-    return hasEnoughMessages && isContinuous
+    if (
+      (messages.length === limit && isContinuous) ||
+      (messages.length < limit && isContinuous && messages[messages.length - 1].message_seq == 0)
+    ) {
+      return true
+    } else {
+      return false
+    }
   }
 
   /**

@@ -16,6 +16,7 @@ export const URLS = {
   getOssSts: '/file/oss/sts',
   clearChannelMessages: '/message/offset',
   syncContactList: '/friend/sync',
+  searchGlobal: '/search/global',
 }
 
 export default class chatApi {
@@ -37,6 +38,7 @@ export default class chatApi {
   static getOssSts = async () => get({ url: URLS.getOssSts })
   static clearChannelMessages = async (data) => post({ url: URLS.clearChannelMessages, data })
   static syncContactList = async (params) => get({ url: URLS.syncContactList, params })
+  static searchGlobal = async (data) => post({ url: URLS.searchGlobal, data })
 }
 
 // const apis = {}
