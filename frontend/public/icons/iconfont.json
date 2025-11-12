@@ -6,6 +6,20 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "14151849",
+      "name": "减",
+      "font_class": "minus",
+      "unicode": "e635",
+      "unicode_decimal": 58933
+    },
+    {
+      "icon_id": "41450159",
+      "name": "plus",
+      "font_class": "plus",
+      "unicode": "e62b",
+      "unicode_decimal": 58923
+    },
+    {
       "icon_id": "2593578",
       "name": "群聊",
       "font_class": "chat",

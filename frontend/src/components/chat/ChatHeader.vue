@@ -1,12 +1,12 @@
 <template>
   <div class="p-2 border-b border-gray-200">
-    <div v-if="channelInfo && channelInfo.channel" class="flex">
+    <div v-if="currentChannelInfo && currentChannelInfo.channel" class="flex">
       <!-- <div class="w-[50px] h-[50px] rounded-lg overflow-hidden">
         <img :src="avatar" alt="" class="w-full h-full object-cover" />
       </div> -->
-      <Avatar :src="avatar" shape="circle" :size="40" />
+      <Avatar :src="getImageURL(currentChannelInfo.logo)" shape="circle" :size="40" />
       <div class="flex-1 flex pl-3">
-        <h3 class="leading-[40px] mr-4">{{ channelInfo.orgData.displayName }}</h3>
+        <h3 class="leading-[40px] mr-4">{{ currentChannelInfo.orgData.displayName }}</h3>
         <!-- <div class="text-sm leading-30">
             <a-badge v-if="wsStatus == 'success'" status="success" text="在线" />
             <a-badge v-else-if="wsStatus == 'loading'" status="processing" text="连接中" />
@@ -15,7 +15,7 @@
       </div>
 
       <div>
-        <IconButton round>
+        <IconButton round @click="handleOpenChannelSetting">
           <i class="iconfont icon-menu-dot" />
         </IconButton>
       </div>
@@ -24,33 +24,30 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { useChatStore } from '@/stores/index'
-import { avatarChannel, fetchChannelInfoIfNeed } from '@/wksdk/channelManager'
+import { getImageURL } from '@/wksdk/channelManager'
 import IconButton from '../base/IconButton.vue'
 import Avatar from '@/components/base/Avatar.vue'
+import { friendSettingSettingDrawer, groupSettingSettingDrawer } from './channelSetting/index'
+import { ChannelTypePerson, ChannelTypeGroup } from 'wukongimjssdk'
 
 const chatStore = useChatStore()
-const currentChannel = computed(() => chatStore.currentChannel || {})
-const channelInfo = ref({})
-const avatar = ref('')
+const currentChannelInfo = computed(() => chatStore.currentChannelInfo || {})
 
-const renderChannelInfo = async () => {
-  if (!(currentChannel.value && currentChannel.value.channelID)) {
-    return
+const handleOpenChannelSetting = () => {
+  if (
+    currentChannelInfo.value.channel &&
+    currentChannelInfo.value.channel.channelType === ChannelTypePerson
+  ) {
+    friendSettingSettingDrawer({})
+  } else if (
+    currentChannelInfo.value.channel &&
+    currentChannelInfo.value.channel.channelType === ChannelTypeGroup
+  ) {
+    groupSettingSettingDrawer({})
   }
-  channelInfo.value = await fetchChannelInfoIfNeed(currentChannel.value)
-  console.log('channelInfo', channelInfo.value)
-  avatar.value = avatarChannel(currentChannel.value)
 }
-
-watch(currentChannel, () => {
-  renderChannelInfo()
-})
-
-onMounted(() => {
-  renderChannelInfo()
-})
 </script>
 
 <style lang="less" scoped></style>

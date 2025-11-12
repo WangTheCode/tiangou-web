@@ -44,6 +44,7 @@ export const useChatStore = defineStore('chat', {
     conversationList: [],
     // 当前会话
     currentChannel: null,
+    currentChannelInfo: null,
     // 发送消息模式
     sendMessageMode: 'enter',
     // 当前会话的消息列表，显示用
@@ -144,7 +145,10 @@ export const useChatStore = defineStore('chat', {
       this.chatMessagesOfOrigin = []
       this.chatMessages = []
       this.setReplyMessage(null)
-      fetchChannelInfoIfNeed(channel)
+      fetchChannelInfoIfNeed(channel).then((res) => {
+        console.log('currentChannelInfo', res)
+        this.currentChannelInfo = res
+      })
       this.getChannelFirstMessageList(channel, {
         limit: 30,
         startMessageSeq: 0,
