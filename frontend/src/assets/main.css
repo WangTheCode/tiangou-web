@@ -53,6 +53,9 @@
   padding: 0 !important;
   border-radius: 10px !important;
   overflow: hidden !important;
+  .el-dialog__header {
+    padding-bottom: 0;
+  }
 }
 .bg-gradient {
   /* background: linear-gradient(to bottom, #c1defd, #fff); */
@@ -71,4 +74,27 @@
   backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast)
     var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert)
     var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+}
+
+.cell-item {
+  @apply px-4 py-3 bg-white flex hover:bg-gray-50 cursor-pointer;
+}
+
+.tag-gray-sm {
+  @apply bg-gray-100 rounded-lg px-2 py-1 mr-2;
+}
+
+.tag-white-sm {
+  @apply bg-white rounded-lg px-2 py-1 mr-2;
+}
+.input-gray-bg {
+  .el-input__wrapper {
+    background-color: #f5f5f5;
+    border: none;
+    box-shadow: none;
+  }
+}
+
+.dialog-content-mark {
+  @apply absolute top-0 left-0 w-full h-full bg-black/50;
 }

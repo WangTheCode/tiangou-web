@@ -21,7 +21,7 @@
       <div class="flex-1 bg-gray-100">
         <div class="p-4">
           <div class="grid grid-cols-5 gap-1 items-center text-center">
-            <div class="flex flex-col items-center">
+            <div class="flex flex-col items-center" @click="onOpenChannelInfo">
               <Avatar
                 :src="getImageURL(currentChannelInfo.logo)"
                 shape="circle"
@@ -76,6 +76,8 @@ import Avatar from '@/components/base/Avatar.vue'
 import { useChatStore } from '@/stores'
 import { getImageURL } from '@/wksdk/channelManager'
 import IconButton from '../../base/IconButton.vue'
+import { friendInfoSettingDrawer } from '../channelInfo/index'
+import { ChannelTypePerson, ChannelTypeGroup } from 'wukongimjssdk'
 
 const chatStore = useChatStore()
 const currentChannelInfo = computed(() => chatStore.currentChannelInfo || {})
@@ -92,6 +94,14 @@ const isShow = ref(false)
 const onCancelModal = () => {
   isShow.value = false
   props.onCancel && props.onCancel()
+}
+const onOpenChannelInfo = () => {
+  if (
+    currentChannelInfo.value.channel &&
+    currentChannelInfo.value.channel.channelType === ChannelTypePerson
+  ) {
+    friendInfoSettingDrawer({})
+  }
 }
 
 onMounted(() => {
