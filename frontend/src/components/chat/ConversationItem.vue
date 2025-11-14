@@ -30,7 +30,11 @@
               :src="channelInfo.orgData.identityIcon"
             />
           </span>
-          <span v-if="channelInfo.mute" class="flex-shrink-0 ml-1 text-gray-500">
+          <span
+            v-if="channelInfo.mute"
+            class="flex-shrink-0 ml-1 text-gray-500"
+            :class="isCurrent ? 'text-white/80' : 'text-gray-500'"
+          >
             <i class="iconfont icon-mute-b" style="font-size: 14px"></i>
           </span>
         </div>

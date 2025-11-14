@@ -90,6 +90,8 @@ const onContextmenuSelect = (e) => {
       updateSetting(data, 'top', !data.extra.top)
       break
     case 'mute':
+      console.log('onContextmenuSelect', data)
+      debugger
       updateSetting(data, 'mute', !data.channelInfo.mute)
       // copyMessageContent(data)
       break

@@ -147,7 +147,7 @@ export const useChatStore = defineStore('chat', {
       this.setReplyMessage(null)
       fetchChannelInfoIfNeed(channel).then((res) => {
         console.log('currentChannelInfo', res)
-        this.currentChannelInfo = res
+        this.setCurrentChannelInfo(res)
       })
       this.getChannelFirstMessageList(channel, {
         limit: 30,
@@ -167,6 +167,9 @@ export const useChatStore = defineStore('chat', {
       } else {
         this.subscribers = []
       }
+    },
+    setCurrentChannelInfo(channelInfo) {
+      this.currentChannelInfo = channelInfo
     },
     async jumpToMessage(message) {
       const channel = newChannel(message.channel.channel_id, message.channel.channel_type)
@@ -502,6 +505,9 @@ export const useChatStore = defineStore('chat', {
       this.conversationList = this.conversationList.filter(
         (item) => !item.channel.isEqual(conversation.channel),
       )
+    },
+    getConversationByChannel(channel) {
+      return this.conversationList.find((item) => item.channel.isEqual(channel))
     },
     // 清空频道消息
     clearChannelMessages(conversation) {

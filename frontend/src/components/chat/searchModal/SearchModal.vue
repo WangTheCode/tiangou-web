@@ -1,5 +1,15 @@
 <template>
   <el-dialog v-model="isShow" width="800" @close="onCancelModal">
+    <template #header>
+      <div class="flex items-center justify-between">
+        <div class="text-base leading-8 flex-1">{{ title }}</div>
+        <div>
+          <IconButton round @click="onCancelModal">
+            <i class="iconfont icon-close" />
+          </IconButton>
+        </div>
+      </div>
+    </template>
     <div>
       <el-input v-model="keyword" placeholder="搜索" @keyup.enter="handleSearch">
         <template #prefix>
@@ -11,10 +21,10 @@
       <el-tab-pane label="聊天" name="message">
         <MessageList ref="messageListRef" @close="onCancelModal" />
       </el-tab-pane>
-      <el-tab-pane label="联系人" name="friend">
+      <el-tab-pane v-if="!(channel && channel.channelID)" label="联系人" name="friend">
         <ChannelList ref="friendListRef" resultField="friends" @close="onCancelModal" />
       </el-tab-pane>
-      <el-tab-pane label="群组" name="group">
+      <el-tab-pane v-if="!(channel && channel.channelID)" label="群组" name="group">
         <ChannelList ref="groupListRef" resultField="groups" @close="onCancelModal" />
       </el-tab-pane>
       <el-tab-pane label="文件" name="file">
@@ -29,7 +39,15 @@ import { ref, onMounted, nextTick } from 'vue'
 import MessageList from './MessageList.vue'
 import ChannelList from './ChannelList.vue'
 import FileList from './FileList.vue'
+import { getChannelInfo } from '@/wksdk/channelManager'
+import IconButton from '@/components/base/IconButton.vue'
+
 const props = defineProps({
+  // 指定查询的频道
+  channel: {
+    type: Object,
+    default: () => {},
+  },
   onCancel: {
     type: Function,
     default: () => {},
@@ -38,11 +56,24 @@ const props = defineProps({
 
 const isShow = ref(false)
 const keyword = ref('')
+const title = ref('搜索')
 const activeTab = ref('message')
 const messageListRef = ref(null)
 const friendListRef = ref(null)
 const groupListRef = ref(null)
 const fileListRef = ref(null)
+
+const renderTitle = () => {
+  if (props.channel) {
+    const channelInfo = getChannelInfo(props.channel)
+    const displayName =
+      channelInfo.orgData && channelInfo.orgData.displayName ? channelInfo.orgData.displayName : ''
+    title.value = `与${displayName}的聊天记录`
+    return
+  }
+  title.value = '搜索'
+}
+renderTitle()
 // 取消按钮点击
 const onCancelModal = () => {
   isShow.value = false
@@ -50,26 +81,23 @@ const onCancelModal = () => {
 }
 
 const handleSearch = () => {
+  const params = {
+    keyword: keyword.value,
+    content_type: [],
+  }
+  if (props.channel) {
+    params.channel_id = props.channel.channelID
+    params.channel_type = props.channel.channelType
+  }
   if (activeTab.value === 'message') {
-    messageListRef.value.reLoadData({
-      keyword: keyword.value,
-      content_type: [],
-    })
+    messageListRef.value.reLoadData(params)
   } else if (activeTab.value === 'friend') {
-    friendListRef.value.reLoadData({
-      keyword: keyword.value,
-      content_type: [],
-    })
+    friendListRef.value.reLoadData(params)
   } else if (activeTab.value === 'group') {
-    groupListRef.value.reLoadData({
-      keyword: keyword.value,
-      content_type: [],
-    })
+    groupListRef.value.reLoadData(params)
   } else if (activeTab.value === 'file') {
-    fileListRef.value.reLoadData({
-      keyword: keyword.value,
-      content_type: [8],
-    })
+    params.content_type = [8]
+    fileListRef.value.reLoadData(params)
   }
 }
 

@@ -207,6 +207,18 @@ export const updateSetting = async (conversation, funcName, setting) => {
       [funcName]: setting ? 1 : 0,
     }
     chatStore.updateConversation(conversation)
+    const currentChannelInfo = chatStore.currentChannelInfo
+    if (
+      currentChannelInfo &&
+      currentChannelInfo.channel &&
+      currentChannelInfo.channel.isEqual(conversation.channel)
+    ) {
+      currentChannelInfo.orgData = {
+        ...currentChannelInfo.orgData,
+        [funcName]: setting ? 1 : 0,
+      }
+      chatStore.setCurrentChannelInfo(currentChannelInfo)
+    }
     if (funcName === 'top') {
       chatStore.sortConversations()
     }
@@ -276,4 +288,20 @@ export const findConversation = async (channel) => {
     return res.data
   }
   return WKSDK.shared().conversationManager.findConversation(channel)
+}
+
+// 退出群聊
+export const exitGroup = async (channel) => {
+  if (channel.channelType !== ChannelTypeGroup) {
+    return Promise.reject(new Error('channelType is not Group'))
+  }
+  try {
+    const res = await chatApi.exitGroup({
+      channelID: channel.channelID,
+    })
+    return res.data
+  } catch (error) {
+    console.error(error)
+    return Promise.reject(error)
+  }
 }

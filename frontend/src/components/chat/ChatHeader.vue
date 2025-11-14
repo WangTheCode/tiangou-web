@@ -25,7 +25,7 @@ import IconButton from '../base/IconButton.vue'
 import Avatar from '@/components/base/Avatar.vue'
 import { friendSettingSettingDrawer, groupSettingSettingDrawer } from './channelSetting/index'
 import { ChannelTypePerson, ChannelTypeGroup } from 'wukongimjssdk'
-import { friendInfoSettingDrawer } from './channelInfo/index'
+import { friendInfoDialog } from './channelInfo/index'
 
 const chatStore = useChatStore()
 const currentChannelInfo = computed(() => chatStore.currentChannelInfo || {})
@@ -49,7 +49,9 @@ const onOpenChannelInfo = () => {
     currentChannelInfo.value.channel &&
     currentChannelInfo.value.channel.channelType === ChannelTypePerson
   ) {
-    friendInfoSettingDrawer({})
+    friendInfoDialog({
+      uid: currentChannelInfo.value.channel.channelID,
+    })
   }
 }
 </script>

@@ -81,8 +81,13 @@ const onCancelModal = () => {
 }
 
 const onSubmit = () => {
-  props.onSubmit && props.onSubmit(text.value)
-  onCancelModal()
+  if (props.onSubmit) {
+    props.onSubmit(text.value).then(() => {
+      onCancelModal()
+    })
+  } else {
+    onCancelModal()
+  }
 }
 
 onMounted(() => {

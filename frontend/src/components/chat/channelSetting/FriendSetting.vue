@@ -46,23 +46,31 @@
             </div>
           </div>
         </div>
-        <div class="p-4 bg-white mb-2">查找聊天信息</div>
+        <div class="p-4 bg-white mb-2" @click="onShowSearchModal">查找聊天信息</div>
         <div class="px-4 py-3 bg-white flex">
           <div class="flex-1 leading-[32px]">消息免打扰</div>
           <div>
-            <el-switch v-model="mute" style="--el-switch-on-color: #13ce66" />
+            <el-switch
+              v-model="mute"
+              style="--el-switch-on-color: #13ce66"
+              @change="onMuteChange"
+            />
           </div>
         </div>
         <div class="px-4 py-3 bg-white mb-2 flex">
           <div class="flex-1 leading-[32px]">聊天置顶</div>
           <div>
-            <el-switch v-model="mute" style="--el-switch-on-color: #13ce66" />
+            <el-switch v-model="top" style="--el-switch-on-color: #13ce66" @change="onTopChange" />
           </div>
         </div>
         <div class="px-4 py-3 bg-white flex">
           <div class="flex-1 leading-[32px]">消息回执</div>
           <div>
-            <el-switch v-model="mute" style="--el-switch-on-color: #13ce66" />
+            <el-switch
+              v-model="receipt"
+              style="--el-switch-on-color: #13ce66"
+              @change="onReceiptChange"
+            />
           </div>
         </div>
       </div>
@@ -71,13 +79,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import Avatar from '@/components/base/Avatar.vue'
 import { useChatStore } from '@/stores'
 import { getImageURL } from '@/wksdk/channelManager'
 import IconButton from '../../base/IconButton.vue'
-import { friendInfoSettingDrawer } from '../channelInfo/index'
-import { ChannelTypePerson, ChannelTypeGroup } from 'wukongimjssdk'
+import { friendInfoDialog } from '../channelInfo/index'
+import { ChannelTypePerson } from 'wukongimjssdk'
+import { chatSearchModal } from '../searchModal/index'
+import { updateSetting } from '@/wksdk/conversationManager'
 
 const chatStore = useChatStore()
 const currentChannelInfo = computed(() => chatStore.currentChannelInfo || {})
@@ -89,18 +99,69 @@ const props = defineProps({
   },
 })
 
+const top = ref(false)
+const mute = ref(false)
+const receipt = ref(false)
+
+const renderSwitchData = () => {
+  if (currentChannelInfo.value && currentChannelInfo.value.orgData) {
+    top.value = currentChannelInfo.value.orgData.top === 1
+    mute.value = currentChannelInfo.value.orgData.mute === 1
+    receipt.value = currentChannelInfo.value.orgData.receipt === 1
+  } else {
+    top.value = false
+    mute.value = false
+    receipt.value = false
+  }
+}
+renderSwitchData()
+
+watch(currentChannelInfo, () => {
+  renderSwitchData()
+})
+
 const isShow = ref(false)
 // 取消按钮点击
 const onCancelModal = () => {
   isShow.value = false
   props.onCancel && props.onCancel()
 }
+
+const onShowSearchModal = () => {
+  chatSearchModal({
+    channel: currentChannelInfo.value.channel,
+  })
+}
+
+const onMuteChange = (value) => {
+  const conversation = chatStore.getConversationByChannel(currentChannelInfo.value.channel)
+  if (conversation) {
+    updateSetting(conversation, 'mute', value)
+  }
+}
+
+const onTopChange = (value) => {
+  const conversation = chatStore.getConversationByChannel(currentChannelInfo.value.channel)
+  if (conversation) {
+    updateSetting(conversation, 'top', value)
+  }
+}
+
+const onReceiptChange = (value) => {
+  const conversation = chatStore.getConversationByChannel(currentChannelInfo.value.channel)
+  if (conversation) {
+    updateSetting(conversation, 'receipt', value)
+  }
+}
+
 const onOpenChannelInfo = () => {
   if (
     currentChannelInfo.value.channel &&
     currentChannelInfo.value.channel.channelType === ChannelTypePerson
   ) {
-    friendInfoSettingDrawer({})
+    friendInfoDialog({
+      uid: currentChannelInfo.value.channel.channelID,
+    })
   }
 }
 

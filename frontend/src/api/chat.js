@@ -17,6 +17,15 @@ export const URLS = {
   clearChannelMessages: '/message/offset',
   syncContactList: '/friend/sync',
   searchGlobal: '/search/global',
+  exitGroup: '/groups/{channelID}/exit',
+  setFriendRemark: '/friend/remark',
+  removeFriend: '/friends/{uid}',
+  removeGroupBlacklist: '/groups/{channelID}/blacklist/remove',
+  addGroupBlacklist: '/groups/{channelID}/blacklist/add',
+  removeUserBlacklist: '/user/blacklist/{channelID}',
+  addUserBlacklist: '/user/blacklist/{channelID}',
+  getGroupUserChannelInfo: '/users/{uid}',
+  forbiddenWithMember: '/groups/{groupNo}/forbidden_with_member',
 }
 
 export default class chatApi {
@@ -39,6 +48,21 @@ export default class chatApi {
   static clearChannelMessages = async (data) => post({ url: URLS.clearChannelMessages, data })
   static syncContactList = async (params) => get({ url: URLS.syncContactList, params })
   static searchGlobal = async (data) => post({ url: URLS.searchGlobal, data })
+  static exitGroup = async (data) => post({ url: getUrl(URLS.exitGroup, data) })
+  static setFriendRemark = async (data) => put({ url: URLS.setFriendRemark, data })
+  static removeFriend = async (data) => del({ url: getUrl(URLS.removeFriend, data) })
+  static removeGroupBlacklist = async (data) =>
+    del({ url: getUrl(URLS.removeGroupBlacklist, data) })
+  static addGroupBlacklist = async (data) => post({ url: getUrl(URLS.addGroupBlacklist, data) })
+  static removeUserBlacklist = async (data) => del({ url: getUrl(URLS.removeUserBlacklist, data) })
+  static addUserBlacklist = async (data) => post({ url: getUrl(URLS.addUserBlacklist, data) })
+  static getGroupUserChannelInfo = async (params) =>
+    get({
+      url: getUrl(URLS.getGroupUserChannelInfo, params),
+      params: { group_no: params.group_no },
+    })
+  static forbiddenWithMember = async (data) =>
+    post({ url: getUrl(URLS.forbiddenWithMember, data), data })
 }
 
 // const apis = {}
