@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="isShow" width="800" @close="onCancelModal">
+  <el-dialog v-model="isShow" :show-close="false" width="800" @close="onCancelModal">
     <template #header>
       <div class="flex items-center justify-between">
         <div class="text-base leading-8 flex-1">{{ title }}</div>

@@ -30,6 +30,19 @@
         :placeholder="placeholder"
         type="textarea"
       />
+      <el-select
+        v-else-if="type === 'select'"
+        size="large"
+        v-model="text"
+        :placeholder="placeholder"
+      >
+        <el-option
+          v-for="item in options"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"
+        />
+      </el-select>
     </div>
     <div class="flex gap-2 p-4 pt-0 justify-center">
       <el-button @click="onCancelModal" size="large" round style="width: 140px">取消</el-button>
@@ -54,7 +67,11 @@ const props = defineProps({
   },
   type: {
     type: String,
-    default: 'input',
+    default: 'input', //input, textarea, select
+  },
+  options: {
+    type: Array,
+    default: () => [],
   },
   width: {
     type: Number,

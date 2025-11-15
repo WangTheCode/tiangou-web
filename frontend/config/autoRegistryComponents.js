@@ -15,6 +15,7 @@ export const AutoRegistryComponents = () => {
     directives: true,
     include: [/\.vue$/, /\.vue\?vue/],
     exclude: [/[\\/]node_modules[\\/]/, /[\\/]\.git[\\/]/, /[\\/]\.nuxt[\\/]/],
-    resolvers: [ElementPlusResolver(), VueUseComponentsResolver()],
+    // 禁用样式自动导入，因为已在 main.js 中全量导入 Element Plus 样式
+    resolvers: [ElementPlusResolver({ importStyle: false }), VueUseComponentsResolver()],
   })
 }

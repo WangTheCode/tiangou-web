@@ -26,6 +26,9 @@ export const URLS = {
   addUserBlacklist: '/user/blacklist/{channelID}',
   getGroupUserChannelInfo: '/users/{uid}',
   forbiddenWithMember: '/groups/{groupNo}/forbidden_with_member',
+  getGroupForbiddenTimes: '/group/forbidden_times',
+  updateGroup: '/groups/{groupNo}',
+  updateGroupMember: '/groups/{groupNo}/members/{uid}',
 }
 
 export default class chatApi {
@@ -63,6 +66,10 @@ export default class chatApi {
     })
   static forbiddenWithMember = async (data) =>
     post({ url: getUrl(URLS.forbiddenWithMember, data), data })
+  static getGroupForbiddenTimes = async () => get({ url: URLS.getGroupForbiddenTimes })
+  static updateGroup = async (data) => put({ url: getUrl(URLS.updateGroup, data), data })
+  static updateGroupMember = async (data) =>
+    put({ url: getUrl(URLS.updateGroupMember, data), data })
 }
 
 // const apis = {}

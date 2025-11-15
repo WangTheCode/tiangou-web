@@ -3,6 +3,7 @@ import axios from 'axios'
 import Cache from '@/utils/cache'
 import { useUserStore } from '@/stores'
 import router from '@/router'
+import { ElNotification } from 'element-plus'
 
 //请求超时时间
 axios.defaults.timeout = 30000
@@ -52,14 +53,17 @@ axiosInstance.interceptors.response.use(
       //提示错误
       const status = error.response ? error.response.status : '提示'
       let message = ''
-      if (error.response && error.response.data && error.response.data.message) {
-        message = error.response.data.message
+      if (error.response && error.response.data && error.response.data.msg) {
+        message = error.response.data.msg
       }
-      // notification.error({
-      //   message: status,
-      //   description: message,
-      //   duration: 5,
-      // })
+      console.log('err', error)
+      if (message) {
+        ElNotification({
+          title: status,
+          message: message,
+          type: 'error',
+        })
+      }
     }
     return Promise.reject(error)
   },

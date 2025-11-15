@@ -54,6 +54,7 @@
             <div class="flex-1 leading-[32px]">进群方式</div>
             <div class="text-gray-400 leading-[32px] text-xs">{{ joinDesc }}</div>
           </div>
+
           <div
             v-if="groupNo && !isCurrentUser && canForbidden"
             class="cell-item"
@@ -244,8 +245,6 @@ const onSetRemark = () => {
             resolve(true)
           })
           .catch((err) => {
-            console.log('err', err)
-            ElMessage.error('设置备注失败')
             reject(err)
           })
       })
@@ -270,10 +269,6 @@ const onRemoveFriend = () => {
         })
         .then(() => {
           ElMessage.success('删除成功')
-        })
-        .catch((err) => {
-          console.log('err', err)
-          ElMessage.error('删除失败')
         })
     })
     .catch(() => {})
@@ -319,9 +314,6 @@ const onSetBlacklist = () => {
       ElMessage.success('拉入黑名单成功')
       userRelation.value = UserRelation.blacklist
     })
-    .catch((err) => {
-      console.log('err', err)
-    })
 }
 
 const onSetGroupUserMute = () => {
@@ -342,14 +334,43 @@ const onSetGroupUserMute = () => {
           .then(() => {
             ElMessage.success('已解除禁言')
           })
-          .catch((err) => {
-            console.log('err', err)
-            ElMessage.error('解除失败')
-          })
       })
       .catch(() => {})
   } else {
-    //
+    isShowMark.value = true
+    chatApi.getGroupForbiddenTimes().then((res) => {
+      const options = res.map((item) => ({ label: item.text, value: item.key }))
+      //弹出选择禁言时长的弹窗
+      showInputDialog({
+        title: '选择禁言时长',
+        type: 'select',
+        options: options,
+        placeholder: '请输入备注',
+        onSubmit(value) {
+          return new Promise((resolve, reject) => {
+            chatApi
+              .forbiddenWithMember({
+                groupNo: props.groupNo,
+                member_uid: props.uid,
+                action: 1,
+                key: value,
+              })
+              .then(() => {
+                ElMessage.success('已设置禁言')
+                resolve(true)
+              })
+              .catch((err) => {
+                // console.log('err', err)
+                // ElMessage.error('设置失败')
+                reject(err)
+              })
+          })
+        },
+        onCancel() {
+          isShowMark.value = false
+        },
+      })
+    })
   }
 }
 

@@ -9,6 +9,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     Avatar: typeof import('./src/components/base/Avatar.vue')['default']
+    AvatarCropper: typeof import('./src/components/base/AvatarCropper.vue')['default']
     Badge: typeof import('./src/components/base/Badge.vue')['default']
     Bubble: typeof import('./src/components/chat/messageCell/Bubble.vue')['default']
     'Bubble copy': typeof import('./src/components/chat/messageCell/Bubble copy.vue')['default']
@@ -42,6 +43,7 @@ declare module 'vue' {
     ElSwitch: typeof import('element-plus/es')['ElSwitch']
     ElTabPane: typeof import('element-plus/es')['ElTabPane']
     ElTabs: typeof import('element-plus/es')['ElTabs']
+    ElTextarea: typeof import('element-plus/es')['ElTextarea']
     ElTooltip: typeof import('element-plus/es')['ElTooltip']
     FileList: typeof import('./src/components/chat/searchModal/FileList.vue')['default']
     FriendInfo: typeof import('./src/components/chat/channelInfo/FriendInfo.vue')['default']
@@ -70,6 +72,9 @@ declare module 'vue' {
     MessageTrail: typeof import('./src/components/chat/messageCell/MessageTrail.vue')['default']
     PhoneInput: typeof import('./src/components/base/PhoneInput.vue')['default']
     PhoneSmsCheck: typeof import('./src/components/base/PhoneSmsCheck.vue')['default']
+    PopupAvatar: typeof import('./src/components/chat/channelSetting/popupView/PopupAvatar.vue')['default']
+    PopupTextarea: typeof import('./src/components/chat/channelSetting/popupView/PopupTextarea.vue')['default']
+    PopupView: typeof import('./src/components/chat/channelSetting/popupView/PopupView.vue')['default']
     ReplyMessage: typeof import('./src/components/chat/ReplyMessage.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
