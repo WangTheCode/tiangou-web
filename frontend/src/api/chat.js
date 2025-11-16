@@ -29,6 +29,9 @@ export const URLS = {
   getGroupForbiddenTimes: '/group/forbidden_times',
   updateGroup: '/groups/{groupNo}',
   updateGroupMember: '/groups/{groupNo}/members/{uid}',
+  updateGroupAvatar: '/groups/{groupNo}/avatar',
+  getGroupQrcode: '/groups/{groupNo}/qrcode',
+  transferGroupOwner: '/groups/{groupNo}/transfer/{uid}',
 }
 
 export default class chatApi {
@@ -55,8 +58,9 @@ export default class chatApi {
   static setFriendRemark = async (data) => put({ url: URLS.setFriendRemark, data })
   static removeFriend = async (data) => del({ url: getUrl(URLS.removeFriend, data) })
   static removeGroupBlacklist = async (data) =>
-    del({ url: getUrl(URLS.removeGroupBlacklist, data) })
-  static addGroupBlacklist = async (data) => post({ url: getUrl(URLS.addGroupBlacklist, data) })
+    post({ url: getUrl(URLS.removeGroupBlacklist, data), data: { uids: data.uids } })
+  static addGroupBlacklist = async (data) =>
+    post({ url: getUrl(URLS.addGroupBlacklist, data), data: { uids: data.uids } })
   static removeUserBlacklist = async (data) => del({ url: getUrl(URLS.removeUserBlacklist, data) })
   static addUserBlacklist = async (data) => post({ url: getUrl(URLS.addUserBlacklist, data) })
   static getGroupUserChannelInfo = async (params) =>
@@ -70,6 +74,16 @@ export default class chatApi {
   static updateGroup = async (data) => put({ url: getUrl(URLS.updateGroup, data), data })
   static updateGroupMember = async (data) =>
     put({ url: getUrl(URLS.updateGroupMember, data), data })
+  static updateGroupAvatar = async (data) => {
+    const formData = new FormData()
+    formData.append('file', data.file)
+    const params = {
+      groupNo: data.groupNo,
+    }
+    return post({ url: getUrl(URLS.updateGroupAvatar, params), data: formData })
+  }
+  static getGroupQrcode = async (params) => get({ url: getUrl(URLS.getGroupQrcode, params) })
+  static transferGroupOwner = async (data) => post({ url: getUrl(URLS.transferGroupOwner, data) })
 }
 
 // const apis = {}

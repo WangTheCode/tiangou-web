@@ -19,14 +19,20 @@
           </IconButton>
         </div>
         <div class="flex-1 pt-2 pl-2">{{ title }}</div>
-        <div class="pt-1">
-          <el-button type="primary" @click="onSubmit" :loading="loading">{{
-            buttonText
-          }}</el-button>
-        </div>
       </div>
       <div class="flex-1 bg-gray-100 overflow-y-auto p-4">
-        <AvatarCropper ref="avatarCropperRef" :src="src" />
+        <div class="bg-white rounded-lg p-4">
+          <div class="text-center mb-4">
+            <Avatar :src="getImageURL(channelInfo.logo)" class="mx-auto mb-2" />
+            <div>{{ channelInfo.orgData.displayName }}</div>
+          </div>
+          <div class="flex items-center justify-center mb-4 w-[200px] h-[200px] mx-auto">
+            <Qrcode v-if="qrcodeSrc" :text="qrcodeSrc" />
+          </div>
+          <div class="text-center text-xs text-gray-500">
+            该二维码{{ qrcodeData.day }}天内({{ qrcodeData.expire }})前有效，重新进入将更新
+          </div>
+        </div>
       </div>
     </div>
   </el-drawer>
@@ -36,8 +42,15 @@
 import { ref, onMounted } from 'vue'
 import IconButton from '@/components/base/IconButton.vue'
 import useLoading from '@/hooks/useLoading'
-import AvatarCropper from '@/components/base/AvatarCropper.vue'
+import chatApi from '@/api/chat'
+import { getImageURL } from '@/wksdk/channelManager'
+import Qrcode from '@/components/base/Qrcode.vue'
+
 const props = defineProps({
+  channelInfo: {
+    type: Object,
+    default: () => {},
+  },
   onCancel: {
     type: Function,
     default: () => {},
@@ -54,18 +67,6 @@ const props = defineProps({
     type: String,
     default: 'icon-close',
   },
-  buttonText: {
-    type: String,
-    default: '完成',
-  },
-  src: {
-    type: String,
-    default: '',
-  },
-  remark: {
-    type: String,
-    default: '',
-  },
   width: {
     type: Number,
     default: 340,
@@ -73,31 +74,32 @@ const props = defineProps({
 })
 
 const isShow = ref(false)
-const avatarCropperRef = ref(null)
 const { loading, startLoading, endLoading } = useLoading()
+const qrcodeData = ref({})
+const qrcodeSrc = ref('')
+
+const fetchQrcode = () => {
+  startLoading()
+  chatApi
+    .getGroupQrcode({
+      groupNo: props.channelInfo.orgData.group_no,
+    })
+    .then((res) => {
+      qrcodeData.value = res
+      qrcodeSrc.value = res.qrcode
+      endLoading()
+    })
+    .catch(() => {
+      endLoading()
+    })
+}
+
+fetchQrcode()
 
 // 取消按钮点击
 const onCancelModal = () => {
   isShow.value = false
   props.onCancel && props.onCancel()
-}
-
-const onSubmit = () => {
-  if (loading.value) return
-  startLoading()
-  try {
-    if (props.onSubmit) {
-      avatarCropperRef.value.confirmCrop((data) => {
-        props.onSubmit(data).then(() => {
-          onCancelModal()
-        })
-      })
-    } else {
-      onCancelModal()
-    }
-  } finally {
-    endLoading()
-  }
 }
 
 onMounted(() => {

@@ -1,76 +1,48 @@
 import { createApp } from 'vue'
-// import VueUiWraper from 'vue-ui-wraper'
-// import Antd from 'ant-design-vue'
-import piniaStore from '@/store'
 
-export class ModalManager {
-  static instance = null
-  modalApp = null
-  modalContainer = null
+/**
+ * 通用弹窗管理器
+ * 用于创建和挂载 Vue 组件到 DOM 中
+ * @param {Component} component - Vue 组件
+ * @param {Object} props - 传递给组件的 props
+ * @returns {Object} Vue 应用实例
+ */
+export const createModalManager = (component, props) => {
+  // 实例化组件，createApp第二个参数是props
+  const confirmInstance = createApp(component, {
+    ...props,
+    onCancel: () => {
+      props.onCancel && props.onCancel()
+      unmount()
+    },
+  })
 
-  constructor() {
-    this.createContainer()
-  }
-
-  static getInstance() {
-    if (!ModalManager.instance) {
-      ModalManager.instance = new ModalManager()
-    }
-    return ModalManager.instance
-  }
-
-  createContainer() {
-    if (!this.modalContainer) {
-      this.modalContainer = document.createElement('div')
-      this.modalContainer.id = 'modal-container'
-      document.body.appendChild(this.modalContainer)
-    }
-
-    if (!this.modalApp) {
-      this.modalApp = createApp({
-        name: 'ModalContainer',
-        template: '<div id="modal-root"></div>',
-      })
-      // 注册全局组件
-      this.modalApp.use(piniaStore)
-      this.modalApp.mount(this.modalContainer)
+  // 确定挂载的父容器
+  let mountContainer = document.body
+  if (props.appendTo) {
+    // 如果传入了 appendTo 参数，尝试查找对应的 DOM 元素
+    const targetElement = document.querySelector(props.appendTo)
+    if (targetElement) {
+      mountContainer = targetElement
+    } else {
+      console.warn(
+        `[createModalManager] 未找到选择器 "${props.appendTo}" 对应的元素，将挂载到 body`,
+      )
     }
   }
 
-  showModal(ModalComponent, props) {
-    const container = document.createElement('div')
-    document.getElementById('modal-root')?.appendChild(container)
+  // 创建一个挂载容器
+  const parentNode = document.createElement('div')
+  mountContainer.appendChild(parentNode)
 
-    const modalInstance = createApp(ModalComponent, {
-      ...props,
-      onCancel: () => {
-        props.onCancel?.()
-        this.destroyModal(modalInstance, container)
-      },
-    })
-
-    // 在模态框实例中也注册必要的组件库
-    modalInstance.use(Antd).use(piniaStore)
-
-    modalInstance.mount(container)
-    return modalInstance
+  // 卸载组件
+  const unmount = () => {
+    confirmInstance.unmount()
+    mountContainer.removeChild(parentNode)
   }
 
-  destroyModal(instance, container) {
-    instance.unmount()
-    container.remove()
-  }
+  // 挂载组件
+  confirmInstance.mount(parentNode)
 
-  // 可选：提供销毁整个 ModalManager 的方法
-  destroy() {
-    if (this.modalApp) {
-      this.modalApp.unmount()
-      this.modalApp = null
-    }
-    if (this.modalContainer) {
-      this.modalContainer.remove()
-      this.modalContainer = null
-    }
-    ModalManager.instance = null
-  }
+  return confirmInstance
 }

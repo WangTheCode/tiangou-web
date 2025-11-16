@@ -323,16 +323,23 @@ export const useChatStore = defineStore('chat', {
               const key = `${channel.channelID}_${channel.channelType}`
               this.cacheChatMessagesByChannelID[key] = messages
             }
-            const sendingMessages = this.getQueueSendMessages(this.currentChannel.getChannelKey())
-            if (sendingMessages && sendingMessages.length > 0) {
-              messages = [...messages, ...sendingMessages]
-            }
+            if (
+              this.currentChannel &&
+              this.currentChannel.channelID === channel.channelID &&
+              this.currentChannel.channelType === channel.channelType
+            ) {
+              const sendingMessages = this.getQueueSendMessages(this.currentChannel.getChannelKey())
+              if (sendingMessages && sendingMessages.length > 0) {
+                messages = [...messages, ...sendingMessages]
+              }
 
-            this.chatMessagesOfOrigin = messages
-            this.chatMessages = refreshMessages(messages)
-            console.log('chatMessages', this.chatMessages)
-            this.markConversationUnread(channel, 0)
-            resolve(messages)
+              this.chatMessagesOfOrigin = messages
+              this.chatMessages = refreshMessages(messages)
+              this.markConversationUnread(channel, 0)
+              resolve(messages)
+            } else {
+              resolve([])
+            }
           })
           .catch((err) => {
             reject(err)

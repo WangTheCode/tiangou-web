@@ -12,7 +12,7 @@
           :full="false"
           :can-move="true"
           :can-move-box="true"
-          :fixed-box="false"
+          :fixed-box="true"
           :original="false"
           :auto-crop="true"
           :auto-crop-width="200"
@@ -23,21 +23,10 @@
         />
       </div>
       <div class="cropper-actions">
-        <el-button @click="zoomIn" circle>
-          <i class="iconfont icon-add" />
-        </el-button>
-        <el-button @click="zoomOut" circle>
-          <i class="iconfont icon-reduce" />
-        </el-button>
-        <el-button @click="rotateLeft" circle>
-          <i class="iconfont icon-rotate-left" />
-        </el-button>
-        <el-button @click="rotateRight" circle>
-          <i class="iconfont icon-rotate-right" />
-        </el-button>
-        <div class="flex-1"></div>
+        <el-button @click="selectImage"> 选择图片 </el-button>
+        <el-button @click="zoomIn"> 放大 </el-button>
+        <el-button @click="zoomOut"> 缩小 </el-button>
         <el-button @click="cancelCrop">取消</el-button>
-        <el-button type="primary" @click="confirmCrop">确认</el-button>
       </div>
     </div>
 
@@ -80,7 +69,7 @@ defineProps({
   },
 })
 
-const emit = defineEmits(['change', 'cancel'])
+const emit = defineEmits(['confirm', 'cancel'])
 
 const isCropping = ref(false)
 const cropperSrc = ref('')
@@ -141,7 +130,7 @@ const cancelCrop = () => {
 }
 
 // 确认裁剪
-const confirmCrop = () => {
+const confirmCrop = (callback) => {
   if (!cropperRef.value) return
 
   // 获取裁剪后的 Blob
@@ -152,7 +141,10 @@ const confirmCrop = () => {
     // 创建预览 URL
     const previewUrl = URL.createObjectURL(blob)
 
-    emit('change', {
+    if (callback) {
+      callback({ file, blob, previewUrl })
+    }
+    emit('confirm', {
       file, // File 对象，可用于上传
       blob, // Blob 对象
       url: previewUrl, // 预览 URL
@@ -162,6 +154,10 @@ const confirmCrop = () => {
     cropperSrc.value = ''
   })
 }
+
+defineExpose({
+  confirmCrop,
+})
 </script>
 
 <style lang="less" scoped>
@@ -182,12 +178,6 @@ const confirmCrop = () => {
   border-radius: 8px;
   overflow: hidden;
   background: #f5f5f5;
-}
-
-.cropper-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .preview-container {

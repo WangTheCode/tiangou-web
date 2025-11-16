@@ -25,8 +25,12 @@
           }}</el-button>
         </div>
       </div>
-      <div class="flex-1 bg-gray-100 overflow-y-auto p-4">
-        <AvatarCropper ref="avatarCropperRef" :src="src" />
+      <div class="flex-1 bg-gray-100 overflow-y-auto">
+        <ChannelSelectList
+          ref="channelSelectListRef"
+          :channelList="channelList"
+          :multiple="multiple"
+        />
       </div>
     </div>
   </el-drawer>
@@ -36,7 +40,8 @@
 import { ref, onMounted } from 'vue'
 import IconButton from '@/components/base/IconButton.vue'
 import useLoading from '@/hooks/useLoading'
-import AvatarCropper from '@/components/base/AvatarCropper.vue'
+import ChannelSelectList from '@/components/chat/ChannelSelectList.vue'
+
 const props = defineProps({
   onCancel: {
     type: Function,
@@ -58,24 +63,28 @@ const props = defineProps({
     type: String,
     default: '完成',
   },
-  src: {
-    type: String,
-    default: '',
-  },
-  remark: {
-    type: String,
-    default: '',
-  },
+
   width: {
     type: Number,
     default: 340,
   },
+  defaultValue: {
+    type: String,
+    default: '',
+  },
+  channelList: {
+    type: Array,
+    default: () => [],
+  },
+  multiple: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const isShow = ref(false)
-const avatarCropperRef = ref(null)
+const channelSelectListRef = ref(null)
 const { loading, startLoading, endLoading } = useLoading()
-
 // 取消按钮点击
 const onCancelModal = () => {
   isShow.value = false
@@ -86,11 +95,10 @@ const onSubmit = () => {
   if (loading.value) return
   startLoading()
   try {
+    const selectedItems = channelSelectListRef.value.getSelectedItems()
     if (props.onSubmit) {
-      avatarCropperRef.value.confirmCrop((data) => {
-        props.onSubmit(data).then(() => {
-          onCancelModal()
-        })
+      props.onSubmit(selectedItems).then(() => {
+        onCancelModal()
       })
     } else {
       onCancelModal()

@@ -58,7 +58,7 @@
               <Avatar :src="getImageURL(currentChannelInfo.logo)" shape="circle" :size="32" />
             </div>
           </div>
-          <div class="cell-item">
+          <div class="cell-item" @click="onShowGroupQrcode">
             <div class="flex-1 leading-[32px]">群二维码</div>
             <div class="text-gray-400 text-xs leading-[32px]">
               <i class="iconfont icon-qrcode"></i>
@@ -77,7 +77,7 @@
             </div>
           </div>
           <div class="cell-item mb-2" @click="onShowSearchModal">查找聊天信息</div>
-          <div class="cell-item mb-2">群管理</div>
+          <div class="cell-item mb-2" @click="onShowGroupManage">群管理</div>
 
           <div class="cell-item">
             <div class="flex-1 leading-[32px]">消息免打扰</div>
@@ -166,7 +166,12 @@ import {
 } from '@/wksdk/conversationManager'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { friendInfoDialog } from '../channelInfo/index'
-import { showPopupTextarea, showPopupAvatar } from './popupView/index'
+import {
+  showPopupTextarea,
+  showPopupAvatar,
+  showPopupQrcode,
+  showPopupGroupManage,
+} from './popupView/index'
 import chatApi from '@/api/chat'
 import WKSDK from 'wukongimjssdk'
 import { UserRelation, GroupRole } from '@/wksdk/const'
@@ -430,10 +435,38 @@ const onSetGroupAvatar = () => {
     onSubmit(value) {
       return new Promise((resolve, reject) => {
         console.log(value)
-
-        resolve(true)
+        chatApi
+          .updateGroupAvatar({
+            groupNo: currentChannelInfo.value.orgData.group_no,
+            file: value.file,
+          })
+          .then(() => {
+            ElMessage.success('设置成功')
+            currentChannelInfo.value.logo = value.url
+            resolve(true)
+          })
+          .catch((err) => {
+            reject(err)
+          })
+        // resolve(true)
       })
     },
+  })
+}
+
+const onShowGroupQrcode = () => {
+  showPopupQrcode({
+    title: '群二维码',
+    appendTo: '#groupSettingPopupView',
+    channelInfo: currentChannelInfo.value,
+  })
+}
+
+const onShowGroupManage = () => {
+  showPopupGroupManage({
+    title: '群管理',
+    appendTo: '#groupSettingPopupView',
+    channelInfo: currentChannelInfo.value,
   })
 }
 
