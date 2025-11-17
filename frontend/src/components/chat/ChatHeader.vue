@@ -1,12 +1,13 @@
 <template>
   <div class="p-2 border-b border-gray-200">
     <div v-if="currentChannelInfo && currentChannelInfo.channel" class="flex">
-      <div class="flex-1 flex" @click="onOpenChannelInfo">
+      <div class="flex cursor-pointer" @click="onOpenChannelInfo">
         <Avatar :src="getImageURL(currentChannelInfo.logo)" shape="circle" :size="40" />
         <div class="pl-3">
           <h3 class="leading-[40px] mr-4">{{ currentChannelInfo.orgData.displayName }}</h3>
         </div>
       </div>
+      <div class="flex-1"></div>
 
       <div>
         <IconButton round @click="handleOpenChannelSetting">
@@ -52,6 +53,11 @@ const onOpenChannelInfo = () => {
     friendInfoDialog({
       uid: currentChannelInfo.value.channel.channelID,
     })
+  } else if (
+    currentChannelInfo.value.channel &&
+    currentChannelInfo.value.channel.channelType === ChannelTypeGroup
+  ) {
+    groupSettingSettingDrawer({})
   }
 }
 </script>

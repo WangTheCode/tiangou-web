@@ -32,6 +32,8 @@ export const URLS = {
   updateGroupAvatar: '/groups/{groupNo}/avatar',
   getGroupQrcode: '/groups/{groupNo}/qrcode',
   transferGroupOwner: '/groups/{groupNo}/transfer/{uid}',
+  removeGroupAdmin: '/groups/{channelID}/managers',
+  addGroupAdmin: '/groups/{channelID}/managers',
 }
 
 export default class chatApi {
@@ -84,6 +86,10 @@ export default class chatApi {
   }
   static getGroupQrcode = async (params) => get({ url: getUrl(URLS.getGroupQrcode, params) })
   static transferGroupOwner = async (data) => post({ url: getUrl(URLS.transferGroupOwner, data) })
+  static removeGroupAdmin = async (data) =>
+    del({ url: getUrl(URLS.removeGroupAdmin, data), data: data.uids })
+  static addGroupAdmin = async (data) =>
+    post({ url: getUrl(URLS.addGroupAdmin, data), data: data.uids })
 }
 
 // const apis = {}

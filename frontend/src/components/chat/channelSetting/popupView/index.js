@@ -5,6 +5,7 @@ import PopupQrcode from './PopupQrcode.vue'
 import PopupGroupManage from './PopupGroupManage.vue'
 import PopupChannelSelect from './PopupChannelSelect.vue'
 import PopupBlackList from './PopupBlackList.vue'
+import PopupAdminList from './PopupAdminList.vue'
 // 使用通用的 modalManager 创建各个弹窗方法
 export const showPopupTextarea = (props) => {
   return createModalManager(PopupTextarea, props)
@@ -28,4 +29,8 @@ export const showPopupChannelSelect = (props) => {
 
 export const showPopupBlackList = (props) => {
   return createModalManager(PopupBlackList, props)
+}
+
+export const showPopupAdminList = (props) => {
+  return createModalManager(PopupAdminList, props)
 }

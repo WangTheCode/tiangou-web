@@ -24,9 +24,9 @@
         </div>
       </div>
       <div class="flex-1 bg-gray-100 overflow-y-auto">
-        <div v-if="blackList.length > 0" class="py-4">
+        <div v-if="adminList.length > 0" class="py-4">
           <div
-            v-for="item in blackList"
+            v-for="item in adminList"
             :key="item.uid"
             class="flex-1 flex cursor-pointer hover:bg-gray-50 px-4 py-1"
           >
@@ -35,7 +35,13 @@
               <div>{{ item.remark ? item.remark : item.name }}</div>
             </div>
             <div class="pt-1">
-              <IconButton round @click="onRemoveBlackList(item)" size="sm" class="leading-[30px]">
+              <IconButton
+                v-if="item.role === GroupRole.manager"
+                round
+                @click="onRemoveBlackList(item)"
+                size="sm"
+                class="leading-[30px]"
+              >
                 <i class="iconfont icon-error text-red-500 text-lg" />
               </IconButton>
             </div>
@@ -53,7 +59,7 @@
 import { ref, onMounted, computed } from 'vue'
 import IconButton from '@/components/base/IconButton.vue'
 import { useChatStore } from '@/stores'
-import { SubscriberStatus } from '@/wksdk/const'
+import { GroupRole } from '@/wksdk/const'
 import { newChannel } from '@/wksdk/channelManager'
 import { showPopupChannelSelect } from './index'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -95,9 +101,9 @@ const isShow = ref(false)
 
 const chatStore = useChatStore()
 
-const blackList = computed(() => {
+const adminList = computed(() => {
   return chatStore.subscribers.filter(
-    (subscriber) => subscriber.status === SubscriberStatus.blacklist,
+    (subscriber) => subscriber.role === GroupRole.owner || subscriber.role === GroupRole.manager,
   )
 })
 
@@ -110,7 +116,7 @@ const onCancelModal = () => {
 const onAddBlackList = () => {
   let channelList = []
   if (chatStore.subscribers && chatStore.subscribers.length > 0) {
-    let blackListUids = blackList.value.map((item) => item.uid)
+    let blackListUids = adminList.value.map((item) => item.uid)
     for (let i = 0; i < chatStore.subscribers.length; i++) {
       const subscriber = chatStore.subscribers[i]
       if (blackListUids.includes(subscriber.uid)) {
@@ -126,17 +132,20 @@ const onAddBlackList = () => {
     return
   }
   showPopupChannelSelect({
-    title: '添加到黑名单',
+    title: '选择管理员',
     appendTo: '#groupSettingPopupView',
     channelList: channelList,
     multiple: true,
     onSubmit: (value) => {
       return new Promise((resolve, reject) => {
+        const data = {
+          channelID: props.channelInfo.orgData.group_no,
+          uids: value.map((item) => item.uid),
+        }
+        console.log(data)
+
         chatApi
-          .addGroupBlacklist({
-            channelID: props.channelInfo.orgData.group_no,
-            uids: value.map((item) => item.uid),
-          })
+          .addGroupAdmin(data)
           .then(() => {
             ElMessage.success('添加成功')
             chatStore.reloadSubscribers(props.channelInfo.channel)
@@ -157,7 +166,7 @@ const onRemoveBlackList = (item) => {
     type: 'warning',
   }).then(() => {
     chatApi
-      .removeGroupBlacklist({
+      .removeGroupAdmin({
         channelID: props.channelInfo.orgData.group_no,
         uids: [item.uid],
       })

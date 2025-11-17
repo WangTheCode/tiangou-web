@@ -171,6 +171,42 @@ export const useChatStore = defineStore('chat', {
     setCurrentChannelInfo(channelInfo) {
       this.currentChannelInfo = channelInfo
     },
+    async getJumpToMessageParams(message, channel) {
+      try {
+        const initMessageSeq = message.message_seq
+        const lastRemoteMessage = await this.getChannelLastMessage(channel)
+        let lastRemoteMessageSeq = 0
+        if (lastRemoteMessage) {
+          lastRemoteMessageSeq = lastRemoteMessage.messageSeq
+        }
+        let opts = {
+          start_message_seq: 0,
+          pull_mode: 1,
+          limit: 30,
+        }
+        if (initMessageSeq && initMessageSeq > 0) {
+          if (lastRemoteMessageSeq <= 0 && initMessageSeq > 30) {
+            opts.start_message_seq = initMessageSeq - 5
+            if (opts.start_message_seq < 0) {
+              opts.start_message_seq = 0
+            }
+            opts.pull_mode = PullMode.Up
+          } else if (
+            lastRemoteMessageSeq > 0 &&
+            lastRemoteMessageSeq - initMessageSeq > opts.limit
+          ) {
+            opts.start_message_seq = initMessageSeq - 5
+            if (opts.start_message_seq < 0) {
+              opts.start_message_seq = 0
+            }
+            opts.pull_mode = PullMode.Up
+          }
+        }
+        return opts
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
     async jumpToMessage(message) {
       const channel = newChannel(message.channel.channel_id, message.channel.channel_type)
       // 先判断是否在当前会话
@@ -183,37 +219,15 @@ export const useChatStore = defineStore('chat', {
           scrollToMessage.scrollTo('to-chat-message', messageIndex)
           return
         }
-        // 当前聊天信息中不存在该消息，重新加载
+        //   // 当前聊天信息中不存在该消息，重新加载指定页内容
+        //   const opts = await this.getJumpToMessageParams(message, channel)
 
-        return
+        //   return
       }
 
-      const initMessageSeq = message.message_seq
-      const lastRemoteMessage = await this.getChannelLastMessage(channel)
-      let lastRemoteMessageSeq = 0
-      if (lastRemoteMessage) {
-        lastRemoteMessageSeq = lastRemoteMessage.messageSeq
-      }
-      let opts = {
-        start_message_seq: 0,
-        pull_mode: 1,
-        limit: 30,
-      }
-      if (initMessageSeq && initMessageSeq > 0) {
-        if (lastRemoteMessageSeq <= 0 && initMessageSeq > 30) {
-          opts.start_message_seq = initMessageSeq - 5
-          if (opts.start_message_seq < 0) {
-            opts.start_message_seq = 0
-          }
-          opts.pull_mode = PullMode.Up
-        } else if (lastRemoteMessageSeq > 0 && lastRemoteMessageSeq - initMessageSeq > opts.limit) {
-          opts.start_message_seq = initMessageSeq - 5
-          if (opts.start_message_seq < 0) {
-            opts.start_message_seq = 0
-          }
-          opts.pull_mode = PullMode.Up
-        }
-      }
+      //
+
+      const opts = await this.getJumpToMessageParams(message, channel)
 
       // 不在当前会话，则设置当前会话
       this.setCurrentChannel(channel, {
@@ -512,6 +526,16 @@ export const useChatStore = defineStore('chat', {
       this.conversationList = this.conversationList.filter(
         (item) => !item.channel.isEqual(conversation.channel),
       )
+      if (this.currentChannel && this.currentChannel.isEqual(conversation.channel)) {
+        this.currentChannel = null
+        this.currentConversationUnread = 0
+        this.chatMessagesOfOrigin = []
+        this.chatMessages = []
+        this.cacheChatMessagesByChannelID = {}
+        this.sendMessageQueue = {}
+        this.selectedMessagesByMessageID = {}
+        this.replyMessage = null
+      }
     },
     getConversationByChannel(channel) {
       return this.conversationList.find((item) => item.channel.isEqual(channel))

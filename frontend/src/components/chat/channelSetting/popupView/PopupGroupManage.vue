@@ -61,10 +61,10 @@
         <div class="cell-item mb-2">
           <div class="flex-1 leading-[32px]" @click="onShowBlackList">群黑名单</div>
         </div>
-        <div class="cell-item mb-2">
+        <div class="cell-item mb-2" @click="onShowAdminList">
           <div class="flex-1 leading-[32px]">管理员设置</div>
         </div>
-        <div class="cell-item mb-2">
+        <div class="cell-item mb-2" @click="onDisbandGroup">
           <div class="flex-1 leading-[32px]">解散群聊</div>
         </div>
       </div>
@@ -77,11 +77,12 @@ import { ref, onMounted, computed } from 'vue'
 import IconButton from '@/components/base/IconButton.vue'
 import useLoading from '@/hooks/useLoading'
 import chatApi from '@/api/chat'
-import { getImageURL, newChannel } from '@/wksdk/channelManager'
+import { newChannel } from '@/wksdk/channelManager'
 import { useChatStore } from '@/stores'
-import { showPopupChannelSelect, showPopupBlackList } from './index'
+import { showPopupChannelSelect, showPopupBlackList, showPopupAdminList } from './index'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { GroupRole } from '@/wksdk/const'
+import { closeConversation } from '@/wksdk/conversationManager'
 
 const props = defineProps({
   channelInfo: {
@@ -174,6 +175,37 @@ const onShowBlackList = () => {
   })
 }
 
+const onShowAdminList = () => {
+  showPopupAdminList({
+    title: '管理员设置',
+    appendTo: '#groupSettingPopupView',
+    channelInfo: props.channelInfo,
+  })
+}
+
+const onDisbandGroup = () => {
+  const conversation = chatStore.getConversationByChannel(props.channelInfo.channel)
+  if (conversation) {
+    ElMessageBox.confirm(
+      '解散后，所有成员将被移出群聊，且聊天记录将被清空，此操作不可恢复',
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      },
+    ).then(() => {
+      chatApi
+        .exitGroup({
+          channelID: props.channelInfo.orgData.group_no,
+        })
+        .then(() => {
+          ElMessage.success('群聊已解散')
+          chatStore.removeConversation(conversation)
+        })
+    })
+  }
+}
 onMounted(() => {
   isShow.value = true
 })
